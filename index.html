@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V34.5 營運詳情版</title>
+    <title>租屋管家 Pro - V34.6 顯示修復版</title>
     
     <!-- PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -116,7 +116,7 @@
                 <i class="fa-solid fa-building-user text-6xl text-indigo-300"></i>
             </div>
             <h1 class="text-4xl font-extrabold mb-2 tracking-tight">租屋管家 Pro</h1>
-            <p class="text-indigo-200 mb-12 font-medium tracking-wide">智慧資產管理 V34.5 (最新版)</p>
+            <p class="text-indigo-200 mb-12 font-medium tracking-wide">智慧資產管理 V34.6 (修復版)</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn bg-white text-indigo-900 py-5 text-xl shadow-xl hover:bg-indigo-50"><i class="fa-solid fa-key mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-indigo-800/50 text-white py-5 rounded-2xl font-bold text-xl border border-indigo-400/30 active:scale-95 transition backdrop-blur-sm"><i class="fa-solid fa-user mr-3"></i> 房客查詢</button>
@@ -164,7 +164,6 @@
         <main class="container mx-auto p-5 max-w-lg">
             <!-- DASHBOARD -->
             <div id="tab-dashboard" class="landlord-tab animate-slide-up">
-                <!-- V34.5 修正：背景改為深藍色，確保與舊版區隔 -->
                 <div class="card p-6 mb-6 bg-gradient-to-br from-blue-900 to-indigo-900 text-white shadow-xl shadow-blue-200">
                     <div class="text-blue-200 text-xs font-bold mb-1 uppercase tracking-widest">本月預估淨利</div>
                     <div class="text-4xl font-black mb-6 tracking-tight" id="dash-net">$0</div>
@@ -180,7 +179,7 @@
                             <div class="text-lg font-bold text-red-100" id="dash-pending">$0</div>
                         </div>
 
-                        <!-- 第二列：利潤分析 (恢復顯示) -->
+                        <!-- 第二列：利潤分析 -->
                         <div class="bg-white/10 rounded-2xl p-3 backdrop-blur-sm border border-white/10">
                             <div class="text-yellow-300 text-[10px] mb-1">⚡ 電費利潤</div>
                             <div class="text-lg font-bold" id="dash-elec-profit">$0</div>
@@ -190,7 +189,7 @@
                             <div class="text-lg font-bold" id="dash-water-profit">$0</div>
                         </div>
 
-                        <!-- 第三列：修繕與報修 (恢復顯示) -->
+                        <!-- 第三列：修繕與報修 -->
                         <div class="bg-white/10 rounded-2xl p-3 backdrop-blur-sm border border-white/10">
                             <div class="text-orange-300 text-[10px] mb-1">🔧 修繕成本</div>
                             <div class="text-lg font-bold" id="dash-repair-cost">$0</div>
@@ -255,10 +254,10 @@
                         <div><label class="text-[10px] font-bold text-gray-400">房客電費</label><input type="number" id="set-elec" class="input-field" onchange="window.saveSettings()"></div>
                         <div><label class="text-[10px] font-bold text-gray-400">台電成本</label><input type="number" id="set-elec-cost" class="input-field text-gray-500" onchange="window.saveSettings()"></div>
                         <div><label class="text-[10px] font-bold text-gray-400">房客水費</label><input type="number" id="set-water" class="input-field" onchange="window.saveSettings()"></div>
-                        <div><label class="text-[10px] font-bold text-gray-400">水利成本</label><input type="number" id="set-water-cost" class="input-field text-gray-500" onchange="window.saveSettings()"></div>
+                        <div><label class="text-[10px] font-bold text-slate-400">水利成本</label><input type="number" id="set-water-cost" class="input-field text-gray-500" onchange="window.saveSettings()"></div>
                     </div>
-                    <div><label class="text-xs font-bold text-gray-400">房東密碼</label><input type="text" id="set-pwd" class="input-field" onchange="window.saveSettings()"></div>
-                    <div><label class="text-xs font-bold text-gray-400">匯款帳號</label><input type="text" id="set-bank" class="input-field" onchange="window.saveSettings()"></div>
+                    <div><label class="text-xs font-bold text-slate-400">房東密碼</label><input type="text" id="set-pwd" class="input-field" onchange="window.saveSettings()"></div>
+                    <div><label class="text-xs font-bold text-slate-400">匯款帳號</label><input type="text" id="set-bank" class="input-field" onchange="window.saveSettings()"></div>
                 </div>
 
                 <div class="card p-6 mb-6 border border-indigo-100 bg-indigo-50/50">
