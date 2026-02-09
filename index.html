@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - 雲端修復版 V33.1</title>
+    <title>租屋管家 Pro - 強制除錯版 V33.2</title>
     
     <!-- PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -81,7 +81,7 @@
                 <i class="fa-solid fa-house-chimney text-7xl text-yellow-400"></i>
             </div>
             <h1 class="text-4xl font-black mb-4 tracking-tighter">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-14 font-bold text-lg">智慧資產管理 (V33.1)</p>
+            <p class="text-slate-400 mb-14 font-bold text-lg">智慧資產管理 (V33.2)</p>
             <div class="space-y-5">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-6 text-2xl shadow-2xl"><i class="fa-solid fa-user-shield mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-slate-800 text-white py-6 rounded-full font-black text-2xl border-2 border-slate-700 active:scale-95 transition shadow-xl"><i class="fa-solid fa-user-tag mr-3"></i> 房客登入</button>
@@ -156,15 +156,6 @@
             <!-- FINANCE TAB -->
             <div id="tab-finance" class="landlord-tab hidden animate-slide-up">
                 <h2 class="text-3xl font-black text-slate-900 mb-2 tracking-tighter">財務分析報表</h2>
-                
-                <div class="card p-6 mb-8 border border-slate-200">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="font-black text-slate-700"><i class="fa-solid fa-chart-column mr-2 text-blue-600"></i>近 6 個月收支趨勢</h3>
-                        <div class="flex gap-3 text-[10px] font-bold"><span class="flex items-center"><span class="w-2 h-2 bg-blue-500 rounded-full mr-1"></span>收入</span><span class="flex items-center"><span class="w-2 h-2 bg-red-400 rounded-full mr-1"></span>支出</span></div>
-                    </div>
-                    <div id="finance-bar-chart" class="bar-chart-container"></div>
-                </div>
-
                 <div id="yearly-summary-container" class="mb-8"></div>
                 <h3 class="text-xl font-black text-slate-700 mb-4 border-l-4 border-blue-500 pl-3">月度明細</h3>
                 <div id="finance-list" class="space-y-6"></div>
@@ -288,7 +279,6 @@
     <!-- Scripts -->
     <script>
         const GEMINI_API_KEY = "AIzaSyBxoXwUu1lvvscKz68Ck2w2JA-mNm8L264";
-
         // *** USER PROVIDED CONFIG (HARDCODED) ***
         const userFirebaseConfig = {
           apiKey: "AIzaSyCNC58tKKVOH09gohIgt9n5p03mMVAkMZM",
@@ -299,7 +289,6 @@
           appId: "1:23211542320:web:c81d782bc3c8c208006af5",
           measurementId: "G-2TLK0PM3PZ"
         };
-        
         const USER_PROJECT_ID = userFirebaseConfig.projectId;
 
         window.state = {
@@ -311,7 +300,6 @@
             lockoutUntil: JSON.parse(localStorage.getItem('rental_lockout_until') || '{"owner":0,"tenant":0}')
         };
         
-        // Ensure Project ID in settings matches the hardcoded config
         window.state.settings.projectId = USER_PROJECT_ID;
 
         let db = null;
@@ -324,7 +312,6 @@
 
         // --- Helper for Paths ---
         const getPath = (coll) => {
-            // ALWAYS use root collection for User's Own Project
             return coll; 
         };
         
@@ -516,7 +503,6 @@
                         console.error("Firestore Error:", e);
                         statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> 權限錯誤';
                         statusEl.className = "text-xs font-bold bg-red-500 px-3 py-2 rounded-full border border-red-400 cursor-pointer shadow-sm text-white";
-                        // alert("無法讀取資料庫，請確認 Firebase Console -> Firestore Database -> Rules 已設為 public (allow read, write: if true;)");
                     });
 
                 } catch(e) {
@@ -529,8 +515,6 @@
         
         window.syncToCloud = async (coll, id, data) => { 
             // Only sync 'rooms' if user wants to focus on that
-            // But code still supports others if needed. 
-            // Button loading state
             if (coll === 'rooms') {
                 const btn = document.querySelector('#modal-room-edit .btn-primary');
                 if(btn) { btn.innerText = "☁️ 上傳中..."; btn.disabled = true; }
@@ -710,7 +694,29 @@
         };
 
         // --- 房間管理 ---
-        window.renderRooms = () => { const c=document.getElementById('rooms-list'); if(!c)return; c.innerHTML=window.state.rooms.map(r=>{ const unpaid=window.state.records.filter(x=>x.roomId==r.id&&!x.paid).reduce((a,b)=>a+b.total,0); const ph=r.photo?`<img src="${r.photo}" class="w-14 h-14 rounded-2xl object-cover mr-4">`:`<div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-300 mr-4 text-xs">${r.name}</div>`; return `<div class="card p-5 flex justify-between items-center cursor-pointer mb-3" onclick="window.showRoomDetail('${r.id}')"><div class="flex items-center min-w-0">${ph}<div class="truncate"><div class="text-xl font-black text-slate-800">${r.name} 房</div><div class="text-slate-400 font-bold text-xs truncate">${r.tenant||'空房'}</div></div></div><div class="flex items-center gap-3 shrink-0">${unpaid>0?`<span class="badge badge-red">欠$${unpaid}</span>`:'<span class="badge badge-green">正常</span>'}</div></div>`; }).join(''); };
+        window.renderRooms = () => { 
+            const c = document.getElementById('rooms-list'); 
+            if(!c) return; 
+            
+            c.innerHTML = window.state.rooms.map(r => { 
+                const unpaid = window.state.records.filter(x => x.roomId == r.id && !x.paid).reduce((a,b)=>a+b.total,0); 
+                const ph = r.photo ? `<img src="${r.photo}" class="w-14 h-14 rounded-2xl object-cover mr-4">` : `<div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-300 mr-4 text-xs">${r.name}</div>`; 
+                // Escape single quotes in ID just in case
+                const safeId = String(r.id).replace(/'/g, "\\'");
+                return `<div class="card p-5 flex justify-between items-center cursor-pointer mb-3" onclick="window.showRoomDetail('${safeId}')">
+                            <div class="flex items-center min-w-0">
+                                ${ph}
+                                <div class="truncate">
+                                    <div class="text-xl font-black text-slate-800">${r.name} 房</div>
+                                    <div class="text-slate-400 font-bold text-xs truncate">${r.tenant || '空房'}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 shrink-0">
+                                ${unpaid > 0 ? `<span class="badge badge-red">欠$${unpaid}</span>` : '<span class="badge badge-green">正常</span>'}
+                            </div>
+                        </div>`; 
+            }).join(''); 
+        };
 
         window.openRoomModal = () => { 
             currentRoomId=null; 
@@ -726,10 +732,7 @@
             document.getElementById('edit-meter').value="0"; 
             document.getElementById('edit-water-fee').value=window.state.settings.waterRate||100; 
             document.getElementById('edit-mgmt').value="0"; 
-            // 修正：只重置封面預覽，不尋找不存在的元素
-            const mainPrev = document.getElementById('edit-preview-main');
-            if(mainPrev) { mainPrev.src=""; mainPrev.classList.add('hidden'); }
-            
+            ['main','furn','cont'].forEach(k=>{ const i=document.getElementById(`edit-preview-${k}`); if(i) { i.src=""; i.classList.add('hidden'); } }); 
             tempEditPhotos = {furn:[], cont:[]}; 
             window.renderEditPhotoList('furn'); 
             window.renderEditPhotoList('cont'); 
@@ -771,6 +774,7 @@
             const id=idVal?idVal:Date.now().toString(); 
             const rd={id, name:document.getElementById('edit-name').value, rent:Number(document.getElementById('edit-rent').value), tenant:document.getElementById('edit-tenant').value, phone:document.getElementById('edit-phone').value, paymentDay:document.getElementById('edit-payday').value, start:document.getElementById('edit-start').value, end:document.getElementById('edit-end').value, meter:Number(document.getElementById('edit-meter').value), waterFee:Number(document.getElementById('edit-water-fee').value), mgmtFee:Number(document.getElementById('edit-mgmt').value), photo:document.getElementById('edit-preview-main').src, furnPhotos: tempEditPhotos.furn, contPhotos: tempEditPhotos.cont, photoFurn: null, photoCont: null}; 
             if(!rd.name) return alert('房號必填'); 
+            
             const size = new Blob([JSON.stringify(rd)]).size;
             if(size > 1000000) { alert("⚠️ 照片總量過大，無法上傳雲端！\n請減少照片數量後再試。\n(資料已暫存於本機)"); if (true) { const btn = document.querySelector('#modal-room-edit .btn-primary'); if(btn) { btn.innerText = "儲存房訊"; btn.disabled = false; } } return; }
             const idx=window.state.rooms.findIndex(x=>x.id==id); 
@@ -863,3 +867,4 @@
     </script>
 </body>
 </html>
+```
