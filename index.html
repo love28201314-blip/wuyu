@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - 強制除錯版 V33.2</title>
+    <title>租屋管家 Pro - 最終除錯版 V33.3</title>
     
     <!-- PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -37,7 +37,6 @@
         .btn-danger { background: #fee2e2; color: #dc2626; border: 2px solid #fecaca; }
         .btn-warning { background: #fff7ed; color: #ea580c; border: 2px solid #fdba74; }
         .btn-outline { background: white; color: #3b82f6; border: 2px solid #e2e8f0; }
-        /* AI Button Style */
         .btn-ai { background: linear-gradient(135deg, #8b5cf6, #d946ef); color: white; box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3); }
 
         .font-size-btn { flex: 1; padding: 12px; border-radius: 12px; border: 2px solid #e2e8f0; font-weight: bold; color: #64748b; background: white; transition: all 0.2s; }
@@ -81,7 +80,7 @@
                 <i class="fa-solid fa-house-chimney text-7xl text-yellow-400"></i>
             </div>
             <h1 class="text-4xl font-black mb-4 tracking-tighter">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-14 font-bold text-lg">智慧資產管理 (V33.2)</p>
+            <p class="text-slate-400 mb-14 font-bold text-lg">智慧資產管理 (V33.3)</p>
             <div class="space-y-5">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-6 text-2xl shadow-2xl"><i class="fa-solid fa-user-shield mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-slate-800 text-white py-6 rounded-full font-black text-2xl border-2 border-slate-700 active:scale-95 transition shadow-xl"><i class="fa-solid fa-user-tag mr-3"></i> 房客登入</button>
@@ -503,6 +502,7 @@
                         console.error("Firestore Error:", e);
                         statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> 權限錯誤';
                         statusEl.className = "text-xs font-bold bg-red-500 px-3 py-2 rounded-full border border-red-400 cursor-pointer shadow-sm text-white";
+                        // alert("無法讀取資料庫，請確認 Firebase Console -> Firestore Database -> Rules 已設為 public (allow read, write: if true;)");
                     });
 
                 } catch(e) {
@@ -757,7 +757,6 @@
             document.getElementById('edit-mgmt').value=r.mgmtFee||0; 
             if(r.photo){const i=document.getElementById('edit-preview-main'); i.src=r.photo; i.classList.remove('hidden');}
             
-            // Deep Copy 避免參照問題
             tempEditPhotos.furn = r.furnPhotos ? [...r.furnPhotos] : (r.photoFurn ? [r.photoFurn] : []);
             tempEditPhotos.cont = r.contPhotos ? [...r.contPhotos] : (r.photoCont ? [r.photoCont] : []);
             
@@ -774,7 +773,6 @@
             const id=idVal?idVal:Date.now().toString(); 
             const rd={id, name:document.getElementById('edit-name').value, rent:Number(document.getElementById('edit-rent').value), tenant:document.getElementById('edit-tenant').value, phone:document.getElementById('edit-phone').value, paymentDay:document.getElementById('edit-payday').value, start:document.getElementById('edit-start').value, end:document.getElementById('edit-end').value, meter:Number(document.getElementById('edit-meter').value), waterFee:Number(document.getElementById('edit-water-fee').value), mgmtFee:Number(document.getElementById('edit-mgmt').value), photo:document.getElementById('edit-preview-main').src, furnPhotos: tempEditPhotos.furn, contPhotos: tempEditPhotos.cont, photoFurn: null, photoCont: null}; 
             if(!rd.name) return alert('房號必填'); 
-            
             const size = new Blob([JSON.stringify(rd)]).size;
             if(size > 1000000) { alert("⚠️ 照片總量過大，無法上傳雲端！\n請減少照片數量後再試。\n(資料已暫存於本機)"); if (true) { const btn = document.querySelector('#modal-room-edit .btn-primary'); if(btn) { btn.innerText = "儲存房訊"; btn.disabled = false; } } return; }
             const idx=window.state.rooms.findIndex(x=>x.id==id); 
@@ -867,4 +865,3 @@
     </script>
 </body>
 </html>
-```
