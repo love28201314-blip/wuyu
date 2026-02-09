@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V33.5 終極修復版</title>
+    <title>租屋管家 Pro - V33.6 房客修復版</title>
     
     <!-- PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -80,7 +80,7 @@
                 <i class="fa-solid fa-house-chimney text-7xl text-yellow-400"></i>
             </div>
             <h1 class="text-4xl font-black mb-4 tracking-tighter">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-14 font-bold text-lg">智慧資產管理 (V33.5)</p>
+            <p class="text-slate-400 mb-14 font-bold text-lg">智慧資產管理 (V33.6)</p>
             <div class="space-y-5">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-6 text-2xl shadow-2xl"><i class="fa-solid fa-user-shield mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-slate-800 text-white py-6 rounded-full font-black text-2xl border-2 border-slate-700 active:scale-95 transition shadow-xl"><i class="fa-solid fa-user-tag mr-3"></i> 房客登入</button>
@@ -188,6 +188,7 @@
     <div id="app-tenant" class="view-section hidden min-h-screen bg-slate-50"><div class="bg-blue-700 p-8 text-white rounded-b-[40px] shadow-2xl mb-8"><div class="flex justify-between items-start mb-6"><div><h1 class="text-4xl font-black mb-1" id="t-room-name">房號</h1><p class="text-blue-100 font-bold" id="t-tenant-name">房客</p></div><button onclick="window.confirmExit()" class="bg-white/20 p-3 rounded-2xl shadow-inner"><i class="fa-solid fa-right-from-bracket text-xl"></i></button></div><div class="grid grid-cols-2 gap-4"><div class="bg-white/10 p-4 rounded-3xl border border-white/20 text-center"><div class="text-xs opacity-70 mb-1">合約到期</div><div class="text-lg font-black" id="t-contract-end">--</div></div><div class="bg-white/10 p-4 rounded-3xl border border-white/20 text-center"><div class="text-xs opacity-70 mb-1">繳款日</div><div class="text-lg font-black" id="t-pay-day">-- 號</div></div></div>
         </div>
         <div class="p-6 space-y-6 overflow-y-auto pb-24">
+            <!-- 房客相簿 (直覺顯示) -->
             <div class="card p-6 shadow-md border border-slate-100">
                 <h3 class="text-xl font-black mb-4 flex items-center"><i class="fa-solid fa-images mr-2 text-blue-500"></i>房間相簿</h3>
                 <div class="mb-4">
@@ -409,7 +410,7 @@
             } else { 
                 window.state.loginAttempts.owner++;
                 if(window.state.loginAttempts.owner >= 5) {
-                    window.state.lockoutUntil.owner = Date.now() + 300000;
+                    window.state.lockoutেশের.owner = Date.now() + 300000;
                     btn.innerText = "系統鎖定中";
                     btn.disabled = true;
                     setTimeout(() => { btn.disabled = false; btn.innerText = "開始管理"; }, 300000);
@@ -420,6 +421,59 @@
                 document.getElementById('owner-pwd-input').value = '';
                 window.saveLoginState();
             } 
+        };
+        
+        // **房客功能 (補回)**
+        window.renderTenantDashboard = () => {
+            const r = currentTenantRoom;
+            if(!r) return;
+            document.getElementById('t-room-name').innerText = r.name;
+            document.getElementById('t-tenant-name').innerText = `${r.tenant} 您好`;
+            document.getElementById('t-contract-end').innerText = r.end || '無日期';
+            document.getElementById('t-pay-day').innerText = r.paymentDay || '5';
+            
+            // Render Photos for Tenant
+            const furnList = document.getElementById('tenant-furn-list');
+            const furnPhotos = r.furnPhotos || (r.photoFurn ? [r.photoFurn] : []);
+            if(furnPhotos.length > 0) {
+                furnList.innerHTML = furnPhotos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join('');
+            } else { furnList.innerHTML = '<span class="text-gray-400 text-sm p-2">無照片</span>'; }
+
+            const contList = document.getElementById('tenant-cont-list');
+            const contPhotos = r.contPhotos || (r.photoCont ? [r.photoCont] : []);
+            if(contPhotos.length > 0) {
+                contList.innerHTML = contPhotos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join('');
+            } else { contList.innerHTML = '<span class="text-gray-400 text-sm p-2">無照片</span>'; }
+
+            const u = window.state.records.filter(rec => rec.roomId == r.id && !rec.paid);
+            const bl = document.getElementById('t-bill-list');
+            if (u.length === 0) bl.innerHTML = '<div class="text-center py-6 text-green-600 font-black">目前無欠費</div>';
+            else bl.innerHTML = u.map(x => `<div class="bg-red-50 p-4 rounded-2xl flex justify-between font-bold"><span>${x.date}</span><span class="text-red-600">$${x.total}</span></div>`).join('');
+            
+            const mr = window.state.repairs.filter(x => x.roomId == r.id);
+            const rl = document.getElementById('t-repair-list');
+            if (mr.length === 0) rl.innerHTML = '<div class="text-center py-4 text-slate-300 font-bold">無紀錄</div>';
+            else rl.innerHTML = mr.map(x => `<div class="card p-5 ${x.status === 'done' ? 'opacity-60' : ''}"><div class="flex justify-between items-center mb-2"><span class="badge ${x.status === 'done' ? 'badge-green' : 'badge-orange'}">${x.status === 'done' ? '完工' : '處理中'}</span><span class="text-xs text-slate-400">${x.date}</span></div><div class="font-bold text-slate-700 mb-3">${x.desc}</div>${x.reply ? `<div class="bg-blue-50 p-3 rounded-xl text-sm font-black text-blue-800">房東：${x.reply}</div>` : ''}</div>`).join('');
+        };
+
+        window.submitTenantRepair = () => { 
+            const d = document.getElementById('t-repair-input').value; 
+            if (!d) return; 
+            const rp = { 
+                id: Date.now().toString(), 
+                roomId: currentTenantRoom.id, 
+                desc: d, 
+                status: 'pending', 
+                date: new Date().toLocaleDateString('zh-TW'), 
+                cost: 0, 
+                reply: "" 
+            }; 
+            window.state.repairs.unshift(rp); 
+            window.saveData(); 
+            window.syncToCloud('repairs', rp.id, rp); 
+            alert('已送出'); 
+            document.getElementById('t-repair-input').value = ''; 
+            window.renderTenantDashboard(); 
         };
 
         window.tenantLogin = () => { 
@@ -525,7 +579,6 @@
         };
         
         window.syncToCloud = async (coll, id, data) => { 
-            // Only sync 'rooms' if user wants to focus on that
             if (coll === 'rooms') {
                 const btn = document.querySelector('#modal-room-edit .btn-primary');
                 if(btn) { btn.innerText = "☁️ 上傳中..."; btn.disabled = true; }
