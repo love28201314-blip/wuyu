@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - GitHub Pages 版</title>
+    <title>租屋管家 Pro - 雲端連線版</title>
     
     <!-- PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase SDKs (Compat version) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -81,12 +81,12 @@
                 <i class="fa-solid fa-house-chimney text-7xl text-yellow-400"></i>
             </div>
             <h1 class="text-4xl font-black mb-4 tracking-tighter">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-14 font-bold text-lg">智慧資產管理 (GH版)</p>
+            <p class="text-slate-400 mb-14 font-bold text-lg">GitHub 雲端版 (V33.0)</p>
             <div class="space-y-5">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-6 text-2xl shadow-2xl"><i class="fa-solid fa-user-shield mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-slate-800 text-white py-6 rounded-full font-black text-2xl border-2 border-slate-700 active:scale-95 transition shadow-xl"><i class="fa-solid fa-user-tag mr-3"></i> 房客登入</button>
             </div>
-            <p class="mt-16 text-xs text-slate-500 font-mono tracking-widest">Project: <span id="landing-id">---</span></p>
+            <p class="mt-16 text-xs text-slate-500 font-mono tracking-widest">Project: <span id="landing-id">test-cb845</span></p>
         </div>
     </div>
 
@@ -168,8 +168,7 @@
                 <div class="card p-6 mb-6"><h3 class="font-black text-blue-800 mb-4 flex items-center"><i class="fa-solid fa-text-height mr-2"></i> 顯示字體</h3><div class="flex gap-2 p-1 bg-slate-100 rounded-2xl"><button onclick="window.setFontSize(16)" id="font-size-16" class="font-size-btn active">小</button><button onclick="window.setFontSize(18)" id="font-size-18" class="font-size-btn">中</button><button onclick="window.setFontSize(22)" id="font-size-22" class="font-size-btn">大</button></div></div>
                 <div class="card p-6 mb-6"><h3 class="font-black text-blue-800 mb-4 flex items-center"><i class="fa-solid fa-gear mr-2"></i> 費率預設值</h3><div class="space-y-4"><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-slate-400">房客電費 (元)</label><input type="number" id="set-elec" class="input-field shadow-inner" onchange="window.saveSettings()"></div><div><label class="text-[10px] font-bold text-slate-400 text-blue-500">台電成本 (元)</label><input type="number" id="set-elec-cost" class="input-field border-blue-100 shadow-inner" onchange="window.saveSettings()"></div></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-slate-400">房客水費 (元)</label><input type="number" id="set-water" class="input-field shadow-inner" onchange="window.saveSettings()"></div><div><label class="text-[10px] font-bold text-slate-400 text-cyan-500">水利成本 (元)</label><input type="number" id="set-water-cost" class="input-field border-cyan-100 shadow-inner" onchange="window.saveSettings()"></div></div><div><label class="text-xs font-bold text-slate-400">房東密碼</label><input type="text" id="set-pwd" class="input-field shadow-inner" onchange="window.saveSettings()"></div><div><label class="text-xs font-bold text-slate-400">匯款帳號</label><input type="text" id="set-bank" class="input-field shadow-inner" onchange="window.saveSettings()"></div></div></div>
                 <div class="card p-6 mb-6 border-2 border-blue-100"><h3 class="text-lg font-bold text-blue-800 mb-4 border-b pb-2 flex items-center"><i class="fa-solid fa-cloud mr-2"></i> 雲端同步設定</h3>
-                    <div class="input-wrapper mb-2"><label class="input-label">Project ID</label><input type="text" id="set-project-id" class="input-field bg-slate-100 text-slate-500" disabled></div>
-                    <div id="cloud-path-display" class="text-[10px] text-slate-400 text-center mb-2 font-mono break-all"></div>
+                    <div class="input-wrapper mb-2"><label class="input-label">連線狀態</label></div>
                     <div id="cloud-status-text" class="text-center text-sm font-bold text-gray-400"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> 連線狀態偵測中...</div>
                 </div>
                 <button onclick="window.checkCloudStatus()" class="w-full btn btn-primary mb-4 font-black shadow-lg"><i class="fa-solid fa-cloud-arrow-down mr-2"></i> 檢查雲端備份</button>
@@ -189,7 +188,6 @@
     <div id="app-tenant" class="view-section hidden min-h-screen bg-slate-50"><div class="bg-blue-700 p-8 text-white rounded-b-[40px] shadow-2xl mb-8"><div class="flex justify-between items-start mb-6"><div><h1 class="text-4xl font-black mb-1" id="t-room-name">房號</h1><p class="text-blue-100 font-bold" id="t-tenant-name">房客</p></div><button onclick="window.confirmExit()" class="bg-white/20 p-3 rounded-2xl shadow-inner"><i class="fa-solid fa-right-from-bracket text-xl"></i></button></div><div class="grid grid-cols-2 gap-4"><div class="bg-white/10 p-4 rounded-3xl border border-white/20 text-center"><div class="text-xs opacity-70 mb-1">合約到期</div><div class="text-lg font-black" id="t-contract-end">--</div></div><div class="bg-white/10 p-4 rounded-3xl border border-white/20 text-center"><div class="text-xs opacity-70 mb-1">繳款日</div><div class="text-lg font-black" id="t-pay-day">-- 號</div></div></div>
         </div>
         <div class="p-6 space-y-6 overflow-y-auto pb-24">
-            <!-- 房客相簿 -->
             <div class="card p-6 shadow-md border border-slate-100">
                 <h3 class="text-xl font-black mb-4 flex items-center"><i class="fa-solid fa-images mr-2 text-blue-500"></i>房間相簿</h3>
                 <div class="mb-4">
@@ -201,7 +199,6 @@
                     <div id="tenant-cont-list" class="photo-scroller flex gap-3 overflow-x-auto pb-2 min-h-[60px] items-center text-slate-300 text-xs pl-2">無照片</div>
                 </div>
             </div>
-
             <div class="card p-6 border-l-[12px] border-red-500 shadow-md"><h3 class="text-xl font-black mb-4">待繳帳單</h3><div id="t-bill-list" class="space-y-3"></div></div><div class="card p-6 shadow-md"><h3 class="text-xl font-black mb-4">問題報修</h3><textarea id="t-repair-input" class="input-field h-32 mb-4 shadow-inner" placeholder="描述損壞情況..."></textarea><button onclick="window.submitTenantRepair()" class="btn btn-primary w-full shadow-lg">送出申請</button></div><div class="card p-6 shadow-md"><h3 class="text-xl font-black mb-4">修繕進度</h3><div id="t-repair-list" class="space-y-4"></div></div></div></div>
 
     <!-- ================= 房間詳情彈窗 ================= -->
@@ -278,10 +275,13 @@
 
     <!-- Scripts -->
     <script>
+        // -------------------------
+        //  CONFIG SECTION
+        // -------------------------
         const GEMINI_API_KEY = "AIzaSyBxoXwUu1lvvscKz68Ck2w2JA-mNm8L264";
 
-        // *** USER PROVIDED CONFIG ***
-        const userFirebaseConfig = {
+        // *** CRITICAL: YOUR FIREBASE CONFIG ***
+        const firebaseConfig = {
           apiKey: "AIzaSyCNC58tKKVOH09gohIgt9n5p03mMVAkMZM",
           authDomain: "test-cb845.firebaseapp.com",
           projectId: "test-cb845",
@@ -291,8 +291,9 @@
           measurementId: "G-2TLK0PM3PZ"
         };
         
-        const USER_PROJECT_ID = userFirebaseConfig.projectId;
-
+        // -------------------------
+        //  APP STATE & LOGIC
+        // -------------------------
         window.state = {
             rooms: JSON.parse(localStorage.getItem('rental_rooms') || '[]'),
             records: JSON.parse(localStorage.getItem('rental_records') || '[]'),
@@ -301,8 +302,6 @@
             loginAttempts: JSON.parse(localStorage.getItem('rental_login_attempts') || '{"owner":0,"tenant":0}'),
             lockoutUntil: JSON.parse(localStorage.getItem('rental_lockout_until') || '{"owner":0,"tenant":0}')
         };
-        
-        window.state.settings.projectId = USER_PROJECT_ID;
 
         let db = null;
         let currentRoomId = null;
@@ -427,28 +426,23 @@
             window.renderRooms(); 
         };
         
-        // --- Init Cloud (User Config) ---
+        // --- Init Cloud ---
         window.initCloud = async function() {
             const statusEl = document.getElementById('status-indicator');
-            const pathDisplay = document.getElementById('cloud-path-display');
-            
-            if(pathDisplay) pathDisplay.innerText = `專案: ${USER_PROJECT_ID}`;
-
             if(typeof firebase !== 'undefined') {
                 try {
-                    // Initialize with User's Config
+                    // Initialize with YOUR config
                     if (!firebase.apps.length) {
-                        firebase.initializeApp(userFirebaseConfig);
+                        firebase.initializeApp(firebaseConfig);
                     }
                     
                     const auth = firebase.auth();
+                    // Try anonymous sign-in
                     await auth.signInAnonymously();
 
                     db = firebase.firestore();
-                    const roomsPath = 'rooms'; // Root collection
-
-                    // Only listen to 'rooms' collection as requested
-                    db.collection(roomsPath).onSnapshot((snap) => {
+                    // Only read the 'rooms' collection as requested
+                    db.collection('rooms').onSnapshot((snap) => {
                         if (!snap.empty) {
                              window.state.rooms = snap.docs.map(d => d.data());
                              localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
@@ -462,7 +456,7 @@
                         console.error("Firestore Error:", e);
                         statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> 權限錯誤';
                         statusEl.className = "text-xs font-bold bg-red-500 px-3 py-2 rounded-full border border-red-400 cursor-pointer shadow-sm text-white";
-                        // alert("無法讀取資料庫，請確認 Firebase Console -> Firestore Database -> Rules 已設為 public (allow read, write: if true;)");
+                        // alert("請確認 Firebase Console -> Authentication -> Sign-in method -> Anonymous 已啟用");
                     });
 
                 } catch(e) {
@@ -474,51 +468,46 @@
         };
         
         window.syncToCloud = async (coll, id, data) => { 
-            // Only sync 'rooms' if user wants to focus on that
-            // But code still supports others if needed. 
-            // Button loading state
-            if (coll === 'rooms') {
-                const btn = document.querySelector('#modal-room-edit .btn-primary');
-                if(btn) { btn.innerText = "☁️ 上傳中..."; btn.disabled = true; }
-            }
+            // Only sync 'rooms'
+            if (coll !== 'rooms') return;
+            
+            const btn = document.querySelector('#modal-room-edit .btn-primary');
+            if(btn) { btn.innerText = "☁️ 上傳中..."; btn.disabled = true; }
             
             const size = new Blob([JSON.stringify(data)]).size;
             if(size > 1000000) {
                  alert("⚠️ 照片總量過大，無法上傳雲端！\n請減少照片數量後再試。\n(資料已暫存於本機)");
-                 if (coll === 'rooms') {
-                    const btn = document.querySelector('#modal-room-edit .btn-primary');
-                    if(btn) { btn.innerText = "儲存房訊"; btn.disabled = false; }
-                 }
+                 if (btn) { btn.innerText = "儲存房訊"; btn.disabled = false; }
                  return;
             }
 
             if(db) {
                 try { 
-                    await db.collection(coll).doc(String(id)).set(data); 
-                    if (coll === 'rooms') window.showToast('✅ 雲端同步完成');
+                    await db.collection('rooms').doc(String(id)).set(data); 
+                    window.showToast('✅ 雲端同步完成');
                 } catch (e) {
                     console.error("Sync Error:", e);
                     alert("⚠️ 雲端寫入失敗 (權限不足?)");
                 } 
             }
             
-            if (coll === 'rooms') {
-                const btn = document.querySelector('#modal-room-edit .btn-primary');
-                if(btn) { btn.innerText = "儲存房訊"; btn.disabled = false; }
-            }
+            if (btn) { btn.innerText = "儲存房訊"; btn.disabled = false; }
         };
         
         window.checkCloudStatus = async () => {
              if(!db) return alert("❌ 未初始化雲端連線");
              try {
                  const doc = await db.collection('rooms').limit(1).get();
-                 alert(`✅ 雲端連線正常！\n目標專案: ${USER_PROJECT_ID}\n寫入權限 OK！`);
+                 alert(`✅ 雲端連線正常！\n寫入權限 OK！`);
              } catch(e) {
                  alert("❌ 連線失敗：" + e.message);
              }
         };
 
-        window.deleteFromCloud = async (coll, id) => { if(db) try { await db.collection(coll).doc(String(id)).delete(); } catch(e) {} };
+        window.deleteFromCloud = async (coll, id) => { 
+            if(coll !== 'rooms') return;
+            if(db) try { await db.collection('rooms').doc(String(id)).delete(); } catch(e) {} 
+        };
 
         // --- Finance ---
         window.renderFinance = () => {
@@ -717,7 +706,6 @@
             const id=idVal?idVal:Date.now().toString(); 
             const rd={id, name:document.getElementById('edit-name').value, rent:Number(document.getElementById('edit-rent').value), tenant:document.getElementById('edit-tenant').value, phone:document.getElementById('edit-phone').value, paymentDay:document.getElementById('edit-payday').value, start:document.getElementById('edit-start').value, end:document.getElementById('edit-end').value, meter:Number(document.getElementById('edit-meter').value), waterFee:Number(document.getElementById('edit-water-fee').value), mgmtFee:Number(document.getElementById('edit-mgmt').value), photo:document.getElementById('edit-preview-main').src, furnPhotos: tempEditPhotos.furn, contPhotos: tempEditPhotos.cont, photoFurn: null, photoCont: null}; 
             if(!rd.name) return alert('房號必填'); 
-            
             const size = new Blob([JSON.stringify(rd)]).size;
             if(size > 1000000) { alert("⚠️ 照片總量過大，無法上傳雲端！\n請減少照片數量後再試。\n(資料已暫存於本機)"); if (true) { const btn = document.querySelector('#modal-room-edit .btn-primary'); if(btn) { btn.innerText = "儲存房訊"; btn.disabled = false; } } return; }
             const idx=window.state.rooms.findIndex(x=>x.id==id); 
@@ -740,8 +728,13 @@
         window.triggerFile = (id) => document.getElementById(id).click();
         window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
         window.showToast = (m) => { const t=document.getElementById('toast'); document.getElementById('toast-msg').innerText=m; t.classList.remove('hidden','opacity-0'); setTimeout(()=>{t.classList.add('opacity-0','hidden')},2000); };
-        window.saveSettings = () => { window.state.settings.elecRate=Number(document.getElementById('set-elec').value); window.state.settings.elecCostRate=Number(document.getElementById('set-elec-cost').value); window.state.settings.waterRate=Number(document.getElementById('set-water').value); window.state.settings.waterCostRate=Number(document.getElementById('set-water-cost').value); window.state.settings.bankAccount=document.getElementById('set-bank').value; window.state.settings.password=document.getElementById('set-pwd').value; window.saveData(); };
-        window.applySettingsUI = () => { document.getElementById('set-elec').value=window.state.settings.elecRate; document.getElementById('set-elec-cost').value=window.state.settings.elecCostRate||2.1; document.getElementById('set-water').value=window.state.settings.waterRate||100; document.getElementById('set-water-cost').value=window.state.settings.waterCostRate||50; document.getElementById('set-bank').value=window.state.settings.bankAccount||''; document.getElementById('set-pwd').value=window.state.settings.password||'0000'; };
+        window.saveSettings = () => { window.state.settings.elecRate=Number(document.getElementById('set-elec').value); window.state.settings.elecCostRate=Number(document.getElementById('set-elec-cost').value); window.state.settings.waterRate=Number(document.getElementById('set-water').value); window.state.settings.waterCostRate=Number(document.getElementById('set-water-cost').value); window.state.settings.bankAccount=document.getElementById('set-bank').value; window.state.settings.password=document.getElementById('set-pwd').value; 
+        const pidInput = document.getElementById('set-project-id').value;
+        if(pidInput) window.state.settings.projectId = pidInput;
+        window.saveData(); };
+        window.applySettingsUI = () => { document.getElementById('set-elec').value=window.state.settings.elecRate; document.getElementById('set-elec-cost').value=window.state.settings.elecCostRate||2.1; document.getElementById('set-water').value=window.state.settings.waterRate||100; document.getElementById('set-water-cost').value=window.state.settings.waterCostRate||50; document.getElementById('set-bank').value=window.state.settings.bankAccount||''; document.getElementById('set-pwd').value=window.state.settings.password||'0000'; 
+        if(window.state.settings.projectId) document.getElementById('set-project-id').value = window.state.settings.projectId;
+        };
         
         // --- Multi-Photo ---
         window.handleAddPhoto = (input, type) => { if(input.files[0]) { window.compressImage(input.files[0], (base64) => { tempEditPhotos[type].push(base64); window.renderEditPhotoList(type); input.value = ''; }); } };
