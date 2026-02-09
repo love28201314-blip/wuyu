@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V34.2 完整修復版</title>
+    <title>租屋管家 Pro - V34.3 最終修復版</title>
     
     <!-- PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -116,7 +116,7 @@
                 <i class="fa-solid fa-building-user text-6xl text-indigo-300"></i>
             </div>
             <h1 class="text-4xl font-extrabold mb-2 tracking-tight">租屋管家 Pro</h1>
-            <p class="text-indigo-200 mb-12 font-medium tracking-wide">智慧資產管理 V34.2</p>
+            <p class="text-indigo-200 mb-12 font-medium tracking-wide">智慧資產管理 V34.3</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn bg-white text-indigo-900 py-5 text-xl shadow-xl hover:bg-indigo-50"><i class="fa-solid fa-key mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-indigo-800/50 text-white py-5 rounded-2xl font-bold text-xl border border-indigo-400/30 active:scale-95 transition backdrop-blur-sm"><i class="fa-solid fa-user mr-3"></i> 房客查詢</button>
@@ -501,13 +501,33 @@
         
         // Photo Buffers
         let tempEditPhotos = { furn: [], cont: [] };
-        let tempTenantRepairPhotos = []; // Fix: Added tenant photo buffer
+        let tempTenantRepairPhotos = []; 
 
         // --- Core Functions ---
         window.saveLoginState = () => { localStorage.setItem('rental_login_attempts', JSON.stringify(window.state.loginAttempts)); localStorage.setItem('rental_lockout_until', JSON.stringify(window.state.lockoutUntil)); };
-        window.setFontSize = (size) => { window.state.settings.fontSize = size; document.documentElement.style.setProperty('--base-font-size', size + 'px'); document.querySelectorAll('.font-size-btn').forEach(btn => btn.classList.remove('active')); const activeBtn = document.getElementById('font-size-' + size); if(activeBtn) activeBtn.classList.add('active'); window.saveData(); };
+        
+        window.setFontSize = (size) => { 
+            window.state.settings.fontSize = size; 
+            document.documentElement.style.setProperty('--base-font-size', size + 'px'); 
+            document.querySelectorAll('.font-size-btn').forEach(btn => btn.classList.remove('active')); 
+            const activeBtn = document.getElementById('font-size-' + size); 
+            if(activeBtn) activeBtn.classList.add('active'); 
+            window.saveData(); 
+        };
+        
         window.switchView = (view) => { document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden')); const t = document.getElementById(`view-${view}`) || document.getElementById(`app-${view.split('-')[0]}`); if(t) t.classList.remove('hidden'); };
-        window.switchTab = (tab) => { document.querySelectorAll('.landlord-tab').forEach(el => el.classList.add('hidden')); document.getElementById(`tab-${tab}`).classList.remove('hidden'); document.querySelectorAll('.nav-btn').forEach(btn => { btn.classList.remove('text-blue-600'); btn.classList.add('text-slate-400'); }); document.getElementById(`btn-${tab}`).classList.remove('text-slate-400'); document.getElementById(`btn-${tab}`).classList.add('text-indigo-600'); if(tab==='finance') window.renderFinance(); };
+        
+        window.switchTab = (tab) => { 
+            document.querySelectorAll('.landlord-tab').forEach(el => el.classList.add('hidden')); 
+            document.getElementById(`tab-${tab}`).classList.remove('hidden'); 
+            document.querySelectorAll('.nav-btn').forEach(btn => { 
+                btn.classList.remove('text-blue-600'); 
+                btn.classList.add('text-slate-400'); 
+            }); 
+            document.getElementById(`btn-${tab}`).classList.remove('text-slate-400'); 
+            document.getElementById(`btn-${tab}`).classList.add('text-indigo-600'); 
+            if(tab==='finance') window.renderFinance(); 
+        };
         
         const checkLockout = (type) => { const now = Date.now(); if (window.state.lockoutUntil[type] > now) { const wait = Math.ceil((window.state.lockoutUntil[type] - now) / 1000); alert(`嘗試次數過多，請等待 ${wait} 秒後再試`); return true; } return false; };
         
@@ -529,7 +549,6 @@
             } 
         };
 
-        // Fix: Added missing tenant functions
         window.tenantLogin = () => { 
              if(checkLockout('tenant')) return;
              const p=document.getElementById('tenant-phone-input').value; 
@@ -556,7 +575,6 @@
             document.getElementById('t-contract-end').innerText = r.end || '無日期';
             document.getElementById('t-pay-day').innerText = r.paymentDay || '5';
             
-            // Render Photos
             const renderList = (id, photos) => {
                  const el = document.getElementById(id);
                  if(photos && photos.length > 0) {
@@ -564,26 +582,22 @@
                  } else { el.innerHTML = '<span class="text-xs text-gray-400 p-2">無照片</span>'; }
             };
             
-            // Fix: Handle legacy single photo
             const furn = r.furnPhotos || (r.photoFurn ? [r.photoFurn] : []);
             const cont = r.contPhotos || (r.photoCont ? [r.photoCont] : []);
             
             renderList('tenant-furn-list', furn);
             renderList('tenant-cont-list', cont);
 
-            // Bills
             const u = window.state.records.filter(rec => rec.roomId == r.id && !rec.paid);
             const bl = document.getElementById('t-bill-list');
             if (u.length === 0) bl.innerHTML = '<div class="text-center py-4 text-green-600 font-bold text-sm">目前無欠費</div>';
             else bl.innerHTML = u.map(x => `<div class="bg-red-50 p-3 rounded-xl flex justify-between font-bold text-sm"><span>${x.date}</span><span class="text-red-600">$${x.total}</span></div>`).join('');
             
-            // Repairs
             const mr = window.state.repairs.filter(x => x.roomId == r.id);
             const rl = document.getElementById('t-repair-list');
             if (mr.length === 0) rl.innerHTML = '<div class="text-center py-4 text-gray-300 font-bold text-sm">無紀錄</div>';
             else rl.innerHTML = mr.map(x => `<div class="card p-4 ${x.status === 'done' ? 'opacity-60' : ''}"><div class="flex justify-between items-center mb-1"><span class="badge ${x.status === 'done' ? 'badge-green' : 'badge-orange'}">${x.status === 'done' ? '完工' : '處理中'}</span><span class="text-xs text-gray-400">${x.date}</span></div><div class="font-bold text-gray-700 mb-2 text-sm">${x.desc}</div>${x.reply ? `<div class="bg-indigo-50 p-2 rounded-lg text-xs font-bold text-indigo-800">房東：${x.reply}</div>` : ''}</div>`).join('');
             
-            // Reset repair photo buffer
             tempTenantRepairPhotos = [];
             document.getElementById('t-repair-photo-preview').innerHTML = '<span class="text-xs text-gray-300 w-full text-center">尚未選擇照片</span>';
         };
@@ -593,9 +607,7 @@
                 Array.from(input.files).forEach(file => {
                      window.compressImage(file, (base64) => {
                          tempTenantRepairPhotos.push(base64);
-                         // Render preview
                          const container = document.getElementById('t-repair-photo-preview');
-                         // Clear placeholder if it exists
                          if(container.innerHTML.includes('span')) container.innerHTML = '';
                          container.innerHTML += `<div class="photo-item"><img src="${base64}"></div>`;
                      });
@@ -614,7 +626,7 @@
                 date: new Date().toLocaleDateString('zh-TW'), 
                 cost: 0, 
                 reply: "",
-                photos: [...tempTenantRepairPhotos] // Save photos
+                photos: [...tempTenantRepairPhotos] 
             }; 
             window.state.repairs.unshift(rp); 
             window.saveData(); 
@@ -641,7 +653,85 @@
             window.renderDashboard(); 
             window.renderRooms(); 
         };
+
+        window.renderFinance = () => {
+            const container = document.getElementById('finance-list');
+            const emptyMsg = document.getElementById('empty-finance-msg');
+            const paidRecs = window.state.records.filter(r => r.paid);
+            if(paidRecs.length === 0) { container.innerHTML = ''; emptyMsg.classList.remove('hidden'); return; }
+            emptyMsg.classList.add('hidden');
+            
+            tempMonthlyData = {};
+            const grouped = {};
+            paidRecs.forEach(r => {
+                const monthKey = r.billingMonth || r.date.split('/')[0] + '-' + r.date.split('/')[1];
+                if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, count: 0, items: [] };
+                const elecCost = (Number(r.usage) || 0) * (window.state.settings.elecCostRate || 2.1);
+                const waterCost = (window.state.settings.waterCostRate || 50);
+                grouped[monthKey].income += Number(r.total) || 0;
+                grouped[monthKey].cost += (elecCost + waterCost);
+                grouped[monthKey].count++;
+                grouped[monthKey].items.push(r);
+            });
+            window.state.repairs.forEach(r => {
+                if(r.cost && r.date) {
+                    const mKey = r.date.split('/')[0] + '-' + r.date.split('/')[1].padStart(2,'0'); 
+                    if(grouped[mKey]) grouped[mKey].cost += Number(r.cost);
+                }
+            });
+            
+            tempMonthlyData = grouped;
+            container.innerHTML = Object.keys(grouped).sort((a,b)=>b.localeCompare(a)).map(month => {
+                const d = grouped[month]; const net = d.income - d.cost;
+                return `<div class="card p-6 border-l-8 border-blue-500 shadow-md cursor-pointer active:scale-95 transition" onclick='window.openMonthDetail("${month}")'>
+                    <div class="flex justify-between items-start mb-4"><div><h4 class="text-2xl font-black text-slate-800">${month} 帳單</h4><p class="text-[10px] text-slate-400 font-bold">${d.count} 筆入帳</p></div><div class="text-right"><div class="text-[10px] text-slate-400 font-bold">本月淨利</div><div class="text-2xl font-black text-blue-600">$${Math.round(net).toLocaleString()}</div></div></div>
+                    <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 font-black text-xs"><div class="text-slate-500">總收: $${Math.round(d.income).toLocaleString()}</div><div class="text-red-400 text-right">成本: -$${Math.round(d.cost).toLocaleString()}</div></div></div>`;
+            }).join('');
+            
+            const yearlyData = {}; const currentYear = new Date().getFullYear();
+            paidRecs.forEach(r => {
+                const y = (r.billingMonth || r.date).split('-')[0].split('/')[0];
+                if(!yearlyData[y]) yearlyData[y] = { income: 0, cost: 0 };
+                const elecCost = (Number(r.usage) || 0) * (window.state.settings.elecCostRate || 2.1);
+                const waterCost = (window.state.settings.waterCostRate || 50);
+                yearlyData[y].income += Number(r.total) || 0;
+                yearlyData[y].cost += (elecCost + waterCost);
+            });
+            const yStat = yearlyData[currentYear] || { income: 0, cost: 0 };
+            const yNet = yStat.income - yStat.cost;
+            
+            const yTotal = yStat.income || 1;
+            const yCostPct = (yStat.cost / yTotal) * 100;
+            const yProfitPct = 100 - yCostPct;
+            
+            document.getElementById('yearly-summary-container').innerHTML = `
+                <div class="bg-slate-800 text-white p-6 rounded-3xl shadow-xl mb-8">
+                    <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">${currentYear} 年度總結</h3><span class="bg-white/20 px-3 py-1 rounded-full text-xs">即時統計</span></div>
+                    <div class="flex flex-col items-center mb-4">
+                        <div class="pie-chart" style="background: conic-gradient(#22c55e 0% ${yProfitPct}%, #f87171 ${yProfitPct}% 100%);"></div>
+                        <div class="flex gap-4 justify-center mt-3 text-xs font-bold">
+                            <div class="flex items-center"><div class="w-3 h-3 bg-green-500 rounded-full mr-1"></div>淨利 ${Math.round(yProfitPct)}%</div>
+                            <div class="flex items-center"><div class="w-3 h-3 bg-red-400 rounded-full mr-1"></div>成本 ${Math.round(yCostPct)}%</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center border-t border-slate-600 pt-4">
+                        <div><div class="text-xs text-slate-400 mb-1">總收入</div><div class="text-lg font-black">$${Math.round(yStat.income).toLocaleString()}</div></div>
+                        <div><div class="text-xs text-slate-400 mb-1">總支出</div><div class="text-lg font-black text-red-300">$${Math.round(yStat.cost).toLocaleString()}</div></div>
+                        <div><div class="text-xs text-slate-400 mb-1">淨利</div><div class="text-2xl font-black text-yellow-400">$${Math.round(yNet).toLocaleString()}</div></div>
+                    </div>
+                </div>`;
+        };
         
+        window.applySettingsUI = () => { 
+            document.getElementById('set-elec').value=window.state.settings.elecRate; 
+            document.getElementById('set-elec-cost').value=window.state.settings.elecCostRate||2.1; 
+            document.getElementById('set-water').value=window.state.settings.waterRate||100; 
+            document.getElementById('set-water-cost').value=window.state.settings.waterCostRate||50; 
+            document.getElementById('set-bank').value=window.state.settings.bankAccount||''; 
+            document.getElementById('set-pwd').value=window.state.settings.password||'0000'; 
+            if(window.state.settings.projectId) document.getElementById('set-project-id').value = window.state.settings.projectId;
+        };
+
         // --- Init Cloud ---
         window.initCloud = async function() {
             const statusEl = document.getElementById('status-indicator');
@@ -650,7 +740,6 @@
                     if (!firebase.apps.length) firebase.initializeApp(userFirebaseConfig);
                     const auth = firebase.auth();
                     
-                    // Added error handling for Auth
                     try {
                         await auth.signInAnonymously();
                     } catch(authErr) {
@@ -676,8 +765,7 @@
                         statusEl.innerText = "連線失敗";
                     });
                     
-                    // Sync other collections
-                    db.collection('records').onSnapshot(snap => { if (!snap.empty) { window.state.records = snap.docs.map(d => d.data()); window.renderDashboard(); } });
+                    db.collection('records').onSnapshot(snap => { if (!snap.empty) { window.state.records = snap.docs.map(d => d.data()); window.renderDashboard(); if(!document.getElementById('tab-finance').classList.contains('hidden')) window.renderFinance(); } });
                     db.collection('repairs').onSnapshot(snap => { if (!snap.empty) { window.state.repairs = snap.docs.map(d => d.data()); window.renderDashboard(); } });
 
                 } catch(e) {
@@ -704,7 +792,6 @@
              } catch(e) { alert("❌ 失敗：" + e.message); }
         };
         
-        // Force upload local data to cloud (Manual Rescue)
         window.forceUploadAllLocalData = async () => {
             if(!db) return alert("❌ 請先確認雲端連線狀態 (左上角綠燈)");
             if(!confirm("確定要將本機所有資料強制覆蓋至雲端嗎？")) return;
@@ -724,7 +811,6 @@
             }
         };
 
-        // Force download cloud data to local (Manual Rescue)
         window.forceDownloadCloudData = async () => {
              if(!db) return alert("❌ 請先確認雲端連線狀態");
              if(!confirm("⚠️ 警告：這將會清除您本機的所有資料，並從雲端重新下載。確定嗎？")) return;
@@ -778,8 +864,6 @@
             document.getElementById('detail-end').innerText = r.end || '--';
             document.getElementById('detail-start').innerText = r.start || '--';
             
-            // Fix: No detail-call button logic here
-
             const renderList = (elId, list) => {
                 const el = document.getElementById(elId);
                 if(list && list.length > 0) {
@@ -795,8 +879,6 @@
             document.getElementById('modal-room-detail').classList.remove('hidden');
         };
 
-        // ... (Rest of existing functions like openEditRoom, saveRoom, etc. - kept as is) ...
-        // Re-adding essential helpers that were trimmed for brevity
         window.openRoomModal = () => { 
             currentRoomId=null; 
             document.getElementById('edit-modal-title').innerText="新增房間"; 
@@ -938,6 +1020,16 @@
             const result = await callGemini(prompt);
             
             replyBox.value = (originalVal ? originalVal + "\n\n" : "") + result;
+        };
+        
+        window.applySettingsUI = () => { 
+            document.getElementById('set-elec').value=window.state.settings.elecRate; 
+            document.getElementById('set-elec-cost').value=window.state.settings.elecCostRate||2.1; 
+            document.getElementById('set-water').value=window.state.settings.waterRate||100; 
+            document.getElementById('set-water-cost').value=window.state.settings.waterCostRate||50; 
+            document.getElementById('set-bank').value=window.state.settings.bankAccount||''; 
+            document.getElementById('set-pwd').value=window.state.settings.password||'0000'; 
+            if(window.state.settings.projectId) document.getElementById('set-project-id').value = window.state.settings.projectId;
         };
 
         window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
