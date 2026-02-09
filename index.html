@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - 最終除錯版 V33.3</title>
+    <title>租屋管家 Pro - V33.4 最終修正版</title>
     
     <!-- PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -80,7 +80,7 @@
                 <i class="fa-solid fa-house-chimney text-7xl text-yellow-400"></i>
             </div>
             <h1 class="text-4xl font-black mb-4 tracking-tighter">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-14 font-bold text-lg">智慧資產管理 (V33.3)</p>
+            <p class="text-slate-400 mb-14 font-bold text-lg">智慧資產管理 (V33.4)</p>
             <div class="space-y-5">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-6 text-2xl shadow-2xl"><i class="fa-solid fa-user-shield mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-slate-800 text-white py-6 rounded-full font-black text-2xl border-2 border-slate-700 active:scale-95 transition shadow-xl"><i class="fa-solid fa-user-tag mr-3"></i> 房客登入</button>
@@ -278,6 +278,7 @@
     <!-- Scripts -->
     <script>
         const GEMINI_API_KEY = "AIzaSyBxoXwUu1lvvscKz68Ck2w2JA-mNm8L264";
+
         // *** USER PROVIDED CONFIG (HARDCODED) ***
         const userFirebaseConfig = {
           apiKey: "AIzaSyCNC58tKKVOH09gohIgt9n5p03mMVAkMZM",
@@ -694,29 +695,7 @@
         };
 
         // --- 房間管理 ---
-        window.renderRooms = () => { 
-            const c = document.getElementById('rooms-list'); 
-            if(!c) return; 
-            
-            c.innerHTML = window.state.rooms.map(r => { 
-                const unpaid = window.state.records.filter(x => x.roomId == r.id && !x.paid).reduce((a,b)=>a+b.total,0); 
-                const ph = r.photo ? `<img src="${r.photo}" class="w-14 h-14 rounded-2xl object-cover mr-4">` : `<div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-300 mr-4 text-xs">${r.name}</div>`; 
-                // Escape single quotes in ID just in case
-                const safeId = String(r.id).replace(/'/g, "\\'");
-                return `<div class="card p-5 flex justify-between items-center cursor-pointer mb-3" onclick="window.showRoomDetail('${safeId}')">
-                            <div class="flex items-center min-w-0">
-                                ${ph}
-                                <div class="truncate">
-                                    <div class="text-xl font-black text-slate-800">${r.name} 房</div>
-                                    <div class="text-slate-400 font-bold text-xs truncate">${r.tenant || '空房'}</div>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-3 shrink-0">
-                                ${unpaid > 0 ? `<span class="badge badge-red">欠$${unpaid}</span>` : '<span class="badge badge-green">正常</span>'}
-                            </div>
-                        </div>`; 
-            }).join(''); 
-        };
+        window.renderRooms = () => { const c=document.getElementById('rooms-list'); if(!c)return; c.innerHTML=window.state.rooms.map(r=>{ const unpaid=window.state.records.filter(x=>x.roomId==r.id&&!x.paid).reduce((a,b)=>a+b.total,0); const ph=r.photo?`<img src="${r.photo}" class="w-14 h-14 rounded-2xl object-cover mr-4">`:`<div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-300 mr-4 text-xs">${r.name}</div>`; return `<div class="card p-5 flex justify-between items-center cursor-pointer mb-3" onclick="window.showRoomDetail('${r.id}')"><div class="flex items-center min-w-0">${ph}<div class="truncate"><div class="text-xl font-black text-slate-800">${r.name} 房</div><div class="text-slate-400 font-bold text-xs truncate">${r.tenant||'空房'}</div></div></div><div class="flex items-center gap-3 shrink-0">${unpaid>0?`<span class="badge badge-red">欠$${unpaid}</span>`:'<span class="badge badge-green">正常</span>'}</div></div>`; }).join(''); };
 
         window.openRoomModal = () => { 
             currentRoomId=null; 
@@ -828,6 +807,38 @@
         };
 
         window.viewBigImage = (src) => { document.getElementById('lightbox-img').src = src; document.getElementById('modal-lightbox').classList.remove('hidden'); };
+
+        window.showRoomDetail = (id) => {
+            if(!id) return;
+            // 轉換為字串比較，避免類型錯誤
+            const r = window.state.rooms.find(x => String(x.id) === String(id));
+            if(!r) { console.warn('Room not found', id); return; }
+            
+            currentRoomId = id;
+            document.getElementById('detail-room-title').innerText = `${r.name} 房`;
+            document.getElementById('detail-photo').src = r.photo || 'https://via.placeholder.com/600x400?text=無照片';
+            document.getElementById('detail-tenant').innerText = r.tenant || '尚未出租';
+            document.getElementById('detail-rent').innerText = `$${r.rent}`;
+            document.getElementById('detail-water').innerText = `$${r.waterFee || window.state.settings.waterRate || 100}`;
+            document.getElementById('detail-mgmt').innerText = `$${r.mgmtFee || 0}`;
+            document.getElementById('detail-end').innerText = r.end || '--';
+            document.getElementById('detail-start').innerText = r.start || '--';
+            
+            // 渲染直覺式相簿列表 (預覽縮圖)
+            const furnList = document.getElementById('detail-furn-list');
+            const furnPhotos = r.furnPhotos || (r.photoFurn ? [r.photoFurn] : []);
+            if(furnPhotos.length > 0) {
+                furnList.innerHTML = furnPhotos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join('');
+            } else { furnList.innerHTML = '<span class="text-xs text-slate-300">無照片</span>'; }
+
+            const contList = document.getElementById('detail-cont-list');
+            const contPhotos = r.contPhotos || (r.photoCont ? [r.photoCont] : []);
+            if(contPhotos.length > 0) {
+                contList.innerHTML = contPhotos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join('');
+            } else { contList.innerHTML = '<span class="text-xs text-slate-300">無照片</span>'; }
+
+            document.getElementById('modal-room-detail').classList.remove('hidden');
+        };
         
         // **修繕功能 (補回)**
         window.openRepairProcess = (id) => { 
