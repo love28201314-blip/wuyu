@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V33.6 房客修復版</title>
+    <title>租屋管家 Pro - V33.7 房客修復版</title>
     
     <!-- PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -80,7 +80,7 @@
                 <i class="fa-solid fa-house-chimney text-7xl text-yellow-400"></i>
             </div>
             <h1 class="text-4xl font-black mb-4 tracking-tighter">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-14 font-bold text-lg">智慧資產管理 (V33.6)</p>
+            <p class="text-slate-400 mb-14 font-bold text-lg">智慧資產管理 (V33.7)</p>
             <div class="space-y-5">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-6 text-2xl shadow-2xl"><i class="fa-solid fa-user-shield mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-slate-800 text-white py-6 rounded-full font-black text-2xl border-2 border-slate-700 active:scale-95 transition shadow-xl"><i class="fa-solid fa-user-tag mr-3"></i> 房客登入</button>
@@ -410,7 +410,7 @@
             } else { 
                 window.state.loginAttempts.owner++;
                 if(window.state.loginAttempts.owner >= 5) {
-                    window.state.lockoutেশের.owner = Date.now() + 300000;
+                    window.state.lockoutUntil.owner = Date.now() + 300000;
                     btn.innerText = "系統鎖定中";
                     btn.disabled = true;
                     setTimeout(() => { btn.disabled = false; btn.innerText = "開始管理"; }, 300000);
@@ -422,8 +422,8 @@
                 window.saveLoginState();
             } 
         };
-        
-        // **房客功能 (補回)**
+
+        // 恢復被遺漏的房客功能
         window.renderTenantDashboard = () => {
             const r = currentTenantRoom;
             if(!r) return;
@@ -432,18 +432,17 @@
             document.getElementById('t-contract-end').innerText = r.end || '無日期';
             document.getElementById('t-pay-day').innerText = r.paymentDay || '5';
             
-            // Render Photos for Tenant
             const furnList = document.getElementById('tenant-furn-list');
             const furnPhotos = r.furnPhotos || (r.photoFurn ? [r.photoFurn] : []);
             if(furnPhotos.length > 0) {
                 furnList.innerHTML = furnPhotos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join('');
-            } else { furnList.innerHTML = '<span class="text-gray-400 text-sm p-2">無照片</span>'; }
+            } else { furnList.innerHTML = '<span class="text-xs text-slate-300 p-2">無照片</span>'; }
 
             const contList = document.getElementById('tenant-cont-list');
             const contPhotos = r.contPhotos || (r.photoCont ? [r.photoCont] : []);
             if(contPhotos.length > 0) {
                 contList.innerHTML = contPhotos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join('');
-            } else { contList.innerHTML = '<span class="text-gray-400 text-sm p-2">無照片</span>'; }
+            } else { contList.innerHTML = '<span class="text-xs text-slate-300 p-2">無照片</span>'; }
 
             const u = window.state.records.filter(rec => rec.roomId == r.id && !rec.paid);
             const bl = document.getElementById('t-bill-list');
@@ -487,7 +486,7 @@
                  window.saveLoginState();
                  currentTenantRoom=r; 
                  window.renderTenantDashboard(); 
-                 window.switchView('tenant-dashboard'); 
+                 window.switchView('tenant'); // 這裡要對應 app-tenant 的 id 前綴
                  err.classList.add('hidden');
              } else { 
                  window.state.loginAttempts.tenant++;
@@ -579,6 +578,7 @@
         };
         
         window.syncToCloud = async (coll, id, data) => { 
+            // Only sync 'rooms' if user wants to focus on that
             if (coll === 'rooms') {
                 const btn = document.querySelector('#modal-room-edit .btn-primary');
                 if(btn) { btn.innerText = "☁️ 上傳中..."; btn.disabled = true; }
@@ -774,7 +774,10 @@
             document.getElementById('edit-meter').value="0"; 
             document.getElementById('edit-water-fee').value=window.state.settings.waterRate||100; 
             document.getElementById('edit-mgmt').value="0"; 
-            ['main','furn','cont'].forEach(k=>{ const i=document.getElementById(`edit-preview-${k}`); if(i) { i.src=""; i.classList.add('hidden'); } }); 
+            // 修正：只重置封面預覽，不尋找不存在的元素
+            const mainPrev = document.getElementById('edit-preview-main');
+            if(mainPrev) { mainPrev.src=""; mainPrev.classList.add('hidden'); }
+            
             tempEditPhotos = {furn:[], cont:[]}; 
             window.renderEditPhotoList('furn'); 
             window.renderEditPhotoList('cont'); 
@@ -855,13 +858,12 @@
             const r = window.state.rooms.find(x => x.id == currentRoomId || x.id == currentTenantRoom?.id);
             if (!r) return;
             let photos = [];
-            // 處理新舊資料結構 (array vs string)
-            if(type === 'furn') {
-                if(r.furnPhotos && r.furnPhotos.length > 0) photos = r.furnPhotos;
-                else if(r.photoFurn) photos = [r.photoFurn];
+            if (type === 'furn') {
+                if (r.furnPhotos && r.furnPhotos.length > 0) photos = r.furnPhotos;
+                else if (r.photoFurn) photos = [r.photoFurn];
             } else {
-                if(r.contPhotos && r.contPhotos.length > 0) photos = r.contPhotos;
-                else if(r.photoCont) photos = [r.photoCont];
+                if (r.contPhotos && r.contPhotos.length > 0) photos = r.contPhotos;
+                else if (r.photoCont) photos = [r.photoCont];
             }
 
             if(photos.length === 0) return alert('尚未上傳此類照片');
@@ -871,38 +873,6 @@
         };
 
         window.viewBigImage = (src) => { document.getElementById('lightbox-img').src = src; document.getElementById('modal-lightbox').classList.remove('hidden'); };
-
-        window.showRoomDetail = (id) => {
-            if(!id) return;
-            // 轉換為字串比較，避免類型錯誤
-            const r = window.state.rooms.find(x => String(x.id) === String(id));
-            if(!r) { console.warn('Room not found', id); return; }
-            
-            currentRoomId = id;
-            document.getElementById('detail-room-title').innerText = `${r.name} 房`;
-            document.getElementById('detail-photo').src = r.photo || 'https://via.placeholder.com/600x400?text=無照片';
-            document.getElementById('detail-tenant').innerText = r.tenant || '尚未出租';
-            document.getElementById('detail-rent').innerText = `$${r.rent}`;
-            document.getElementById('detail-water').innerText = `$${r.waterFee || window.state.settings.waterRate || 100}`;
-            document.getElementById('detail-mgmt').innerText = `$${r.mgmtFee || 0}`;
-            document.getElementById('detail-end').innerText = r.end || '--';
-            document.getElementById('detail-start').innerText = r.start || '--';
-            
-            // 渲染直覺式相簿列表 (預覽縮圖)
-            const furnList = document.getElementById('detail-furn-list');
-            const furnPhotos = r.furnPhotos || (r.photoFurn ? [r.photoFurn] : []);
-            if(furnPhotos.length > 0) {
-                furnList.innerHTML = furnPhotos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join('');
-            } else { furnList.innerHTML = '<span class="text-xs text-slate-300">無照片</span>'; }
-
-            const contList = document.getElementById('detail-cont-list');
-            const contPhotos = r.contPhotos || (r.photoCont ? [r.photoCont] : []);
-            if(contPhotos.length > 0) {
-                contList.innerHTML = contPhotos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join('');
-            } else { contList.innerHTML = '<span class="text-xs text-slate-300">無照片</span>'; }
-
-            document.getElementById('modal-room-detail').classList.remove('hidden');
-        };
         
         // **修繕功能 (補回)**
         window.openRepairProcess = (id) => { 
