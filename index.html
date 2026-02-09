@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - 雲端連線版</title>
+    <title>租屋管家 Pro - 雲端修復版 V33.1</title>
     
     <!-- PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -81,12 +81,12 @@
                 <i class="fa-solid fa-house-chimney text-7xl text-yellow-400"></i>
             </div>
             <h1 class="text-4xl font-black mb-4 tracking-tighter">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-14 font-bold text-lg">GitHub 雲端版 (V33.0)</p>
+            <p class="text-slate-400 mb-14 font-bold text-lg">智慧資產管理 (V33.1)</p>
             <div class="space-y-5">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-6 text-2xl shadow-2xl"><i class="fa-solid fa-user-shield mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-slate-800 text-white py-6 rounded-full font-black text-2xl border-2 border-slate-700 active:scale-95 transition shadow-xl"><i class="fa-solid fa-user-tag mr-3"></i> 房客登入</button>
             </div>
-            <p class="mt-16 text-xs text-slate-500 font-mono tracking-widest">Project: <span id="landing-id">test-cb845</span></p>
+            <p class="mt-16 text-xs text-slate-500 font-mono tracking-widest">Project: <span id="landing-id">---</span></p>
         </div>
     </div>
 
@@ -156,6 +156,15 @@
             <!-- FINANCE TAB -->
             <div id="tab-finance" class="landlord-tab hidden animate-slide-up">
                 <h2 class="text-3xl font-black text-slate-900 mb-2 tracking-tighter">財務分析報表</h2>
+                
+                <div class="card p-6 mb-8 border border-slate-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-black text-slate-700"><i class="fa-solid fa-chart-column mr-2 text-blue-600"></i>近 6 個月收支趨勢</h3>
+                        <div class="flex gap-3 text-[10px] font-bold"><span class="flex items-center"><span class="w-2 h-2 bg-blue-500 rounded-full mr-1"></span>收入</span><span class="flex items-center"><span class="w-2 h-2 bg-red-400 rounded-full mr-1"></span>支出</span></div>
+                    </div>
+                    <div id="finance-bar-chart" class="bar-chart-container"></div>
+                </div>
+
                 <div id="yearly-summary-container" class="mb-8"></div>
                 <h3 class="text-xl font-black text-slate-700 mb-4 border-l-4 border-blue-500 pl-3">月度明細</h3>
                 <div id="finance-list" class="space-y-6"></div>
@@ -168,7 +177,8 @@
                 <div class="card p-6 mb-6"><h3 class="font-black text-blue-800 mb-4 flex items-center"><i class="fa-solid fa-text-height mr-2"></i> 顯示字體</h3><div class="flex gap-2 p-1 bg-slate-100 rounded-2xl"><button onclick="window.setFontSize(16)" id="font-size-16" class="font-size-btn active">小</button><button onclick="window.setFontSize(18)" id="font-size-18" class="font-size-btn">中</button><button onclick="window.setFontSize(22)" id="font-size-22" class="font-size-btn">大</button></div></div>
                 <div class="card p-6 mb-6"><h3 class="font-black text-blue-800 mb-4 flex items-center"><i class="fa-solid fa-gear mr-2"></i> 費率預設值</h3><div class="space-y-4"><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-slate-400">房客電費 (元)</label><input type="number" id="set-elec" class="input-field shadow-inner" onchange="window.saveSettings()"></div><div><label class="text-[10px] font-bold text-slate-400 text-blue-500">台電成本 (元)</label><input type="number" id="set-elec-cost" class="input-field border-blue-100 shadow-inner" onchange="window.saveSettings()"></div></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-slate-400">房客水費 (元)</label><input type="number" id="set-water" class="input-field shadow-inner" onchange="window.saveSettings()"></div><div><label class="text-[10px] font-bold text-slate-400 text-cyan-500">水利成本 (元)</label><input type="number" id="set-water-cost" class="input-field border-cyan-100 shadow-inner" onchange="window.saveSettings()"></div></div><div><label class="text-xs font-bold text-slate-400">房東密碼</label><input type="text" id="set-pwd" class="input-field shadow-inner" onchange="window.saveSettings()"></div><div><label class="text-xs font-bold text-slate-400">匯款帳號</label><input type="text" id="set-bank" class="input-field shadow-inner" onchange="window.saveSettings()"></div></div></div>
                 <div class="card p-6 mb-6 border-2 border-blue-100"><h3 class="text-lg font-bold text-blue-800 mb-4 border-b pb-2 flex items-center"><i class="fa-solid fa-cloud mr-2"></i> 雲端同步設定</h3>
-                    <div class="input-wrapper mb-2"><label class="input-label">連線狀態</label></div>
+                    <div class="input-wrapper mb-2"><label class="input-label">連線 ID</label><input type="text" id="set-project-id" class="input-field bg-slate-100 text-slate-500" disabled></div>
+                    <div id="cloud-path-display" class="text-[10px] text-slate-400 text-center mb-2 font-mono break-all"></div>
                     <div id="cloud-status-text" class="text-center text-sm font-bold text-gray-400"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> 連線狀態偵測中...</div>
                 </div>
                 <button onclick="window.checkCloudStatus()" class="w-full btn btn-primary mb-4 font-black shadow-lg"><i class="fa-solid fa-cloud-arrow-down mr-2"></i> 檢查雲端備份</button>
@@ -188,6 +198,7 @@
     <div id="app-tenant" class="view-section hidden min-h-screen bg-slate-50"><div class="bg-blue-700 p-8 text-white rounded-b-[40px] shadow-2xl mb-8"><div class="flex justify-between items-start mb-6"><div><h1 class="text-4xl font-black mb-1" id="t-room-name">房號</h1><p class="text-blue-100 font-bold" id="t-tenant-name">房客</p></div><button onclick="window.confirmExit()" class="bg-white/20 p-3 rounded-2xl shadow-inner"><i class="fa-solid fa-right-from-bracket text-xl"></i></button></div><div class="grid grid-cols-2 gap-4"><div class="bg-white/10 p-4 rounded-3xl border border-white/20 text-center"><div class="text-xs opacity-70 mb-1">合約到期</div><div class="text-lg font-black" id="t-contract-end">--</div></div><div class="bg-white/10 p-4 rounded-3xl border border-white/20 text-center"><div class="text-xs opacity-70 mb-1">繳款日</div><div class="text-lg font-black" id="t-pay-day">-- 號</div></div></div>
         </div>
         <div class="p-6 space-y-6 overflow-y-auto pb-24">
+            <!-- 房客相簿 (直覺顯示) -->
             <div class="card p-6 shadow-md border border-slate-100">
                 <h3 class="text-xl font-black mb-4 flex items-center"><i class="fa-solid fa-images mr-2 text-blue-500"></i>房間相簿</h3>
                 <div class="mb-4">
@@ -199,6 +210,7 @@
                     <div id="tenant-cont-list" class="photo-scroller flex gap-3 overflow-x-auto pb-2 min-h-[60px] items-center text-slate-300 text-xs pl-2">無照片</div>
                 </div>
             </div>
+
             <div class="card p-6 border-l-[12px] border-red-500 shadow-md"><h3 class="text-xl font-black mb-4">待繳帳單</h3><div id="t-bill-list" class="space-y-3"></div></div><div class="card p-6 shadow-md"><h3 class="text-xl font-black mb-4">問題報修</h3><textarea id="t-repair-input" class="input-field h-32 mb-4 shadow-inner" placeholder="描述損壞情況..."></textarea><button onclick="window.submitTenantRepair()" class="btn btn-primary w-full shadow-lg">送出申請</button></div><div class="card p-6 shadow-md"><h3 class="text-xl font-black mb-4">修繕進度</h3><div id="t-repair-list" class="space-y-4"></div></div></div></div>
 
     <!-- ================= 房間詳情彈窗 ================= -->
@@ -275,13 +287,10 @@
 
     <!-- Scripts -->
     <script>
-        // -------------------------
-        //  CONFIG SECTION
-        // -------------------------
         const GEMINI_API_KEY = "AIzaSyBxoXwUu1lvvscKz68Ck2w2JA-mNm8L264";
 
-        // *** CRITICAL: YOUR FIREBASE CONFIG ***
-        const firebaseConfig = {
+        // *** USER PROVIDED CONFIG (HARDCODED) ***
+        const userFirebaseConfig = {
           apiKey: "AIzaSyCNC58tKKVOH09gohIgt9n5p03mMVAkMZM",
           authDomain: "test-cb845.firebaseapp.com",
           projectId: "test-cb845",
@@ -291,9 +300,8 @@
           measurementId: "G-2TLK0PM3PZ"
         };
         
-        // -------------------------
-        //  APP STATE & LOGIC
-        // -------------------------
+        const USER_PROJECT_ID = userFirebaseConfig.projectId;
+
         window.state = {
             rooms: JSON.parse(localStorage.getItem('rental_rooms') || '[]'),
             records: JSON.parse(localStorage.getItem('rental_records') || '[]'),
@@ -302,6 +310,9 @@
             loginAttempts: JSON.parse(localStorage.getItem('rental_login_attempts') || '{"owner":0,"tenant":0}'),
             lockoutUntil: JSON.parse(localStorage.getItem('rental_lockout_until') || '{"owner":0,"tenant":0}')
         };
+        
+        // Ensure Project ID in settings matches the hardcoded config
+        window.state.settings.projectId = USER_PROJECT_ID;
 
         let db = null;
         let currentRoomId = null;
@@ -310,6 +321,49 @@
         let currentNotifyRecordId = null;
         let tempMonthlyData = null; 
         let tempEditPhotos = { furn: [], cont: [] };
+
+        // --- Helper for Paths ---
+        const getPath = (coll) => {
+            // ALWAYS use root collection for User's Own Project
+            return coll; 
+        };
+        
+        // --- Gemini AI ---
+        const callGemini = async (prompt) => {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "AI 暫時無法回應";
+            } catch (e) {
+                console.error(e);
+                return "連線錯誤，請稍後再試";
+            }
+        };
+
+        window.aiRewrite = async (tone) => {
+            const textarea = document.getElementById('notify-text');
+            const originalText = textarea.value;
+            if(!originalText) return alert("請先選擇一筆帳單以生成內容");
+            
+            const btn = event.target;
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 生成中...';
+            btn.disabled = true;
+
+            const toneMap = { 'warm': '溫馨親切、像朋友', 'formal': '正式、專業、有禮貌' };
+            const prompt = `請將以下租屋通知訊息改寫為「${toneMap[tone]}」的語氣，保持原有金額與資訊正確，使用繁體中文：\n\n${originalText}`;
+
+            const result = await callGemini(prompt);
+            textarea.value = result;
+            
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+        };
 
         // --- Core Functions ---
         window.saveLoginState = () => {
@@ -426,14 +480,18 @@
             window.renderRooms(); 
         };
         
-        // --- Init Cloud ---
+        // --- Init Cloud (User Config) ---
         window.initCloud = async function() {
             const statusEl = document.getElementById('status-indicator');
+            const pathDisplay = document.getElementById('cloud-path-display');
+            
+            if(pathDisplay) pathDisplay.innerText = `專案: ${USER_PROJECT_ID}`;
+
             if(typeof firebase !== 'undefined') {
                 try {
-                    // Initialize with YOUR config
+                    // Initialize with User's Config
                     if (!firebase.apps.length) {
-                        firebase.initializeApp(firebaseConfig);
+                        firebase.initializeApp(userFirebaseConfig);
                     }
                     
                     const auth = firebase.auth();
@@ -441,8 +499,10 @@
                     await auth.signInAnonymously();
 
                     db = firebase.firestore();
-                    // Only read the 'rooms' collection as requested
-                    db.collection('rooms').onSnapshot((snap) => {
+                    const roomsPath = 'rooms'; // Root collection
+
+                    // Only listen to 'rooms' collection as requested
+                    db.collection(roomsPath).onSnapshot((snap) => {
                         if (!snap.empty) {
                              window.state.rooms = snap.docs.map(d => d.data());
                              localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
@@ -456,7 +516,7 @@
                         console.error("Firestore Error:", e);
                         statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> 權限錯誤';
                         statusEl.className = "text-xs font-bold bg-red-500 px-3 py-2 rounded-full border border-red-400 cursor-pointer shadow-sm text-white";
-                        // alert("請確認 Firebase Console -> Authentication -> Sign-in method -> Anonymous 已啟用");
+                        // alert("無法讀取資料庫，請確認 Firebase Console -> Firestore Database -> Rules 已設為 public (allow read, write: if true;)");
                     });
 
                 } catch(e) {
@@ -468,46 +528,51 @@
         };
         
         window.syncToCloud = async (coll, id, data) => { 
-            // Only sync 'rooms'
-            if (coll !== 'rooms') return;
-            
-            const btn = document.querySelector('#modal-room-edit .btn-primary');
-            if(btn) { btn.innerText = "☁️ 上傳中..."; btn.disabled = true; }
+            // Only sync 'rooms' if user wants to focus on that
+            // But code still supports others if needed. 
+            // Button loading state
+            if (coll === 'rooms') {
+                const btn = document.querySelector('#modal-room-edit .btn-primary');
+                if(btn) { btn.innerText = "☁️ 上傳中..."; btn.disabled = true; }
+            }
             
             const size = new Blob([JSON.stringify(data)]).size;
             if(size > 1000000) {
                  alert("⚠️ 照片總量過大，無法上傳雲端！\n請減少照片數量後再試。\n(資料已暫存於本機)");
-                 if (btn) { btn.innerText = "儲存房訊"; btn.disabled = false; }
+                 if (coll === 'rooms') {
+                    const btn = document.querySelector('#modal-room-edit .btn-primary');
+                    if(btn) { btn.innerText = "儲存房訊"; btn.disabled = false; }
+                 }
                  return;
             }
 
             if(db) {
                 try { 
-                    await db.collection('rooms').doc(String(id)).set(data); 
-                    window.showToast('✅ 雲端同步完成');
+                    await db.collection(getPath(coll)).doc(String(id)).set(data); 
+                    if (coll === 'rooms') window.showToast('✅ 雲端同步完成');
                 } catch (e) {
                     console.error("Sync Error:", e);
                     alert("⚠️ 雲端寫入失敗 (權限不足?)");
                 } 
             }
             
-            if (btn) { btn.innerText = "儲存房訊"; btn.disabled = false; }
+            if (coll === 'rooms') {
+                const btn = document.querySelector('#modal-room-edit .btn-primary');
+                if(btn) { btn.innerText = "儲存房訊"; btn.disabled = false; }
+            }
         };
         
         window.checkCloudStatus = async () => {
              if(!db) return alert("❌ 未初始化雲端連線");
              try {
                  const doc = await db.collection('rooms').limit(1).get();
-                 alert(`✅ 雲端連線正常！\n寫入權限 OK！`);
+                 alert(`✅ 雲端連線正常！\n目標專案: ${USER_PROJECT_ID}\n寫入權限 OK！`);
              } catch(e) {
                  alert("❌ 連線失敗：" + e.message);
              }
         };
 
-        window.deleteFromCloud = async (coll, id) => { 
-            if(coll !== 'rooms') return;
-            if(db) try { await db.collection('rooms').doc(String(id)).delete(); } catch(e) {} 
-        };
+        window.deleteFromCloud = async (coll, id) => { if(db) try { await db.collection(getPath(coll)).doc(String(id)).delete(); } catch(e) {} };
 
         // --- Finance ---
         window.renderFinance = () => {
