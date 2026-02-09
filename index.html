@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V33.4 最終修正版</title>
+    <title>租屋管家 Pro - V33.5 終極修復版</title>
     
     <!-- PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -80,7 +80,7 @@
                 <i class="fa-solid fa-house-chimney text-7xl text-yellow-400"></i>
             </div>
             <h1 class="text-4xl font-black mb-4 tracking-tighter">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-14 font-bold text-lg">智慧資產管理 (V33.4)</p>
+            <p class="text-slate-400 mb-14 font-bold text-lg">智慧資產管理 (V33.5)</p>
             <div class="space-y-5">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-6 text-2xl shadow-2xl"><i class="fa-solid fa-user-shield mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-slate-800 text-white py-6 rounded-full font-black text-2xl border-2 border-slate-700 active:scale-95 transition shadow-xl"><i class="fa-solid fa-user-tag mr-3"></i> 房客登入</button>
@@ -167,7 +167,7 @@
                 <div class="card p-6 mb-6"><h3 class="font-black text-blue-800 mb-4 flex items-center"><i class="fa-solid fa-text-height mr-2"></i> 顯示字體</h3><div class="flex gap-2 p-1 bg-slate-100 rounded-2xl"><button onclick="window.setFontSize(16)" id="font-size-16" class="font-size-btn active">小</button><button onclick="window.setFontSize(18)" id="font-size-18" class="font-size-btn">中</button><button onclick="window.setFontSize(22)" id="font-size-22" class="font-size-btn">大</button></div></div>
                 <div class="card p-6 mb-6"><h3 class="font-black text-blue-800 mb-4 flex items-center"><i class="fa-solid fa-gear mr-2"></i> 費率預設值</h3><div class="space-y-4"><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-slate-400">房客電費 (元)</label><input type="number" id="set-elec" class="input-field shadow-inner" onchange="window.saveSettings()"></div><div><label class="text-[10px] font-bold text-slate-400 text-blue-500">台電成本 (元)</label><input type="number" id="set-elec-cost" class="input-field border-blue-100 shadow-inner" onchange="window.saveSettings()"></div></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-slate-400">房客水費 (元)</label><input type="number" id="set-water" class="input-field shadow-inner" onchange="window.saveSettings()"></div><div><label class="text-[10px] font-bold text-slate-400 text-cyan-500">水利成本 (元)</label><input type="number" id="set-water-cost" class="input-field border-cyan-100 shadow-inner" onchange="window.saveSettings()"></div></div><div><label class="text-xs font-bold text-slate-400">房東密碼</label><input type="text" id="set-pwd" class="input-field shadow-inner" onchange="window.saveSettings()"></div><div><label class="text-xs font-bold text-slate-400">匯款帳號</label><input type="text" id="set-bank" class="input-field shadow-inner" onchange="window.saveSettings()"></div></div></div>
                 <div class="card p-6 mb-6 border-2 border-blue-100"><h3 class="text-lg font-bold text-blue-800 mb-4 border-b pb-2 flex items-center"><i class="fa-solid fa-cloud mr-2"></i> 雲端同步設定</h3>
-                    <div class="input-wrapper mb-2"><label class="input-label">連線 ID</label><input type="text" id="set-project-id" class="input-field bg-slate-100 text-slate-500" disabled></div>
+                    <div class="input-wrapper mb-2"><label class="input-label">Project ID</label><input type="text" id="set-project-id" class="input-field bg-slate-100 text-slate-500" disabled></div>
                     <div id="cloud-path-display" class="text-[10px] text-slate-400 text-center mb-2 font-mono break-all"></div>
                     <div id="cloud-status-text" class="text-center text-sm font-bold text-gray-400"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> 連線狀態偵測中...</div>
                 </div>
@@ -188,7 +188,6 @@
     <div id="app-tenant" class="view-section hidden min-h-screen bg-slate-50"><div class="bg-blue-700 p-8 text-white rounded-b-[40px] shadow-2xl mb-8"><div class="flex justify-between items-start mb-6"><div><h1 class="text-4xl font-black mb-1" id="t-room-name">房號</h1><p class="text-blue-100 font-bold" id="t-tenant-name">房客</p></div><button onclick="window.confirmExit()" class="bg-white/20 p-3 rounded-2xl shadow-inner"><i class="fa-solid fa-right-from-bracket text-xl"></i></button></div><div class="grid grid-cols-2 gap-4"><div class="bg-white/10 p-4 rounded-3xl border border-white/20 text-center"><div class="text-xs opacity-70 mb-1">合約到期</div><div class="text-lg font-black" id="t-contract-end">--</div></div><div class="bg-white/10 p-4 rounded-3xl border border-white/20 text-center"><div class="text-xs opacity-70 mb-1">繳款日</div><div class="text-lg font-black" id="t-pay-day">-- 號</div></div></div>
         </div>
         <div class="p-6 space-y-6 overflow-y-auto pb-24">
-            <!-- 房客相簿 (直覺顯示) -->
             <div class="card p-6 shadow-md border border-slate-100">
                 <h3 class="text-xl font-black mb-4 flex items-center"><i class="fa-solid fa-images mr-2 text-blue-500"></i>房間相簿</h3>
                 <div class="mb-4">
@@ -482,8 +481,20 @@
                     }
                     
                     const auth = firebase.auth();
-                    // Try anonymous sign-in
-                    await auth.signInAnonymously();
+                    
+                    // Try anonymous sign-in, handle disabled auth error specifically
+                    try {
+                        await auth.signInAnonymously();
+                    } catch (authError) {
+                        if (authError.code === 'auth/admin-restricted-operation' || authError.message.includes('admin-restricted-operation')) {
+                            console.error("Auth Error:", authError);
+                            alert("⚠️ 連線錯誤 (400)：請至 Firebase Console -> Authentication -> Sign-in method 開啟「匿名 (Anonymous)」登入權限。");
+                            statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> 權限未開';
+                            statusEl.className = "text-xs font-bold bg-red-600 px-3 py-2 rounded-full border border-red-500 cursor-pointer shadow-sm text-white";
+                            return; // Stop initialization
+                        }
+                        throw authError; // Rethrow other errors
+                    }
 
                     db = firebase.firestore();
                     const roomsPath = 'rooms'; // Root collection
@@ -503,7 +514,6 @@
                         console.error("Firestore Error:", e);
                         statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> 權限錯誤';
                         statusEl.className = "text-xs font-bold bg-red-500 px-3 py-2 rounded-full border border-red-400 cursor-pointer shadow-sm text-white";
-                        // alert("無法讀取資料庫，請確認 Firebase Console -> Firestore Database -> Rules 已設為 public (allow read, write: if true;)");
                     });
 
                 } catch(e) {
@@ -736,6 +746,7 @@
             document.getElementById('edit-mgmt').value=r.mgmtFee||0; 
             if(r.photo){const i=document.getElementById('edit-preview-main'); i.src=r.photo; i.classList.remove('hidden');}
             
+            // Deep Copy 避免參照問題
             tempEditPhotos.furn = r.furnPhotos ? [...r.furnPhotos] : (r.photoFurn ? [r.photoFurn] : []);
             tempEditPhotos.cont = r.contPhotos ? [...r.contPhotos] : (r.photoCont ? [r.photoCont] : []);
             
