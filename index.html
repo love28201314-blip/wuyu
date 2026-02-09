@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - 現代極簡版 V34.0</title>
+    <title>租屋管家 Pro - 強制同步版 V34.1</title>
     
     <!-- PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,26 +22,24 @@
         :root { --base-font-size: 16px; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
-            background-color: #f3f4f6; /* Lighter background */
+            background-color: #f3f4f6;
             color: #374151; 
             font-size: var(--base-font-size); 
             -webkit-tap-highlight-color: transparent; 
             padding-top: env(safe-area-inset-top);
-            padding-bottom: 100px; /* Space for floating nav */
+            padding-bottom: 100px;
         }
 
-        /* Modern Card Style */
         .card { 
             background: white; 
             border-radius: 24px; 
-            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); /* Softer, deeper shadow */
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
             border: none;
             overflow: hidden; 
             transition: transform 0.2s ease, box-shadow 0.2s ease; 
         }
         .card:active { transform: scale(0.98); }
 
-        /* Input Fields */
         .input-field { 
             width: 100%; 
             padding: 14px 18px; 
@@ -60,7 +58,6 @@
             box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15); 
         }
 
-        /* Buttons */
         .btn { display: flex; align-items: center; justify-content: center; padding: 14px; font-size: 1rem; font-weight: 700; border-radius: 16px; transition: all 0.2s; cursor: pointer; border: none; }
         .btn:active { transform: scale(0.96); opacity: 0.9; }
         .btn:disabled { opacity: 0.6; cursor: not-allowed; background: #9ca3af; color: #f3f4f6; box-shadow: none; }
@@ -72,7 +69,6 @@
         .btn-outline { background: white; color: #6366f1; border: 1px solid #e0e7ff; }
         .btn-ai { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3); }
 
-        /* Floating Nav */
         .floating-nav {
             position: fixed; bottom: 20px; left: 20px; right: 20px;
             background: rgba(255, 255, 255, 0.9);
@@ -89,7 +85,6 @@
         .nav-btn { color: #9ca3af; transition: all 0.3s; padding: 8px; border-radius: 12px; }
         .nav-btn.active { color: #8b5cf6; background: #f3f4f6; transform: translateY(-2px); }
 
-        /* Helpers */
         .hidden { display: none !important; }
         .modal { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 1000; }
         
@@ -100,7 +95,6 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-        /* Photo Lists */
         .photo-scroller { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0 12px 0; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
         .photo-item { 
             width: 90px; height: 90px; flex-shrink: 0; 
@@ -122,7 +116,7 @@
                 <i class="fa-solid fa-building-user text-6xl text-indigo-300"></i>
             </div>
             <h1 class="text-4xl font-extrabold mb-2 tracking-tight">租屋管家 Pro</h1>
-            <p class="text-indigo-200 mb-12 font-medium tracking-wide">智慧資產管理系統 V34.0</p>
+            <p class="text-indigo-200 mb-12 font-medium tracking-wide">智慧資產管理 V34.1</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn bg-white text-indigo-900 py-5 text-xl shadow-xl hover:bg-indigo-50"><i class="fa-solid fa-key mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-indigo-800/50 text-white py-5 rounded-2xl font-bold text-xl border border-indigo-400/30 active:scale-95 transition backdrop-blur-sm"><i class="fa-solid fa-user mr-3"></i> 房客查詢</button>
@@ -245,15 +239,19 @@
                 </div>
 
                 <div class="card p-6 mb-6 border border-indigo-100 bg-indigo-50/50">
-                    <h3 class="font-bold text-indigo-900 mb-4 text-sm flex items-center"><i class="fa-solid fa-cloud mr-2"></i>雲端連線</h3>
+                    <h3 class="font-bold text-indigo-900 mb-4 text-sm flex items-center"><i class="fa-solid fa-cloud mr-2"></i>雲端資料同步</h3>
                     <div class="space-y-3">
-                         <div>
-                            <label class="text-[10px] font-bold text-indigo-400">Project ID</label>
-                            <input type="text" id="set-project-id" class="input-field bg-white text-gray-500" disabled>
+                        <div class="flex justify-between text-xs font-bold text-gray-500 mb-1">
+                            <span>專案 ID: <span id="set-project-id">---</span></span>
+                            <span id="auth-status" class="text-orange-500">未驗證</span>
                         </div>
-                        <div id="cloud-status-text" class="text-center text-xs font-bold text-gray-400 mt-2"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> 連線狀態偵測中...</div>
-                        <button onclick="window.checkCloudStatus()" class="w-full btn bg-white text-indigo-600 shadow-sm text-sm py-3 mt-2">檢查連線</button>
-                        <button onclick="window.forceUploadAllLocalData()" class="w-full btn bg-indigo-200 text-indigo-800 shadow-sm text-sm py-3">強制上傳本機資料</button>
+                        <div id="cloud-status-text" class="text-center text-xs font-bold text-gray-400 mb-3"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> 連線狀態偵測中...</div>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="window.forceUploadAllLocalData()" class="btn bg-indigo-600 text-white shadow-md text-xs py-3"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> 強制上傳</button>
+                            <button onclick="window.forceDownloadCloudData()" class="btn bg-white text-indigo-600 border border-indigo-200 shadow-sm text-xs py-3"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> 強制下載</button>
+                        </div>
+                        <p class="text-[10px] text-gray-400 text-center mt-1">⚠️ 換手機時，請先在舊機「強制上傳」，再用新機「強制下載」</p>
                     </div>
                 </div>
 
@@ -271,8 +269,7 @@
     </div>
 
     <!-- 房客介面 -->
-    <div id="app-tenant" class="view-section hidden min-h-screen">
-        <div class="bg-gradient-to-br from-indigo-600 to-violet-700 p-8 pt-12 pb-16 text-white rounded-b-[40px] shadow-2xl mb-6 relative overflow-hidden">
+    <div id="app-tenant" class="view-section hidden min-h-screen"><div class="bg-gradient-to-br from-indigo-600 to-violet-700 p-8 pt-12 pb-16 text-white rounded-b-[40px] shadow-2xl mb-6 relative overflow-hidden">
             <div class="absolute top-0 right-0 p-4 opacity-10"><i class="fa-solid fa-house-chimney text-9xl"></i></div>
             <div class="flex justify-between items-start mb-6 relative z-10">
                 <div>
@@ -294,54 +291,22 @@
         </div>
         
         <div class="p-5 space-y-6 pb-24">
-            <!-- 房客相簿 -->
-            <div class="card p-6">
-                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center"><i class="fa-solid fa-images mr-2 text-indigo-500"></i>房間相簿</h3>
+            <!-- 房客相簿 (直覺顯示) -->
+            <div class="card p-6 shadow-md border border-slate-100">
+                <h3 class="text-xl font-black mb-4 flex items-center"><i class="fa-solid fa-images mr-2 text-indigo-500"></i>房間相簿</h3>
                 <div class="mb-4">
-                    <div class="text-xs font-bold text-gray-400 mb-2 ml-1">家具照片</div>
+                    <div class="text-xs font-bold text-slate-400 ml-1 mb-2">家具照片</div>
                     <div id="tenant-furn-list" class="photo-scroller"><span class="text-xs text-gray-300 p-1">無照片</span></div>
                 </div>
                 <div>
-                    <div class="text-xs font-bold text-gray-400 mb-2 ml-1">合約照片</div>
+                    <div class="text-xs font-bold text-slate-400 ml-1 mb-2">合約照片</div>
                     <div id="tenant-cont-list" class="photo-scroller"><span class="text-xs text-gray-300 p-1">無照片</span></div>
                 </div>
             </div>
 
-            <!-- 帳單 -->
-            <div class="card p-6 border-l-4 border-red-400">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">待繳帳單</h3>
-                <div id="t-bill-list" class="space-y-3"></div>
-            </div>
+            <div class="card p-6 border-l-[12px] border-red-500 shadow-md"><h3 class="text-xl font-black mb-4">待繳帳單</h3><div id="t-bill-list" class="space-y-3"></div></div><div class="card p-6 shadow-md"><h3 class="text-xl font-black mb-4">問題報修</h3><textarea id="t-repair-input" class="input-field h-32 mb-4 shadow-inner" placeholder="描述損壞情況..."></textarea><button onclick="window.submitTenantRepair()" class="btn btn-primary w-full shadow-lg">送出申請</button></div><div class="card p-6 shadow-md"><h3 class="text-xl font-black mb-4">修繕進度</h3><div id="t-repair-list" class="space-y-4"></div></div></div></div>
 
-            <!-- 報修 (新增上傳功能) -->
-            <div class="card p-6">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">問題報修</h3>
-                <textarea id="t-repair-input" class="input-field h-32 mb-4 text-sm" placeholder="請描述損壞情況..."></textarea>
-                
-                <!-- 新增：房客上傳報修照片 -->
-                <div class="mb-4">
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="text-xs font-bold text-gray-400">上傳照片 (選填)</label>
-                        <button onclick="document.getElementById('t-repair-photo-upload').click()" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg font-bold"><i class="fa-solid fa-camera mr-1"></i>拍照/選圖</button>
-                    </div>
-                    <input type="file" id="t-repair-photo-upload" class="hidden" multiple accept="image/*" onchange="window.handleTenantRepairPhotos(this)">
-                    <div id="t-repair-photo-preview" class="photo-scroller min-h-[60px] bg-gray-50 rounded-xl flex items-center px-2">
-                        <span class="text-xs text-gray-300 w-full text-center">尚未選擇照片</span>
-                    </div>
-                </div>
-
-                <button onclick="window.submitTenantRepair()" class="btn btn-primary w-full shadow-lg">送出申請</button>
-            </div>
-
-            <div class="card p-6">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">修繕進度</h3>
-                <div id="t-repair-list" class="space-y-4"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modals -->
-    <!-- 房間詳情 -->
+    <!-- ================= 房間詳情彈窗 ================= -->
     <div id="modal-room-detail" class="modal fixed inset-0 hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
             <div class="h-64 bg-gray-100 relative shrink-0">
@@ -525,13 +490,13 @@
             lockoutUntil: JSON.parse(localStorage.getItem('rental_lockout_until') || '{"owner":0,"tenant":0}')
         };
         
-        // Force Project ID
         window.state.settings.projectId = USER_PROJECT_ID;
 
         let db = null;
         let currentRoomId = null;
         let currentBillRoomId = null;
         let currentTenantRoom = null;
+        let currentNotifyRecordId = null;
         let tempMonthlyData = null; 
         
         // Photo Buffers
@@ -738,6 +703,53 @@
                  alert(`✅ 連線正常 (Project: ${USER_PROJECT_ID})`);
              } catch(e) { alert("❌ 失敗：" + e.message); }
         };
+        
+        // Force upload local data to cloud (Manual Rescue)
+        window.forceUploadAllLocalData = async () => {
+            if(!db) return alert("❌ 請先確認雲端連線狀態 (左上角綠燈)");
+            if(!confirm("確定要將本機所有資料強制覆蓋至雲端嗎？")) return;
+            
+            const rooms = JSON.parse(localStorage.getItem('rental_rooms') || '[]');
+            const records = JSON.parse(localStorage.getItem('rental_records') || '[]');
+            const repairs = JSON.parse(localStorage.getItem('rental_repairs') || '[]');
+            
+            let count = 0;
+            try {
+                for (const r of rooms) { await window.syncToCloud('rooms', r.id, r); count++; }
+                for (const r of records) { await window.syncToCloud('records', r.id, r); }
+                for (const r of repairs) { await window.syncToCloud('repairs', r.id, r); }
+                alert(`✅ 成功上傳 ${count} 間房間與相關資料！`);
+            } catch(e) {
+                alert("❌ 上傳過程發生錯誤：" + e.message);
+            }
+        };
+
+        // Force download cloud data to local (Manual Rescue)
+        window.forceDownloadCloudData = async () => {
+             if(!db) return alert("❌ 請先確認雲端連線狀態");
+             if(!confirm("⚠️ 警告：這將會清除您本機的所有資料，並從雲端重新下載。確定嗎？")) return;
+             
+             try {
+                 const snap = await db.collection('rooms').get();
+                 if(snap.empty) return alert("雲端目前沒有房間資料！");
+                 
+                 window.state.rooms = snap.docs.map(d => d.data());
+                 localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
+                 
+                 const snapRec = await db.collection('records').get();
+                 window.state.records = snapRec.docs.map(d => d.data());
+                 localStorage.setItem('rental_records', JSON.stringify(window.state.records));
+
+                 const snapRep = await db.collection('repairs').get();
+                 window.state.repairs = snapRep.docs.map(d => d.data());
+                 localStorage.setItem('rental_repairs', JSON.stringify(window.state.repairs));
+                 
+                 alert("✅ 資料已成功從雲端同步！");
+                 window.location.reload();
+             } catch(e) {
+                 alert("下載失敗：" + e.message);
+             }
+        };
 
         window.deleteFromCloud = async (coll, id) => { if(db) try { await db.collection(coll).doc(String(id)).delete(); } catch(e) {} };
 
@@ -858,6 +870,8 @@
         window.openBillFromDetail = () => { window.closeModal('modal-room-detail'); window.openBillModal(currentRoomId); };
         window.openBillModal = (id) => { const r=window.state.rooms.find(x=>x.id==id); currentBillRoomId=id; document.getElementById('bill-last').innerText=r.meter; document.getElementById('bill-curr').value=""; document.getElementById('bill-elec-rate').value=window.state.settings.elecRate; document.getElementById('bill-water-fee').value=r.waterFee||window.state.settings.waterRate||100; document.getElementById('bill-mgmt').value=r.mgmtFee||0; const now=new Date(); document.getElementById('bill-month').value=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,'0'); document.getElementById('modal-bill').classList.remove('hidden'); };
         window.createBill = () => { const r=window.state.rooms.find(x=>x.id==currentBillRoomId); const c=Number(document.getElementById('bill-curr').value); const m=document.getElementById('bill-month').value; const er=Number(document.getElementById('bill-elec-rate').value); const wf=Number(document.getElementById('bill-water-fee').value); const mf=Number(document.getElementById('bill-mgmt').value); if(!c)return alert('度數?'); if(!m)return alert('月份?'); const u=c-(r.meter||0); const e=u*er; const t=parseInt(r.rent)+e+wf+mf; const rec={id:Date.now().toString(), roomId:r.id, roomName:r.name, tenant:r.tenant, total:t, paid:false, date:new Date().toLocaleDateString('zh-TW'), billingMonth:m, elecCost:e, waterFee:wf, rent:r.rent, usage:u}; r.meter=c; window.state.records.unshift(rec); window.saveData(); window.syncToCloud('rooms',r.id,r); window.syncToCloud('records',rec.id,rec); window.closeModal('modal-bill'); window.showToast('生成'); };
+        window.openPayModal = (id) => { const r=window.state.records.find(x=>x.id==id); if(r){ document.getElementById('pay-record-id').value=id; document.getElementById('pay-amount').innerText=`$${Math.round(r.total)}`; document.getElementById('pay-date').valueAsDate=new Date(); document.getElementById('modal-pay-confirm').classList.remove('hidden'); } };
+        window.confirmPay = () => { const id=document.getElementById('pay-record-id').value; const r=window.state.records.find(x=>x.id==id); if(r){ r.paid=true; window.saveData(); window.syncToCloud('records',id,r); window.closeModal('modal-pay-confirm'); window.showToast('收款成功'); } };
 
         window.renderDashboard = () => {
             const income = window.state.records.filter(r => r.paid).reduce((s, r) => s + (Number(r.total) || 0), 0);
