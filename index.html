@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V37.1 智能防呆版</title>
+    <title>租屋管家 Pro - V37.2 圓餅圖修復版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -61,7 +61,7 @@
 
         .btn { display: flex; align-items: center; justify-content: center; padding: 14px; font-size: 1rem; font-weight: 700; border-radius: 16px; transition: all 0.2s; cursor: pointer; border: none; }
         .btn:active { transform: scale(0.96); opacity: 0.9; }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; background: #9ca3af; color: #f3f4f6; box-shadow: none; pointer-events: none; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; background: #9ca3af; color: #f3f4f6; box-shadow: none; }
         
         .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); }
         .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
@@ -107,8 +107,19 @@
         .photo-item img { width: 100%; height: 100%; object-fit: cover; }
         .photo-del { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; }
         
-        /* Pie Chart Fallback */
-        .pie-chart { width: 180px; height: 180px; border-radius: 50%; position: relative; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); background: #e5e7eb; }
+        /* Pie Chart CSS */
+        .pie-chart { 
+            width: 180px; height: 180px; 
+            border-radius: 50%; 
+            position: relative; 
+            margin: 0 auto; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            background: conic-gradient(
+                var(--c-profit, #e5e7eb) 0% var(--p-profit, 0%), 
+                var(--c-utility, #3b82f6) var(--p-profit, 0%) var(--p-utility, 0%), 
+                var(--c-repair, #f97316) var(--p-utility, 0%) 100%
+            );
+        }
         .pie-chart::after { content: ""; position: absolute; inset: 25px; background: white; border-radius: 50%; box-shadow: inset 0 2px 10px rgba(0,0,0,0.05); }
     </style>
 </head>
@@ -121,7 +132,7 @@
                 <i class="fa-solid fa-building-user text-6xl text-indigo-300"></i>
             </div>
             <h1 class="text-4xl font-extrabold mb-2 tracking-tight">租屋管家 Pro</h1>
-            <p class="text-indigo-200 mb-12 font-medium tracking-wide">智慧資產管理 V37.1</p>
+            <p class="text-indigo-200 mb-12 font-medium tracking-wide">智慧資產管理 V37.2</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn bg-white text-indigo-900 py-5 text-xl shadow-xl hover:bg-indigo-50"><i class="fa-solid fa-key mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-indigo-800/50 text-white py-5 rounded-2xl font-bold text-xl border border-indigo-400/30 active:scale-95 transition backdrop-blur-sm"><i class="fa-solid fa-user mr-3"></i> 房客查詢</button>
@@ -296,10 +307,7 @@
                 <div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-slate-400 ml-2 mb-1 block">房號</label><input id="edit-name" class="input-field" placeholder="101"></div><div><label class="text-[10px] font-bold text-slate-400 ml-2 mb-1 block">月租</label><input id="edit-rent" type="number" class="input-field" placeholder="6000"></div></div>
                 <div class="bg-blue-50 p-6 rounded-3xl space-y-4 border border-blue-100 shadow-sm"><h4 class="font-black text-blue-800 text-sm mb-2"><i class="fa-solid fa-user-edit mr-2"></i>合約資料</h4><input id="edit-tenant" class="input-field bg-white" placeholder="房客姓名"><div class="grid grid-cols-2 gap-3"><input id="edit-phone" class="input-field bg-white" placeholder="電話"><input id="edit-payday" type="number" class="input-field bg-white" placeholder="繳款日"></div><div class="grid grid-cols-2 gap-3"><div><label class="text-[10px] font-bold text-indigo-400 ml-1">起租</label><input id="edit-start" type="date" class="input-field bg-white text-sm"></div><div><label class="text-[10px] font-bold text-indigo-400 ml-1">到期</label><input id="edit-end" type="date" class="input-field bg-white text-sm"></div></div></div>
                 <div class="grid grid-cols-2 gap-3"><div><label class="text-[10px] font-bold text-gray-400 ml-1">當前電表</label><input id="edit-meter" type="number" class="input-field"></div><div><label class="text-[10px] font-bold text-gray-400 ml-1">水費設定</label><input id="edit-water-fee" type="number" class="input-field"></div><div class="col-span-2"><label class="text-[10px] font-bold text-gray-400 ml-1">管理費</label><input id="edit-mgmt" type="number" class="input-field"></div></div></div>
-            <div class="p-4 border-t bg-gray-50 flex gap-3 rounded-b-[32px]">
-                <button id="edit-btn-del" onclick="window.deleteRoom()" class="w-12 btn btn-danger"><i class="fa-solid fa-trash"></i></button>
-                <button id="edit-btn-moveout" onclick="window.moveOutTenant()" class="w-24 btn btn-warning text-sm">退租</button>
-                <button id="btn-save-room" onclick="window.saveRoom()" class="flex-1 btn btn-primary shadow-lg">儲存</button></div>
+            <div class="p-4 border-t bg-gray-50 flex gap-3 rounded-b-[32px]"><button id="edit-btn-del" onclick="window.deleteRoom()" class="w-12 btn btn-danger"><i class="fa-solid fa-trash"></i></button><button id="edit-btn-moveout" onclick="window.moveOutTenant()" class="w-24 btn btn-warning text-sm">退租</button><button id="btn-save-room" onclick="window.saveRoom()" class="flex-1 btn btn-primary shadow-lg">儲存</button></div>
         </div>
     </div>
 
@@ -322,7 +330,35 @@
     <div id="modal-pay-confirm" class="modal fixed inset-0 hidden flex items-center justify-center p-6"><div class="bg-white w-full max-w-sm rounded-[32px] shadow-2xl overflow-hidden animate-slide-up"><div class="bg-green-500 p-8 text-white text-center"><i class="fa-solid fa-circle-check text-5xl mb-2"></i><h3 class="text-2xl font-bold">確認收款</h3></div><div class="p-6 space-y-4"><input type="hidden" id="pay-record-id"><div class="text-center"><div class="text-gray-400 font-bold mb-1 text-sm">金額</div><div class="text-4xl font-black text-gray-900" id="pay-amount">$0</div></div><div><label class="text-xs font-bold text-gray-400 ml-1 mb-1 block">收款日期</label><input type="date" id="pay-date" class="input-field"></div><div class="flex gap-3 mt-4"><button onclick="window.closeModal('modal-pay-confirm')" class="btn btn-outline flex-1">取消</button><button onclick="window.confirmPay()" class="btn btn-success flex-1 shadow-lg">確認</button></div></div></div></div>
     <div id="modal-notify" class="modal fixed inset-0 hidden flex items-center justify-center p-4"><div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"><div class="p-4 border-b bg-gray-50 flex justify-between items-center"><h3 class="font-bold text-lg text-gray-800">帳單通知</h3><button onclick="window.closeModal('modal-notify')"><i class="fa-solid fa-xmark text-xl text-gray-400"></i></button></div><div class="p-5"><div class="flex gap-2 mb-3"><button onclick="window.aiRewrite('warm')" class="btn-ai flex-1 py-2 text-sm rounded-lg font-bold">😊 溫馨</button><button onclick="window.aiRewrite('formal')" class="btn-ai flex-1 py-2 text-sm rounded-lg font-bold">👔 正式</button></div><textarea id="notify-text" class="w-full h-48 p-3 bg-gray-50 border border-gray-200 rounded-xl text-base focus:border-indigo-500 focus:bg-white resize-none"></textarea><div class="flex gap-2 mt-4"><button onclick="window.copyNotify()" class="btn-lg btn-outline flex-1 text-sm">複製</button><button onclick="window.markNotified()" class="btn-lg btn-success flex-1 text-sm">已通知</button></div></div></div></div>
     <div id="modal-lightbox" class="modal fixed inset-0 hidden flex items-center justify-center p-0 bg-black/95"><div class="relative w-full h-full flex items-center justify-center"><button onclick="window.closeModal('modal-lightbox')" class="absolute top-6 right-6 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white text-xl z-50"><i class="fa-solid fa-xmark"></i></button><img id="lightbox-img" class="max-w-full max-h-[90vh] object-contain"></div></div>
-    <div id="modal-finance-detail" class="modal fixed inset-0 hidden flex items-center justify-center p-4"><div class="bg-white w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]"><div class="bg-indigo-900 p-6 text-white shrink-0 flex justify-between items-center"><h3 class="text-2xl font-bold" id="fin-detail-month">---</h3><button onclick="window.closeModal('modal-finance-detail')" class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button></div><div class="p-6 overflow-y-auto space-y-6"><div class="flex flex-col items-center"><div id="pie-chart" class="pie-chart mb-4"></div><div class="flex gap-4 justify-center flex-wrap text-xs font-bold text-gray-500"><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-green-500 mr-1"></div>淨利</div><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>成本</div><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-orange-500 mr-1"></div>修繕</div></div></div><div class="grid grid-cols-3 gap-2 text-center bg-gray-50 p-4 rounded-2xl"><div><div class="text-[10px] text-gray-400 font-bold mb-1">總收</div><div id="fin-detail-income" class="text-lg font-black text-gray-800">$0</div></div><div><div class="text-[10px] text-red-400 font-bold mb-1">總支</div><div id="fin-detail-cost" class="text-lg font-black text-red-600">$0</div></div><div><div class="text-[10px] text-green-500 font-bold mb-1">淨賺</div><div id="fin-detail-net" class="text-lg font-black text-green-600">$0</div></div></div><div><h4 class="font-bold text-gray-800 mb-3 border-l-4 border-indigo-500 pl-3">帳單明細</h4><div id="fin-detail-list" class="space-y-2"></div></div></div></div></div>
+    
+    <!-- 修復後的財務詳情 Modal -->
+    <div id="modal-finance-detail" class="modal fixed inset-0 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
+            <div class="bg-indigo-900 p-6 text-white shrink-0 flex justify-between items-center">
+                <h3 class="text-2xl font-bold" id="fin-detail-month">---</h3>
+                <button onclick="window.closeModal('modal-finance-detail')" class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-6">
+                <div class="flex flex-col items-center">
+                    <div id="pie-chart" class="pie-chart mb-4"></div>
+                    <div class="flex gap-4 justify-center flex-wrap text-xs font-bold text-gray-500">
+                        <div class="flex items-center"><div class="w-2 h-2 rounded-full bg-green-500 mr-1"></div>淨利</div>
+                        <div class="flex items-center"><div class="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>成本</div>
+                        <div class="flex items-center"><div class="w-2 h-2 rounded-full bg-orange-500 mr-1"></div>修繕</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center bg-gray-50 p-4 rounded-2xl">
+                    <div><div class="text-[10px] text-gray-400 font-bold mb-1">總收</div><div id="fin-detail-income" class="text-lg font-black text-gray-800">$0</div></div>
+                    <div><div class="text-[10px] text-red-400 font-bold mb-1">總支</div><div id="fin-detail-cost" class="text-lg font-black text-red-600">$0</div></div>
+                    <div><div class="text-[10px] text-green-500 font-bold mb-1">淨賺</div><div id="fin-detail-net" class="text-lg font-black text-green-600">$0</div></div>
+                </div>
+                <div>
+                    <h4 class="font-bold text-gray-800 mb-3 border-l-4 border-indigo-500 pl-3">帳單明細</h4>
+                    <div id="fin-detail-list" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="toast" class="fixed top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl z-[1000] hidden transition-all duration-300 opacity-0 font-bold flex items-center"><i class="fa-solid fa-check-circle mr-2 text-green-400"></i> <span id="toast-msg">成功</span></div>
 
@@ -353,18 +389,17 @@
         
         window.state.settings.projectId = USER_PROJECT_ID;
 
-        // Global Variables (Explicitly on window)
+        // Global Variables
         window.db = null;
         window.currentRoomId = null;
         window.currentBillRoomId = null;
         window.currentTenantRoom = null;
         window.currentNotifyRecordId = null;
-        window.tempMonthlyData = null; 
+        window.tempMonthlyData = {}; // Fix: Initialize as empty object
         window.tempEditPhotos = { furn: [], cont: [] };
         window.tempTenantRepairPhotos = []; 
 
-        // --- Functions assigned directly to window (Hoisting Fix) ---
-        // Top-level definitions to ensure availability
+        // --- GLOBAL FUNCTIONS (HOISTED) ---
 
         window.renderRooms = function() { 
             const c=document.getElementById('rooms-list'); if(!c)return; 
@@ -379,7 +414,7 @@
         window.renderDashboard = function() {
             const income = window.state.records.filter(r => r.paid).reduce((s, r) => s + (Number(r.total) || 0), 0);
             const pending = window.state.records.filter(r => !r.paid).reduce((s, r) => s + (Number(r.total) || 0), 0);
-            
+            const repairCost = window.state.repairs.reduce((s, r) => s + (Number(r.cost) || 0), 0);
             const totalUsage = window.state.records.reduce((s, r) => s + (Number(r.usage) || 0), 0);
             const elecRev = window.state.records.reduce((s, r) => s + (Number(r.elecCost) || 0), 0);
             const elecCostT = totalUsage * (window.state.settings.elecCostRate || 2.1);
@@ -388,7 +423,6 @@
             const waterCostT = window.state.records.length * (window.state.settings.waterCostRate || 50);
             const waterProfit = waterRev - waterCostT;
             
-            const repairCost = window.state.repairs.reduce((s, r) => s + (Number(r.cost) || 0), 0);
             const net = income + elecProfit + waterProfit - repairCost; 
             const pendingReps = window.state.repairs.filter(r => r.status === 'pending');
 
@@ -410,25 +444,20 @@
                     document.getElementById('dashboard-repairs-container').classList.add('hidden'); 
                 }
             }
-            
-            // Meter Reading Reminder Logic (New)
+
+            // Meter Reading Reminder Logic
             const today = new Date();
             today.setHours(0,0,0,0);
             
             const meterReminders = window.state.rooms.filter(r => {
                 if(!r.tenant || !r.paymentDay) return false;
                 const pDay = parseInt(r.paymentDay);
-                
-                // Construct next payment date
                 let nextPayDate = new Date(today.getFullYear(), today.getMonth(), pDay);
                 if (nextPayDate < today) {
                     nextPayDate.setMonth(nextPayDate.getMonth() + 1);
                 }
-                
-                // Check if within 5 days
                 const diffTime = nextPayDate - today;
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
                 return diffDays <= 5 && diffDays >= 0;
             });
             
@@ -514,25 +543,29 @@
             }
             emptyMsg.classList.add('hidden');
             
-            window.tempMonthlyData = {}; // FIXED: Reset grouped data on render
+            window.tempMonthlyData = {}; 
             const grouped = {}; 
             paidRecs.forEach(r => {
                 const monthKey = r.billingMonth || r.date.split('/')[0] + '-' + r.date.split('/')[1];
-                if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, count: 0, items: [] };
+                if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, utilityCost: 0, repairCost: 0, items: [] };
+                
                 const elecCost = (Number(r.usage) || 0) * (window.state.settings.elecCostRate || 2.1);
                 const waterCost = (window.state.settings.waterCostRate || 50);
+                const currentUtility = elecCost + waterCost;
+
                 grouped[monthKey].income += Number(r.total) || 0;
-                grouped[monthKey].cost += (elecCost + waterCost);
-                grouped[monthKey].count++;
+                grouped[monthKey].cost += currentUtility;
+                grouped[monthKey].utilityCost += currentUtility;
                 grouped[monthKey].items.push(r);
             });
-            // Also add repair costs to monthly grouping
+            // Fix: Correctly add repair costs to monthly data
             window.state.repairs.forEach(r => {
                 if(r.cost && r.date) {
                     const parts = r.date.split('/');
                     const monthKey = parts[0] + '-' + parts[1]; // YYYY-MM
-                    if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, count: 0, items: [] };
+                    if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, utilityCost: 0, repairCost: 0, items: [] };
                     grouped[monthKey].cost += Number(r.cost);
+                    grouped[monthKey].repairCost += Number(r.cost);
                 }
             });
 
@@ -540,9 +573,39 @@
             container.innerHTML = Object.keys(grouped).sort((a,b)=>b.localeCompare(a)).map(month => {
                 const d = grouped[month]; const net = d.income - d.cost;
                 return `<div class="card p-6 border-l-8 border-indigo-500 shadow-md cursor-pointer active:scale-95 transition" onclick='window.openMonthDetail("${month}")'>
-                    <div class="flex justify-between items-start mb-4"><div><h4 class="text-2xl font-black text-slate-800">${month} 帳單</h4><p class="text-[10px] text-slate-400 font-bold">${d.count} 筆入帳</p></div><div class="text-right"><div class="text-[10px] text-slate-400 font-bold">本月淨利</div><div class="text-2xl font-black text-indigo-600">$${Math.round(net).toLocaleString()}</div></div></div>
+                    <div class="flex justify-between items-start mb-4"><div><h4 class="text-2xl font-black text-slate-800">${month} 帳單</h4><p class="text-[10px] text-slate-400 font-bold">${d.items.length} 筆入帳</p></div><div class="text-right"><div class="text-[10px] text-slate-400 font-bold">本月淨利</div><div class="text-2xl font-black text-indigo-600">$${Math.round(net).toLocaleString()}</div></div></div>
                     <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 font-black text-xs"><div class="text-slate-500">總收: $${Math.round(d.income).toLocaleString()}</div><div class="text-red-400 text-right">成本: -$${Math.round(d.cost).toLocaleString()}</div></div></div>`;
             }).join('');
+        };
+        
+        window.openMonthDetail = function(month) {
+            const data = window.tempMonthlyData[month]; if(!data) return;
+            document.getElementById('fin-detail-month').innerText = month;
+            const net = data.income - data.cost;
+            document.getElementById('fin-detail-income').innerText = `$${Math.round(data.income).toLocaleString()}`;
+            document.getElementById('fin-detail-cost').innerText = `-$${Math.round(data.cost).toLocaleString()}`;
+            document.getElementById('fin-detail-net').innerText = `$${Math.round(net).toLocaleString()}`;
+            
+            const total = data.income || 1; 
+            const profitPct = Math.max(0, (net / total) * 100);
+            const utilityPct = (data.utilityCost / total) * 100;
+            // The remaining percent is repair or other costs, simply mapping gradient stops
+            
+            // Logic: 
+            // 0% -> Profit% : Green
+            // Profit% -> (Profit+Utility)% : Blue
+            // (Profit+Utility)% -> 100% : Orange
+            
+            const stop1 = profitPct;
+            const stop2 = profitPct + utilityPct;
+            
+            const chart = document.getElementById('pie-chart');
+            // Reset background to avoid old gray background overriding
+            chart.style.background = `conic-gradient(#10b981 0% ${stop1}%, #3b82f6 ${stop1}% ${stop2}%, #f97316 ${stop2}% 100%)`;
+            
+            const list = document.getElementById('fin-detail-list');
+            list.innerHTML = data.items.map(r => `<div class="flex justify-between items-center py-2 border-b border-slate-100 last:border-0"><span class="font-bold text-slate-700">${r.roomName}</span><span class="font-black text-blue-600">$${r.total}</span></div>`).join('');
+            document.getElementById('modal-finance-detail').classList.remove('hidden');
         };
 
         window.saveLoginState = function() { 
@@ -718,6 +781,7 @@
                     if (!firebase.apps.length) firebase.initializeApp(userFirebaseConfig);
                     const auth = firebase.auth();
                     
+                    // Added error handling for Auth
                     try {
                         await auth.signInAnonymously();
                     } catch(authErr) {
@@ -729,12 +793,28 @@
 
                     window.db = firebase.firestore();
                     
+                    // Enable offline persistence
+                    try {
+                        await window.db.enablePersistence();
+                    } catch (err) {
+                        if (err.code == 'failed-precondition') {
+                             console.log("Persistence failed: Multiple tabs open");
+                        } else if (err.code == 'unimplemented') {
+                             console.log("Persistence not supported");
+                        }
+                    }
+
+                    // --- Optimized Listener: Only update UI if data actually changed ---
                     window.db.collection('rooms').onSnapshot((snap) => {
-                        if (!snap.empty) {
-                             window.state.rooms = snap.docs.map(d => d.data());
-                             localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
-                             window.renderRooms(); 
-                             window.renderDashboard();
+                        if (!snap.empty && !snap.metadata.hasPendingWrites) {
+                             const cloudRooms = snap.docs.map(d => d.data());
+                             // Simple check to avoid redraw if length is same (can be improved)
+                             if (JSON.stringify(window.state.rooms) !== JSON.stringify(cloudRooms)) {
+                                 window.state.rooms = cloudRooms;
+                                 localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
+                                 window.renderRooms(); 
+                                 window.renderDashboard();
+                             }
                         }
                         statusEl.innerHTML = '<i class="fa-solid fa-cloud mr-1"></i> 已連線';
                         statusEl.className = "text-xs font-bold bg-green-600 px-3 py-2 rounded-full border border-green-500 cursor-pointer shadow-sm text-white";
@@ -743,8 +823,20 @@
                         statusEl.innerText = "連線失敗";
                     });
                     
-                    window.db.collection('records').onSnapshot(snap => { if (!snap.empty) { window.state.records = snap.docs.map(d => d.data()); window.renderDashboard(); if(!document.getElementById('tab-finance').classList.contains('hidden')) window.renderFinance(); } });
-                    window.db.collection('repairs').onSnapshot(snap => { if (!snap.empty) { window.state.repairs = snap.docs.map(d => d.data()); window.renderDashboard(); } });
+                    window.db.collection('records').onSnapshot(snap => { 
+                        if (!snap.empty && !snap.metadata.hasPendingWrites) { 
+                            window.state.records = snap.docs.map(d => d.data()); 
+                            window.renderDashboard(); 
+                            if(!document.getElementById('tab-finance').classList.contains('hidden')) window.renderFinance(); 
+                        } 
+                    });
+                    
+                    window.db.collection('repairs').onSnapshot(snap => { 
+                        if (!snap.empty && !snap.metadata.hasPendingWrites) { 
+                            window.state.repairs = snap.docs.map(d => d.data()); 
+                            window.renderDashboard(); 
+                        } 
+                    });
 
                 } catch(e) {
                     console.error("Firebase Init Error:", e);
@@ -757,6 +849,8 @@
             const size = new Blob([JSON.stringify(data)]).size;
             // 降低照片壓縮標準，避免大檔案阻塞
             if(size > 2000000) return alert("⚠️ 資料過大，請減少照片數量");
+            
+            // Simple debounce logic could go here, but Firestore SDK handles batching well.
             if(window.db) {
                 try { await window.db.collection(coll).doc(String(id)).set(data); } 
                 catch (e) { console.error("Sync Error:", e); } 
@@ -1083,9 +1177,8 @@
             const profitPct = Math.max(0, 100 - costPct);
             
             const chart = document.getElementById('pie-chart');
-            chart.style.setProperty('--c-profit', '#22c55e'); chart.style.setProperty('--p-profit', `${profitPct}%`);
-            chart.style.setProperty('--c-utility', '#3b82f6'); chart.style.setProperty('--p-utility', `${profitPct + (costPct * 0.7)}%`);
-            chart.style.setProperty('--c-repair', '#f97316'); 
+            // Reset background to avoid old gray background overriding
+            chart.style.background = `conic-gradient(#10b981 0% ${profitPct}%, #3b82f6 ${profitPct}% ${profitPct + (data.utilityCost/total*100)}%, #f97316 ${profitPct + (data.utilityCost/total*100)}% 100%)`;
             
             const list = document.getElementById('fin-detail-list');
             list.innerHTML = data.items.map(r => `<div class="flex justify-between items-center py-2 border-b border-slate-100 last:border-0"><span class="font-bold text-slate-700">${r.roomName}</span><span class="font-black text-blue-600">$${r.total}</span></div>`).join('');
