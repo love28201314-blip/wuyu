@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V36.5 極速版</title>
+    <title>租屋管家 Pro - V37.0 穩定極速版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -106,6 +106,10 @@
         }
         .photo-item img { width: 100%; height: 100%; object-fit: cover; }
         .photo-del { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+        
+        /* Pie Chart Fallback */
+        .pie-chart { width: 180px; height: 180px; border-radius: 50%; position: relative; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); background: #e5e7eb; }
+        .pie-chart::after { content: ""; position: absolute; inset: 25px; background: white; border-radius: 50%; box-shadow: inset 0 2px 10px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body class="antialiased">
@@ -117,7 +121,7 @@
                 <i class="fa-solid fa-building-user text-6xl text-indigo-300"></i>
             </div>
             <h1 class="text-4xl font-extrabold mb-2 tracking-tight">租屋管家 Pro</h1>
-            <p class="text-indigo-200 mb-12 font-medium tracking-wide">智慧資產管理 V36.5</p>
+            <p class="text-indigo-200 mb-12 font-medium tracking-wide">智慧資產管理 V37.0</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn bg-white text-indigo-900 py-5 text-xl shadow-xl hover:bg-indigo-50"><i class="fa-solid fa-key mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-indigo-800/50 text-white py-5 rounded-2xl font-bold text-xl border border-indigo-400/30 active:scale-95 transition backdrop-blur-sm"><i class="fa-solid fa-user mr-3"></i> 房客查詢</button>
@@ -456,7 +460,7 @@
             }
             emptyMsg.classList.add('hidden');
             
-            const grouped = {}; // Add missing 'grouped' definition
+            const grouped = {}; 
             paidRecs.forEach(r => {
                 const monthKey = r.billingMonth || r.date.split('/')[0] + '-' + r.date.split('/')[1];
                 if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, count: 0, items: [] };
@@ -470,7 +474,6 @@
             // Also add repair costs to monthly grouping
             window.state.repairs.forEach(r => {
                 if(r.cost && r.date) {
-                    // Assuming date format YYYY/MM/DD
                     const parts = r.date.split('/');
                     const monthKey = parts[0] + '-' + parts[1]; // YYYY-MM
                     if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, count: 0, items: [] };
@@ -703,7 +706,8 @@
         
         window.syncToCloud = async function(coll, id, data) { 
             const size = new Blob([JSON.stringify(data)]).size;
-            if(size > 1000000) return alert("⚠️ 照片過大，僅存本機");
+            // 降低照片壓縮標準，避免大檔案阻塞
+            if(size > 2000000) return alert("⚠️ 資料過大，請減少照片數量");
             if(window.db) {
                 try { await window.db.collection(coll).doc(String(id)).set(data); } 
                 catch (e) { console.error("Sync Error:", e); } 
@@ -847,11 +851,15 @@
             const rd={id, name:document.getElementById('edit-name').value, rent:Number(document.getElementById('edit-rent').value), tenant:document.getElementById('edit-tenant').value, phone:document.getElementById('edit-phone').value, paymentDay:document.getElementById('edit-payday').value, start:document.getElementById('edit-start').value, end:document.getElementById('edit-end').value, meter:Number(document.getElementById('edit-meter').value), waterFee:Number(document.getElementById('edit-water-fee').value), mgmtFee:Number(document.getElementById('edit-mgmt').value), photo:document.getElementById('edit-preview-main').src, furnPhotos: window.tempEditPhotos.furn, contPhotos: window.tempEditPhotos.cont, photoFurn: null, photoCont: null}; 
             if(!rd.name) return alert('房號必填'); 
             const size = new Blob([JSON.stringify(rd)]).size;
-            if(size > 1000000) { alert("⚠️ 照片總量過大，無法上傳雲端！\n請減少照片數量後再試。\n(資料已暫存於本機)"); if (true) { const btn = document.querySelector('#modal-room-edit .btn-primary'); if(btn) { btn.innerText = "儲存房訊"; btn.disabled = false; } } return; }
+            // 寬鬆一點的大小限制
+            if(size > 2000000) { alert("⚠️ 照片總量過大，無法上傳雲端！\n資料已暫存於本機"); }
+            
             const idx=window.state.rooms.findIndex(x=>x.id==id); 
             if(idx>-1) window.state.rooms[idx]=rd; else window.state.rooms.push(rd); 
             window.saveData(); 
-            await window.syncToCloud('rooms',id,rd); 
+            // 如果太大就不上傳雲端，避免卡死
+            if(size <= 2000000) await window.syncToCloud('rooms',id,rd); 
+            
             window.closeModal('modal-room-edit'); 
             window.showToast('房訊儲存成功'); 
         };
@@ -864,7 +872,31 @@
         window.viewBigImage = function(src) { document.getElementById('lightbox-img').src = src; document.getElementById('modal-lightbox').classList.remove('hidden'); };
         window.triggerFile = function(id) { document.getElementById(id).click(); };
         window.handlePhoto = function(input, id) { if(input.files[0]) { window.compressImage(input.files[0], (base64) => { const img=document.getElementById(id); img.src=base64; img.classList.remove('hidden'); }); } };
-        window.compressImage = function(file, callback) { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = event => { const img = new Image(); img.src = event.target.result; img.onload = () => { const canvas = document.createElement('canvas'); const MAX_WIDTH = 400; const scaleSize = MAX_WIDTH / img.width; if (scaleSize >= 1) { canvas.width = img.width; canvas.height = img.height; } else { canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize; } const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); callback(canvas.toDataURL('image/jpeg', 0.4)); } } };
+        
+        // 增強的圖片壓縮邏輯：限制寬度 600px, 品質 0.5
+        window.compressImage = function(file, callback) { 
+            const reader = new FileReader(); 
+            reader.readAsDataURL(file); 
+            reader.onload = event => { 
+                const img = new Image(); 
+                img.src = event.target.result; 
+                img.onload = () => { 
+                    const canvas = document.createElement('canvas'); 
+                    const MAX_WIDTH = 600; // 更小的寬度限制
+                    const scaleSize = MAX_WIDTH / img.width; 
+                    if (scaleSize >= 1) { 
+                        canvas.width = img.width; 
+                        canvas.height = img.height; 
+                    } else { 
+                        canvas.width = MAX_WIDTH; 
+                        canvas.height = img.height * scaleSize; 
+                    } 
+                    const ctx = canvas.getContext('2d'); 
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
+                    callback(canvas.toDataURL('image/jpeg', 0.5)); // 更低的品質
+                } 
+            } 
+        };
         
         window.openBillFromDetail = function() { window.closeModal('modal-room-detail'); window.openBillModal(window.currentRoomId); };
         window.openBillModal = function(id) { const r=window.state.rooms.find(x=>x.id==id); window.currentBillRoomId=id; document.getElementById('bill-last').innerText=r.meter; document.getElementById('bill-curr').value=""; document.getElementById('bill-elec-rate').value=window.state.settings.elecRate; document.getElementById('bill-water-fee').value=r.waterFee||window.state.settings.waterRate||100; document.getElementById('bill-mgmt').value=r.mgmtFee||0; const now=new Date(); document.getElementById('bill-month').value=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,'0'); document.getElementById('modal-bill').classList.remove('hidden'); };
