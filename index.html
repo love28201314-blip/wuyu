@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V35.0 PWA 優化版</title>
+    <title>租屋管家 Pro - V36.1 逾時救援版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -117,7 +117,7 @@
                 <i class="fa-solid fa-building-user text-6xl text-indigo-300"></i>
             </div>
             <h1 class="text-4xl font-extrabold mb-2 tracking-tight">租屋管家 Pro</h1>
-            <p class="text-indigo-200 mb-12 font-medium tracking-wide">智慧資產管理 V35.0 (PWA優化)</p>
+            <p class="text-indigo-200 mb-12 font-medium tracking-wide">智慧資產管理 V36.1</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn bg-white text-indigo-900 py-5 text-xl shadow-xl hover:bg-indigo-50"><i class="fa-solid fa-key mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-indigo-800/50 text-white py-5 rounded-2xl font-bold text-xl border border-indigo-400/30 active:scale-95 transition backdrop-blur-sm"><i class="fa-solid fa-user mr-3"></i> 房客查詢</button>
@@ -327,7 +327,21 @@
                 </div>
             </div>
 
-            <div class="card p-6 border-l-[12px] border-red-500 shadow-md"><h3 class="text-xl font-black mb-4">待繳帳單</h3><div id="t-bill-list" class="space-y-3"></div></div><div class="card p-6 shadow-md"><h3 class="text-xl font-black mb-4">問題報修</h3><textarea id="t-repair-input" class="input-field h-32 mb-4 shadow-inner" placeholder="描述損壞情況..."></textarea><button onclick="window.submitTenantRepair()" class="btn btn-primary w-full shadow-lg">送出申請</button></div><div class="card p-6 shadow-md"><h3 class="text-xl font-black mb-4">修繕進度</h3><div id="t-repair-list" class="space-y-4"></div></div></div></div>
+            <div class="card p-6 border-l-[12px] border-red-500 shadow-md"><h3 class="text-xl font-black mb-4">待繳帳單</h3><div id="t-bill-list" class="space-y-3"></div></div><div class="card p-6 shadow-md"><h3 class="text-xl font-black mb-4">問題報修</h3><textarea id="t-repair-input" class="input-field h-32 mb-4 shadow-inner" placeholder="描述損壞情況..."></textarea>
+            
+             <!-- 新增：房客上傳報修照片 -->
+             <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-bold text-gray-400">上傳照片 (選填)</label>
+                    <button onclick="document.getElementById('t-repair-photo-upload').click()" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg font-bold"><i class="fa-solid fa-camera mr-1"></i>拍照/選圖</button>
+                </div>
+                <input type="file" id="t-repair-photo-upload" class="hidden" multiple accept="image/*" onchange="window.handleTenantRepairPhotos(this)">
+                <div id="t-repair-photo-preview" class="photo-scroller min-h-[60px] bg-gray-50 rounded-xl flex items-center px-2">
+                    <span class="text-xs text-gray-300 w-full text-center">尚未選擇照片</span>
+                </div>
+            </div>
+            
+            <button onclick="window.submitTenantRepair()" class="btn btn-primary w-full shadow-lg">送出申請</button></div><div class="card p-6 shadow-md"><h3 class="text-xl font-black mb-4">修繕進度</h3><div id="t-repair-list" class="space-y-4"></div></div></div></div>
 
     <!-- ================= 房間詳情彈窗 ================= -->
     <div id="modal-room-detail" class="modal fixed inset-0 hidden flex items-center justify-center p-4">
@@ -486,8 +500,9 @@
         let tempEditPhotos = { furn: [], cont: [] };
         let tempTenantRepairPhotos = []; // Fix: Added tenant photo buffer
 
-        // --- UI Render Functions (Moved to Top to fix hoisting issues) ---
-        window.renderRooms = () => { 
+        // --- GLOBAL FUNCTIONS DEFINED FIRST ---
+        
+        function renderRooms() { 
             const c=document.getElementById('rooms-list'); if(!c)return; 
             c.innerHTML=window.state.rooms.map(r=>{ 
                 const unpaid=window.state.records.filter(x=>x.roomId==r.id&&!x.paid).reduce((a,b)=>a+b.total,0); 
@@ -495,12 +510,12 @@
                 const safeId = String(r.id).replace(/'/g, "\\'");
                 return `<div class="card p-5 flex justify-between items-center cursor-pointer mb-3" onclick="window.showRoomDetail('${safeId}')"><div class="flex items-center min-w-0">${ph}<div class="truncate"><div class="text-xl font-black text-slate-800">${r.name} 房</div><div class="text-slate-400 font-bold text-xs truncate">${r.tenant||'空房'}</div></div></div><div class="flex items-center gap-3 shrink-0">${unpaid>0?`<span class="badge badge-red">欠$${unpaid}</span>`:'<span class="badge badge-green">正常</span>'}</div></div>`; 
             }).join(''); 
-        };
+        }
 
-        window.renderDashboard = () => {
+        function renderDashboard() {
             const income = window.state.records.filter(r => r.paid).reduce((s, r) => s + (Number(r.total) || 0), 0);
             const pending = window.state.records.filter(r => !r.paid).reduce((s, r) => s + (Number(r.total) || 0), 0);
-            
+            const repairCost = window.state.repairs.reduce((s, r) => s + (Number(r.cost) || 0), 0);
             const totalUsage = window.state.records.reduce((s, r) => s + (Number(r.usage) || 0), 0);
             const elecRev = window.state.records.reduce((s, r) => s + (Number(r.elecCost) || 0), 0);
             const elecCostT = totalUsage * (window.state.settings.elecCostRate || 2.1);
@@ -509,7 +524,6 @@
             const waterCostT = window.state.records.length * (window.state.settings.waterCostRate || 50);
             const waterProfit = waterRev - waterCostT;
             
-            const repairCost = window.state.repairs.reduce((s, r) => s + (Number(r.cost) || 0), 0);
             const net = income + elecProfit + waterProfit - repairCost; 
             const pendingReps = window.state.repairs.filter(r => r.status === 'pending');
 
@@ -538,9 +552,9 @@
                 if(unpaidRecs.length === 0) list.innerHTML = `<div class="text-center py-10 text-gray-300 font-bold">無待收帳單 🎉</div>`;
                 else { list.innerHTML = unpaidRecs.map(r => `<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden mb-4"><div class="absolute left-0 top-0 bottom-0 w-2 bg-red-500"></div><div class="flex justify-between items-center mb-4 pl-3"><div><span class="text-lg font-black text-gray-800">${r.roomName}</span><span class="text-gray-400 text-[10px] font-bold ml-2">${r.billingMonth || '本期'}</span></div><span class="text-xl font-black text-red-600">$${Math.round(r.total)}</span></div><div class="flex gap-3 pl-3"><button onclick='window.openNotifyModal("${r.id}")' class="btn btn-outline flex-1 !py-3 rounded-xl text-sm">催繳</button><button onclick='window.openPayModal("${r.id}")' class="btn btn-success flex-1 !py-3 shadow-md font-black text-sm">確認收款</button></div></div>`).join(''); }
             }
-        };
+        }
 
-        window.renderFinance = () => {
+        function renderFinance() {
             const container = document.getElementById('finance-list');
             const emptyMsg = document.getElementById('empty-finance-msg');
             const paidRecs = window.state.records.filter(r => r.paid);
@@ -599,9 +613,9 @@
                     <div class="flex justify-between items-start mb-4"><div><h4 class="text-2xl font-black text-slate-800">${month} 帳單</h4><p class="text-[10px] text-slate-400 font-bold">${d.count} 筆入帳</p></div><div class="text-right"><div class="text-[10px] text-slate-400 font-bold">本月淨利</div><div class="text-2xl font-black text-indigo-600">$${Math.round(net).toLocaleString()}</div></div></div>
                     <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 font-black text-xs"><div class="text-slate-500">總收: $${Math.round(d.income).toLocaleString()}</div><div class="text-red-400 text-right">成本: -$${Math.round(d.cost).toLocaleString()}</div></div></div>`;
             }).join('');
-        };
+        }
         
-        window.applySettingsUI = () => { 
+        function applySettingsUI() { 
             document.getElementById('set-elec').value=window.state.settings.elecRate; 
             document.getElementById('set-elec-cost').value=window.state.settings.elecCostRate||2.1; 
             document.getElementById('set-water').value=window.state.settings.waterRate||100; 
@@ -609,7 +623,54 @@
             document.getElementById('set-bank').value=window.state.settings.bankAccount||''; 
             document.getElementById('set-pwd').value=window.state.settings.password||'0000'; 
             if(window.state.settings.projectId) document.getElementById('set-project-id').value = window.state.settings.projectId;
-        };
+        }
+
+        function renderTenantDashboard() {
+            const r = currentTenantRoom;
+            if(!r) return;
+            document.getElementById('t-room-name').innerText = r.name;
+            document.getElementById('t-tenant-name').innerText = `${r.tenant} 您好`;
+            document.getElementById('t-contract-end').innerText = r.end || '無日期';
+            document.getElementById('t-pay-day').innerText = r.paymentDay || '5';
+            
+            // Render Photos
+            const renderList = (id, photos) => {
+                 const el = document.getElementById(id);
+                 if(photos && photos.length > 0) {
+                     el.innerHTML = photos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join('');
+                 } else { el.innerHTML = '<span class="text-xs text-gray-400 p-2">無照片</span>'; }
+            };
+            
+            // Fix: Handle legacy single photo
+            const furn = r.furnPhotos || (r.photoFurn ? [r.photoFurn] : []);
+            const cont = r.contPhotos || (r.photoCont ? [r.photoCont] : []);
+            
+            renderList('tenant-furn-list', furn);
+            renderList('tenant-cont-list', cont);
+
+            // Bills
+            const u = window.state.records.filter(rec => rec.roomId == r.id && !rec.paid);
+            const bl = document.getElementById('t-bill-list');
+            if (u.length === 0) bl.innerHTML = '<div class="text-center py-4 text-green-600 font-bold text-sm">目前無欠費</div>';
+            else bl.innerHTML = u.map(x => `<div class="bg-red-50 p-3 rounded-xl flex justify-between font-bold text-sm"><span>${x.date}</span><span class="text-red-600">$${x.total}</span></div>`).join('');
+            
+            // Repairs
+            const mr = window.state.repairs.filter(x => x.roomId == r.id);
+            const rl = document.getElementById('t-repair-list');
+            if (mr.length === 0) rl.innerHTML = '<div class="text-center py-4 text-gray-300 font-bold text-sm">無紀錄</div>';
+            else rl.innerHTML = mr.map(x => `<div class="card p-4 ${x.status === 'done' ? 'opacity-60' : ''}"><div class="flex justify-between items-center mb-1"><span class="badge ${x.status === 'done' ? 'badge-green' : 'badge-orange'}">${x.status === 'done' ? '完工' : '處理中'}</span><span class="text-xs text-gray-400">${x.date}</span></div><div class="font-bold text-gray-700 mb-2 text-sm">${x.desc}</div>${x.reply ? `<div class="bg-indigo-50 p-2 rounded-lg text-xs font-bold text-indigo-800">房東：${x.reply}</div>` : ''}</div>`).join('');
+            
+            // Reset repair photo buffer
+            tempTenantRepairPhotos = [];
+            document.getElementById('t-repair-photo-preview').innerHTML = '<span class="text-xs text-gray-300 w-full text-center">尚未選擇照片</span>';
+        }
+
+        // Attach to window immediately
+        window.renderRooms = renderRooms;
+        window.renderDashboard = renderDashboard;
+        window.renderFinance = renderFinance;
+        window.applySettingsUI = applySettingsUI;
+        window.renderTenantDashboard = renderTenantDashboard;
 
         // --- Core Functions ---
         window.saveLoginState = () => { localStorage.setItem('rental_login_attempts', JSON.stringify(window.state.loginAttempts)); localStorage.setItem('rental_lockout_until', JSON.stringify(window.state.lockoutUntil)); };
@@ -665,46 +726,6 @@
                  err.innerText = "查無此號碼"; err.classList.remove('hidden');
                  window.saveLoginState();
              } 
-        };
-
-        window.renderTenantDashboard = () => {
-            const r = currentTenantRoom;
-            if(!r) return;
-            document.getElementById('t-room-name').innerText = r.name;
-            document.getElementById('t-tenant-name').innerText = `${r.tenant} 您好`;
-            document.getElementById('t-contract-end').innerText = r.end || '無日期';
-            document.getElementById('t-pay-day').innerText = r.paymentDay || '5';
-            
-            // Render Photos
-            const renderList = (id, photos) => {
-                 const el = document.getElementById(id);
-                 if(photos && photos.length > 0) {
-                     el.innerHTML = photos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join('');
-                 } else { el.innerHTML = '<span class="text-xs text-gray-400 p-2">無照片</span>'; }
-            };
-            
-            // Fix: Handle legacy single photo
-            const furn = r.furnPhotos || (r.photoFurn ? [r.photoFurn] : []);
-            const cont = r.contPhotos || (r.photoCont ? [r.photoCont] : []);
-            
-            renderList('tenant-furn-list', furn);
-            renderList('tenant-cont-list', cont);
-
-            // Bills
-            const u = window.state.records.filter(rec => rec.roomId == r.id && !rec.paid);
-            const bl = document.getElementById('t-bill-list');
-            if (u.length === 0) bl.innerHTML = '<div class="text-center py-4 text-green-600 font-bold text-sm">目前無欠費</div>';
-            else bl.innerHTML = u.map(x => `<div class="bg-red-50 p-3 rounded-xl flex justify-between font-bold text-sm"><span>${x.date}</span><span class="text-red-600">$${x.total}</span></div>`).join('');
-            
-            // Repairs
-            const mr = window.state.repairs.filter(x => x.roomId == r.id);
-            const rl = document.getElementById('t-repair-list');
-            if (mr.length === 0) rl.innerHTML = '<div class="text-center py-4 text-gray-300 font-bold text-sm">無紀錄</div>';
-            else rl.innerHTML = mr.map(x => `<div class="card p-4 ${x.status === 'done' ? 'opacity-60' : ''}"><div class="flex justify-between items-center mb-1"><span class="badge ${x.status === 'done' ? 'badge-green' : 'badge-orange'}">${x.status === 'done' ? '完工' : '處理中'}</span><span class="text-xs text-gray-400">${x.date}</span></div><div class="font-bold text-gray-700 mb-2 text-sm">${x.desc}</div>${x.reply ? `<div class="bg-indigo-50 p-2 rounded-lg text-xs font-bold text-indigo-800">房東：${x.reply}</div>` : ''}</div>`).join('');
-            
-            // Reset repair photo buffer
-            tempTenantRepairPhotos = [];
-            document.getElementById('t-repair-photo-preview').innerHTML = '<span class="text-xs text-gray-300 w-full text-center">尚未選擇照片</span>';
         };
 
         window.handleTenantRepairPhotos = (input) => {
