@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V38.2 絕對全域版</title>
+    <title>租屋管家 Pro - V38.3 介面同步版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -132,7 +132,7 @@
                 <i class="fa-solid fa-building-user text-6xl text-indigo-300"></i>
             </div>
             <h1 class="text-4xl font-extrabold mb-2 tracking-tight">租屋管家 Pro</h1>
-            <p class="text-indigo-200 mb-12 font-medium tracking-wide">智慧資產管理 V38.2</p>
+            <p class="text-indigo-200 mb-12 font-medium tracking-wide">智慧資產管理 V38.3</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn bg-white text-indigo-900 py-5 text-xl shadow-xl hover:bg-indigo-50"><i class="fa-solid fa-key mr-3"></i> 房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full bg-indigo-800/50 text-white py-5 rounded-2xl font-bold text-xl border border-indigo-400/30 active:scale-95 transition backdrop-blur-sm"><i class="fa-solid fa-user mr-3"></i> 房客查詢</button>
@@ -248,7 +248,10 @@
                 <div class="card p-6 mb-6 border border-indigo-100 bg-indigo-50/50">
                     <h3 class="font-bold text-indigo-900 mb-4 text-sm flex items-center"><i class="fa-solid fa-cloud mr-2"></i>雲端資料同步</h3>
                     <div class="space-y-3">
-                        <div class="flex justify-between text-xs font-bold text-gray-500 mb-1"><span>專案 ID: <span id="set-project-id">---</span></span><span id="auth-status" class="text-orange-500">未驗證</span></div>
+                        <div class="flex justify-between text-xs font-bold text-gray-500 mb-1">
+                            <span>專案 ID: <span id="set-project-id" class="text-indigo-600">---</span></span>
+                            <span id="auth-status" class="text-orange-500">未驗證</span>
+                        </div>
                         <div id="cloud-status-text" class="text-center text-xs font-bold text-gray-400 mb-3"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> 連線狀態偵測中...</div>
                         <div class="grid grid-cols-2 gap-3"><button onclick="window.forceUploadAllLocalData()" class="btn bg-indigo-600 text-white shadow-md text-xs py-3"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> 強制上傳</button><button onclick="window.forceDownloadCloudData()" class="btn bg-white text-indigo-600 border border-indigo-200 shadow-sm text-xs py-3"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> 強制下載</button></div>
                         <p class="text-[10px] text-gray-400 text-center mt-1">⚠️ 換手機時，請先在舊機「強制上傳」，再用新機「強制下載」</p>
@@ -340,6 +343,7 @@
         window.GEMINI_API_KEY = "AIzaSyBxoXwUu1lvvscKz68Ck2w2JA-mNm8L264";
         window.USER_PROJECT_ID = "test-cb845"; 
         
+        // Config for Firebase
         window.userFirebaseConfig = {
           apiKey: "AIzaSyCNC58tKKVOH09gohIgt9n5p03mMVAkMZM",
           authDomain: "test-cb845.firebaseapp.com",
@@ -361,6 +365,7 @@
         
         window.state.settings.projectId = window.USER_PROJECT_ID;
 
+        // Global Variables
         window.db = null;
         window.currentRoomId = null;
         window.currentBillRoomId = null;
@@ -370,18 +375,20 @@
         window.tempEditPhotos = { furn: [], cont: [] };
         window.tempTenantRepairPhotos = []; 
 
-        // --- GLOBAL FUNCTIONS (WINDOW ATTACHED) ---
+        // --- GLOBAL FUNCTIONS (Function Expressions on Window) ---
 
         window.applySettingsUI = function() { 
             const s = window.state.settings;
-            if(!document.getElementById('set-elec')) return; // Safety check
+            if(window.state.settings.projectId && document.getElementById('set-project-id')) {
+                document.getElementById('set-project-id').innerText = window.state.settings.projectId;
+            }
+            if(!document.getElementById('set-elec')) return; 
             document.getElementById('set-elec').value = s.elecRate; 
             document.getElementById('set-elec-cost').value = s.elecCostRate||2.1; 
             document.getElementById('set-water').value = s.waterRate||100; 
             document.getElementById('set-water-cost').value = s.waterCostRate||50; 
             document.getElementById('set-bank').value = s.bankAccount||''; 
             document.getElementById('set-pwd').value = s.password||'0000'; 
-            if(s.projectId) document.getElementById('set-project-id').value = s.projectId;
         };
 
         window.renderRooms = function() { 
@@ -713,55 +720,53 @@
         // --- Init Cloud ---
         window.initCloud = async function() {
             const statusEl = document.getElementById('status-indicator');
+            const settingsStatusEl = document.getElementById('cloud-status-text'); // Settings tab status
+            const authStatusEl = document.getElementById('auth-status'); // Auth status
+
             if(typeof firebase !== 'undefined') {
                 try {
-                    if (!firebase.apps.length) firebase.initializeApp(userFirebaseConfig);
+                    if (!firebase.apps.length) firebase.initializeApp(window.userFirebaseConfig);
                     const auth = firebase.auth();
                     
                     try {
                         await auth.signInAnonymously();
+                        if(authStatusEl) {
+                             authStatusEl.innerText = "已驗證 (匿名)";
+                             authStatusEl.className = "text-green-500 font-bold";
+                        }
                     } catch(authErr) {
                         console.error("Auth Failed:", authErr);
                         statusEl.innerText = "驗證失敗";
+                        if(authStatusEl) authStatusEl.innerText = "驗證失敗";
                         alert("連線失敗：請至 Firebase Console 開啟「匿名登入」權限。");
                         return;
                     }
 
                     window.db = firebase.firestore();
                     
-                    // Removed persistence call to avoid conflicts
-
                     window.db.collection('rooms').onSnapshot((snap) => {
-                        if (!snap.empty && !snap.metadata.hasPendingWrites) {
-                             const cloudRooms = snap.docs.map(d => d.data());
-                             if (JSON.stringify(window.state.rooms) !== JSON.stringify(cloudRooms)) {
-                                 window.state.rooms = cloudRooms;
-                                 localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
-                                 window.renderRooms(); 
-                                 window.renderDashboard();
-                             }
+                        if (!snap.empty) {
+                             window.state.rooms = snap.docs.map(d => d.data());
+                             localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
+                             window.renderRooms(); 
+                             window.renderDashboard();
                         }
                         statusEl.innerHTML = '<i class="fa-solid fa-cloud mr-1"></i> 已連線';
-                        statusEl.className = "text-xs font-bold bg-green-600 px-3 py-2 rounded-full border border-green-500 cursor-pointer shadow-sm text-white";
+                        statusEl.className = "text-[10px] font-bold bg-green-100 text-green-600 px-3 py-1.5 rounded-full cursor-pointer";
+                        
+                        // Update Settings Tab Status
+                        if(settingsStatusEl) {
+                            settingsStatusEl.innerHTML = '<i class="fa-solid fa-check-circle text-green-500"></i> 雲端連線正常';
+                            settingsStatusEl.className = "text-center text-xs font-bold text-green-600 mb-3";
+                        }
                     }, e => {
                         console.error(e);
                         statusEl.innerText = "連線失敗";
+                        if(settingsStatusEl) settingsStatusEl.innerText = "連線失敗: 權限不足";
                     });
                     
-                    window.db.collection('records').onSnapshot(snap => { 
-                        if (!snap.empty && !snap.metadata.hasPendingWrites) { 
-                            window.state.records = snap.docs.map(d => d.data()); 
-                            window.renderDashboard(); 
-                            if(!document.getElementById('tab-finance').classList.contains('hidden')) window.renderFinance(); 
-                        } 
-                    });
-                    
-                    window.db.collection('repairs').onSnapshot(snap => { 
-                        if (!snap.empty && !snap.metadata.hasPendingWrites) { 
-                            window.state.repairs = snap.docs.map(d => d.data()); 
-                            window.renderDashboard(); 
-                        } 
-                    });
+                    window.db.collection('records').onSnapshot(snap => { if (!snap.empty) { window.state.records = snap.docs.map(d => d.data()); window.renderDashboard(); if(!document.getElementById('tab-finance').classList.contains('hidden')) window.renderFinance(); } });
+                    window.db.collection('repairs').onSnapshot(snap => { if (!snap.empty) { window.state.repairs = snap.docs.map(d => d.data()); window.renderDashboard(); } });
 
                 } catch(e) {
                     console.error("Firebase Init Error:", e);
@@ -774,8 +779,8 @@
             const size = new Blob([JSON.stringify(data)]).size;
             if(size > 2000000) return alert("⚠️ 照片過大，僅存本機");
             if(window.db) {
-                // Fire and forget
-                window.db.collection(coll).doc(String(id)).set(data).catch(e => console.error("Sync Error:", e));
+                try { await window.db.collection(coll).doc(String(id)).set(data); } 
+                catch (e) { console.error("Sync Error:", e); } 
             }
         };
         
@@ -845,298 +850,6 @@
             }
         };
 
-        window.showRoomDetail = function(id) {
-            if(!id) return;
-            const r = window.state.rooms.find(x => String(x.id) === String(id));
-            if(!r) return;
-            window.currentRoomId = id;
-            document.getElementById('detail-room-title').innerText = `${r.name} 房`;
-            document.getElementById('detail-photo').src = r.photo || 'https://via.placeholder.com/600x400?text=No+Photo';
-            document.getElementById('detail-tenant').innerText = r.tenant || '尚未出租';
-            document.getElementById('detail-rent').innerText = `$${r.rent}`;
-            document.getElementById('detail-water').innerText = `$${r.waterFee || 100}`;
-            document.getElementById('detail-mgmt').innerText = `$${r.mgmtFee || 0}`;
-            document.getElementById('detail-end').innerText = r.end || '--';
-            document.getElementById('detail-start').innerText = r.start || '--';
-            
-            const renderList = (elId, list) => {
-                const el = document.getElementById(elId);
-                if(list && list.length > 0) {
-                     el.innerHTML = list.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join('');
-                } else { el.innerHTML = '<span class="text-xs text-gray-300">無照片</span>'; }
-            };
-            
-            const furn = r.furnPhotos || (r.photoFurn ? [r.photoFurn] : []);
-            const cont = r.contPhotos || (r.photoCont ? [r.photoCont] : []);
-            renderList('detail-furn-list', furn);
-            renderList('detail-cont-list', cont);
-
-            document.getElementById('modal-room-detail').classList.remove('hidden');
-        };
-
-        window.openRoomModal = function() { 
-            window.currentRoomId=null; 
-            document.getElementById('edit-modal-title').innerText="新增房間"; 
-            document.getElementById('edit-room-id').value=""; 
-            document.getElementById('edit-name').value=""; 
-            document.getElementById('edit-rent').value="6000"; 
-            document.getElementById('edit-tenant').value=""; 
-            document.getElementById('edit-phone').value=""; 
-            document.getElementById('edit-payday').value="5"; 
-            document.getElementById('edit-start').value=""; 
-            document.getElementById('edit-end').value=""; 
-            document.getElementById('edit-meter').value="0"; 
-            document.getElementById('edit-water-fee').value=window.state.settings.waterRate||100; 
-            document.getElementById('edit-mgmt').value="0"; 
-            const mainPrev = document.getElementById('edit-preview-main');
-            if(mainPrev) { mainPrev.src=""; mainPrev.classList.add('hidden'); }
-            window.tempEditPhotos = {furn:[], cont:[]}; 
-            window.renderEditPhotoList('furn'); window.renderEditPhotoList('cont'); 
-            document.getElementById('edit-btn-del').classList.add('hidden'); 
-            document.getElementById('edit-btn-moveout').classList.add('hidden'); 
-            document.getElementById('modal-room-edit').classList.remove('hidden'); 
-        };
-
-        window.openEditRoom = function() { 
-            const r=window.state.rooms.find(x=>x.id==window.currentRoomId); 
-            document.getElementById('edit-modal-title').innerText="編輯房訊"; 
-            document.getElementById('edit-room-id').value=r.id; 
-            document.getElementById('edit-name').value=r.name; 
-            document.getElementById('edit-rent').value=r.rent; 
-            document.getElementById('edit-tenant').value=r.tenant||""; 
-            document.getElementById('edit-phone').value=r.phone||""; 
-            document.getElementById('edit-payday').value=r.paymentDay||""; 
-            document.getElementById('edit-start').value=r.start||""; 
-            document.getElementById('edit-end').value=r.end||""; 
-            document.getElementById('edit-meter').value=r.meter||0; 
-            document.getElementById('edit-water-fee').value=r.waterFee||window.state.settings.waterRate||100; 
-            document.getElementById('edit-mgmt').value=r.mgmtFee||0; 
-            if(r.photo){const i=document.getElementById('edit-preview-main'); i.src=r.photo; i.classList.remove('hidden');}
-            window.tempEditPhotos.furn = r.furnPhotos ? [...r.furnPhotos] : (r.photoFurn ? [r.photoFurn] : []);
-            window.tempEditPhotos.cont = r.contPhotos ? [...r.contPhotos] : (r.photoCont ? [r.photoCont] : []);
-            window.renderEditPhotoList('furn'); window.renderEditPhotoList('cont');
-            document.getElementById('edit-btn-del').classList.remove('hidden'); 
-            document.getElementById('edit-btn-moveout').classList.toggle('hidden',!r.tenant); 
-            window.closeModal('modal-room-detail'); 
-            document.getElementById('modal-room-edit').classList.remove('hidden'); 
-        };
-
-        window.saveRoom = async function() { 
-            const btn = document.getElementById('btn-save-room');
-            if (btn.disabled) return;
-            btn.disabled = true;
-            const originalText = btn.innerText;
-            btn.innerText = "處理中...";
-
-            try {
-                const idVal=document.getElementById('edit-room-id').value; 
-                const id=idVal?idVal:Date.now().toString(); 
-                const rd={id, name:document.getElementById('edit-name').value, rent:Number(document.getElementById('edit-rent').value), tenant:document.getElementById('edit-tenant').value, phone:document.getElementById('edit-phone').value, paymentDay:document.getElementById('edit-payday').value, start:document.getElementById('edit-start').value, end:document.getElementById('edit-end').value, meter:Number(document.getElementById('edit-meter').value), waterFee:Number(document.getElementById('edit-water-fee').value), mgmtFee:Number(document.getElementById('edit-mgmt').value), photo:document.getElementById('edit-preview-main').src, furnPhotos: window.tempEditPhotos.furn, contPhotos: window.tempEditPhotos.cont, photoFurn: null, photoCont: null}; 
-                if(!rd.name) { alert('房號必填'); return; }
-                const size = new Blob([JSON.stringify(rd)]).size;
-                if(size > 2000000) { alert("⚠️ 照片總量過大，無法上傳雲端！\n資料已暫存於本機"); }
-                
-                const idx=window.state.rooms.findIndex(x=>x.id==id); 
-                if(idx>-1) window.state.rooms[idx]=rd; else window.state.rooms.push(rd); 
-                window.saveData(); 
-                if(size <= 2000000) await window.syncToCloud('rooms',id,rd); 
-                
-                window.closeModal('modal-room-edit'); 
-                window.showToast('房訊儲存成功'); 
-            } catch (e) {
-                console.error(e);
-                alert("儲存失敗: " + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        };
-
-        window.deleteRoom = function() { 
-            if(confirm('確定要刪除此房間嗎？')){ 
-                const id=document.getElementById('edit-room-id').value; 
-                window.showToast('正在刪除雲端資料...'); 
-                window.state.rooms=window.state.rooms.filter(x=>x.id!=id); 
-                window.saveData(); 
-                window.deleteFromCloud('rooms',id); 
-                window.closeModal('modal-room-edit'); 
-            } 
-        };
-
-        window.moveOutTenant = function() { 
-            if(confirm('退租？')){ 
-                const id=document.getElementById('edit-room-id').value; 
-                const r=window.state.rooms.find(x=>x.id==id); 
-                r.tenant=""; r.phone=""; r.start=""; r.end=""; r.contPhotos=[]; 
-                window.saveData(); 
-                window.syncToCloud('rooms',id,r); 
-                window.closeModal('modal-room-edit'); 
-                window.showToast('退租成功'); 
-            } 
-        };
-
-        window.handleAddPhoto = function(input, type) { if(input.files[0]) { window.compressImage(input.files[0], (base64) => { window.tempEditPhotos[type].push(base64); window.renderEditPhotoList(type); input.value = ''; }); } };
-        window.renderEditPhotoList = function(type) { const container = document.getElementById(`edit-list-${type}`); const list = window.tempEditPhotos[type]; container.innerHTML = list.map((src, index) => `<div class="photo-item"><img src="${src}"><div class="photo-del" onclick="window.removeEditPhoto('${type}', ${index})"><i class="fa-solid fa-xmark"></i></div></div>`).join(''); };
-        window.removeEditPhoto = function(type, index) { window.tempEditPhotos[type].splice(index, 1); window.renderEditPhotoList(type); };
-        window.viewBigImage = function(src) { document.getElementById('lightbox-img').src = src; document.getElementById('modal-lightbox').classList.remove('hidden'); };
-        window.triggerFile = function(id) { document.getElementById(id).click(); };
-        window.handlePhoto = function(input, id) { if(input.files[0]) { window.compressImage(input.files[0], (base64) => { const img=document.getElementById(id); img.src=base64; img.classList.remove('hidden'); }); } };
-        
-        window.compressImage = function(file, callback) { 
-            const reader = new FileReader(); 
-            reader.readAsDataURL(file); 
-            reader.onload = event => { 
-                const img = new Image(); 
-                img.src = event.target.result; 
-                img.onload = () => { 
-                    const canvas = document.createElement('canvas'); 
-                    const MAX_WIDTH = 600; 
-                    const scaleSize = MAX_WIDTH / img.width; 
-                    if (scaleSize >= 1) { 
-                        canvas.width = img.width; 
-                        canvas.height = img.height; 
-                    } else { 
-                        canvas.width = MAX_WIDTH; 
-                        canvas.height = img.height * scaleSize; 
-                    } 
-                    const ctx = canvas.getContext('2d'); 
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
-                    callback(canvas.toDataURL('image/jpeg', 0.5)); 
-                } 
-            } 
-        };
-        
-        window.openBillFromDetail = function() { window.closeModal('modal-room-detail'); window.openBillModal(window.currentRoomId); };
-        window.openBillModal = function(id) { const r=window.state.rooms.find(x=>x.id==id); window.currentBillRoomId=id; document.getElementById('bill-last').innerText=r.meter; document.getElementById('bill-curr').value=""; document.getElementById('bill-elec-rate').value=window.state.settings.elecRate; document.getElementById('bill-water-fee').value=r.waterFee||window.state.settings.waterRate||100; document.getElementById('bill-mgmt').value=r.mgmtFee||0; const now=new Date(); document.getElementById('bill-month').value=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,'0'); document.getElementById('modal-bill').classList.remove('hidden'); };
-        window.createBill = function() { const r=window.state.rooms.find(x=>x.id==window.currentBillRoomId); const c=Number(document.getElementById('bill-curr').value); const m=document.getElementById('bill-month').value; const er=Number(document.getElementById('bill-elec-rate').value); const wf=Number(document.getElementById('bill-water-fee').value); const mf=Number(document.getElementById('bill-mgmt').value); if(!c)return alert('度數?'); if(!m)return alert('月份?'); const u=c-(r.meter||0); const e=u*er; const t=parseInt(r.rent)+e+wf+mf; const rec={id:Date.now().toString(), roomId:r.id, roomName:r.name, tenant:r.tenant, total:t, paid:false, date:new Date().toLocaleDateString('zh-TW'), billingMonth:m, elecCost:e, waterFee:wf, rent:r.rent, usage:u}; r.meter=c; window.state.records.unshift(rec); window.saveData(); window.syncToCloud('rooms',r.id,r); window.syncToCloud('records',rec.id,rec); window.closeModal('modal-bill'); window.showToast('生成'); };
-        window.openPayModal = function(id) { const r=window.state.records.find(x=>x.id==id); if(r){ document.getElementById('pay-record-id').value=id; document.getElementById('pay-amount').innerText=`$${Math.round(r.total)}`; document.getElementById('pay-date').valueAsDate=new Date(); document.getElementById('modal-pay-confirm').classList.remove('hidden'); } };
-        window.confirmPay = function() { const id=document.getElementById('pay-record-id').value; const r=window.state.records.find(x=>x.id==id); if(r){ r.paid=true; window.saveData(); window.syncToCloud('records',id,r); window.closeModal('modal-pay-confirm'); window.showToast('收款成功'); } };
-
-        window.openRepairProcess = function(id) { 
-            const r = window.state.repairs.find(x => x.id == id); 
-            if (!r) return; 
-            document.getElementById('repair-process-id').value = id; 
-            document.getElementById('repair-desc-display').innerText = r.desc; 
-            document.getElementById('repair-reply-input').value = r.reply || ""; 
-            document.getElementById('repair-cost-input').value = r.cost || 0; 
-            document.getElementById('repair-done-check').checked = (r.status === 'done'); 
-            
-            const photoContainer = document.getElementById('repair-photos-container');
-            const photoDisplay = document.getElementById('repair-photos-display');
-            if (r.photos && r.photos.length > 0) {
-                photoContainer.classList.remove('hidden');
-                photoDisplay.innerHTML = r.photos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join('');
-            } else {
-                photoContainer.classList.add('hidden');
-            }
-
-            document.getElementById('modal-repair-process').classList.remove('hidden'); 
-        };
-
-        window.saveRepairProcess = function() { 
-            const id = document.getElementById('repair-process-id').value; 
-            const r = window.state.repairs.find(x => x.id == id); 
-            if (r) { 
-                r.reply = document.getElementById('repair-reply-input').value; 
-                r.cost = Number(document.getElementById('repair-cost-input').value); 
-                r.status = document.getElementById('repair-done-check').checked ? 'done' : 'pending'; 
-                window.saveData(); 
-                window.syncToCloud('repairs', id, r); 
-                window.closeModal('modal-repair-process'); 
-                window.showToast('更新成功'); 
-                window.renderDashboard(); 
-            } 
-        };
-        
-        window.analyzeRepair = async function() {
-            const id = document.getElementById('repair-process-id').value;
-            const r = window.state.repairs.find(x => x.id == id);
-            if(!r) return;
-            const replyBox = document.getElementById('repair-reply-input');
-            const originalVal = replyBox.value;
-            replyBox.value = "🤖 AI 診斷中...";
-            
-            const prompt = `房客報修：「${r.desc}」。請以專業房東角度，條列式提供：1.可能原因 2.建議處理方式 3.預估費用(台幣)。`;
-            const result = await callGemini(prompt);
-            
-            replyBox.value = (originalVal ? originalVal + "\n\n" : "") + result;
-        };
-        
-        window.saveSettings = function() { 
-            window.state.settings.elecRate=Number(document.getElementById('set-elec').value); 
-            window.state.settings.elecCostRate=Number(document.getElementById('set-elec-cost').value); 
-            window.state.settings.waterRate=Number(document.getElementById('set-water').value); 
-            window.state.settings.waterCostRate=Number(document.getElementById('set-water-cost').value); 
-            window.state.settings.bankAccount=document.getElementById('set-bank').value; 
-            window.state.settings.password=document.getElementById('set-pwd').value; 
-            const pidInput = document.getElementById('set-project-id').value;
-            if(pidInput) window.state.settings.projectId = pidInput;
-            window.saveData(); 
-        };
-        
-        window.aiRewrite = async function(tone) {
-            const textarea = document.getElementById('notify-text');
-            const originalText = textarea.value;
-            if(!originalText) return alert("請先選擇一筆帳單以生成內容");
-            
-            const btn = event.target;
-            const originalContent = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 生成中...';
-            btn.disabled = true;
-
-            const toneMap = { 'warm': '溫馨親切、像朋友', 'formal': '正式、專業、有禮貌' };
-            const prompt = `請將以下租屋通知訊息改寫為「${toneMap[tone]}」的語氣，保持原有金額與資訊正確，使用繁體中文：\n\n${originalText}`;
-
-            const result = await callGemini(prompt);
-            textarea.value = result;
-            
-            btn.innerHTML = originalContent;
-            btn.disabled = false;
-        };
-        
-        window.openNotifyModal = function(id) { 
-            window.currentNotifyRecordId = id; 
-            const r = window.state.records.find(x => x.id == id); 
-            const text = `Hi ${r.tenant || '房客'}，${r.billingMonth} 的租金帳單已出爐。\n\n房號：${r.roomName}\n本期電度：${r.usage} 度\n\n總金額：$${Math.round(r.total)}\n\n請於 ${new Date().getDate() + 3} 日內匯款，謝謝！`; 
-            document.getElementById('notify-text').value = text; 
-            document.getElementById('modal-notify').classList.remove('hidden'); 
-        };
-        
-        window.copyNotify = function() { 
-            const text = document.getElementById('notify-text'); 
-            text.select(); 
-            document.execCommand('copy'); 
-            window.showToast('已複製'); 
-        };
-        
-        window.markNotified = function() { 
-            window.closeModal('modal-notify'); 
-            window.showToast('已標記通知'); 
-        };
-        
-        window.openMonthDetail = function(month) {
-            const data = window.tempMonthlyData[month]; if(!data) return;
-            document.getElementById('fin-detail-month').innerText = month;
-            const net = data.income - data.cost;
-            document.getElementById('fin-detail-income').innerText = `$${Math.round(data.income).toLocaleString()}`;
-            document.getElementById('fin-detail-cost').innerText = `-$${Math.round(data.cost).toLocaleString()}`;
-            document.getElementById('fin-detail-net').innerText = `$${Math.round(net).toLocaleString()}`;
-            
-            const total = data.income || 1; 
-            const profitPct = Math.max(0, (net / total) * 100);
-            const utilityPct = (data.utilityCost / total) * 100;
-            
-            const stop1 = profitPct;
-            const stop2 = profitPct + utilityPct;
-            
-            const chart = document.getElementById('pie-chart');
-            chart.style.background = `conic-gradient(#10b981 0% ${stop1}%, #3b82f6 ${stop1}% ${stop2}%, #f97316 ${stop2}% 100%)`;
-            
-            const list = document.getElementById('fin-detail-list');
-            list.innerHTML = data.items.map(r => `<div class="flex justify-between items-center py-2 border-b border-slate-100 last:border-0"><span class="font-bold text-slate-700">${r.roomName}</span><span class="font-black text-blue-600">$${r.total}</span></div>`).join('');
-            document.getElementById('modal-finance-detail').classList.remove('hidden');
-        };
-        
         window.exportData = function() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state));
             const downloadAnchorNode = document.createElement('a');
@@ -1164,7 +877,6 @@
                 window.initCloud();
             } catch (e) {
                 console.error("Init Error:", e);
-                // alert("系統初始化失敗，請重新整理網頁。");
             }
         };
     </script>
