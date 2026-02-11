@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V39.5 終極修復版</title>
+    <title>租屋管家 Pro - V40.0 絕對重構版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -11,10 +11,15 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#f8fafc">
     
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase SDKs -->
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -22,16 +27,16 @@
     <style>
         :root { --base-font-size: 16px; }
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
             background-color: #f8fafc;
             color: #1e293b; 
             font-size: var(--base-font-size); 
             -webkit-tap-highlight-color: transparent; 
             padding-top: env(safe-area-inset-top);
-            padding-bottom: 100px;
+            padding-bottom: 110px;
+            overscroll-behavior-y: none;
         }
 
-        /* 蘋果風卡片 */
         .card { 
             background: white; 
             border-radius: 20px; 
@@ -42,70 +47,41 @@
         }
         .card:active { transform: scale(0.99); }
 
-        /* 輸入框優化 */
-        .input-label {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #64748b;
-            margin-bottom: 0.3rem;
-            display: block;
-            margin-left: 0.2rem;
-        }
+        /* 輸入框 - 蘋果風 */
+        .input-label { font-size: 0.85em; font-weight: 700; color: #64748b; margin-bottom: 4px; display: block; margin-left: 4px; }
         .input-field { 
-            width: 100%; 
-            padding: 14px 16px; 
-            font-size: 16px; 
-            font-weight: 500; 
-            color: #0f172a; 
-            background-color: #f1f5f9; 
-            border: 2px solid transparent; 
-            border-radius: 14px; 
-            outline: none; 
-            transition: all 0.2s ease;
-            -webkit-appearance: none;
+            width: 100%; padding: 14px 16px; font-size: 1em; font-weight: 600; color: #0f172a; 
+            background-color: #f1f5f9; border: 2px solid transparent; border-radius: 16px; 
+            outline: none; transition: all 0.2s ease; -webkit-appearance: none;
         }
-        .input-field:focus { 
-            background-color: #ffffff; 
-            border-color: #6366f1; 
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); 
-        }
-        
-        .input-highlight {
-            background-color: #eef2ff;
-            color: #4338ca;
-            font-family: monospace;
-            font-weight: 700;
-        }
+        .input-field:focus { background-color: #ffffff; border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+        .input-highlight { background-color: #eef2ff; color: #4338ca; font-family: monospace; font-weight: 700; font-size: 1.5em; }
 
-        /* 按鈕樣式 */
-        .btn { display: flex; align-items: center; justify-content: center; padding: 14px; font-size: 1rem; font-weight: 700; border-radius: 14px; transition: all 0.2s; cursor: pointer; border: none; }
+        /* 按鈕 */
+        .btn { display: flex; align-items: center; justify-content: center; padding: 14px; font-size: 1em; font-weight: 700; border-radius: 16px; transition: all 0.2s; cursor: pointer; border: none; }
         .btn:active { transform: scale(0.96); opacity: 0.9; }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; background: #e2e8f0; color: #94a3b8; }
-        
         .btn-primary { background: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
         .btn-success { background: #10b981; color: white; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
         .btn-danger { background: #fee2e2; color: #ef4444; }
+        .btn-warning { background: #ffedd5; color: #c2410c; }
         .btn-outline { background: white; color: #4f46e5; border: 2px solid #e0e7ff; }
-        .btn-ai { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; }
 
-        /* 字體大小按鈕 */
-        .font-size-group { display: flex; gap: 8px; background: #f1f5f9; padding: 6px; border-radius: 16px; }
-        .font-size-btn { flex: 1; padding: 12px; border-radius: 12px; font-weight: 700; color: #64748b; background: transparent; border: none; transition: all 0.2s; }
-        .font-size-btn.active { background: white; color: #4f46e5; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        /* 字體大小按鈕 (獨立方塊) */
+        .font-btn-container { display: flex; gap: 10px; margin-top: 5px; }
+        .font-btn {
+            flex: 1; padding: 15px; border-radius: 16px; border: 2px solid #e2e8f0; background: white;
+            font-weight: 700; color: #64748b; text-align: center; cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .font-btn.active { border-color: #6366f1; color: #4338ca; background-color: #eef2ff; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); }
 
-        /* 導航列 */
+        /* 導航 */
         .floating-nav {
             position: fixed; bottom: 20px; left: 16px; right: 16px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(12px);
-            border-radius: 24px;
-            padding: 10px;
-            display: flex; justify-content: space-around;
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15);
-            border: 1px solid rgba(255,255,255,0.5);
-            z-index: 50;
-            max-width: 500px;
-            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px);
+            border-radius: 24px; padding: 10px; display: flex; justify-content: space-around;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15); border: 1px solid rgba(255,255,255,0.5); z-index: 50;
+            max-width: 500px; margin: 0 auto;
         }
         .nav-btn { color: #94a3b8; transition: all 0.2s; padding: 10px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .nav-btn i { font-size: 1.2rem; }
@@ -113,20 +89,19 @@
         .nav-btn.active { color: #4f46e5; background: #eef2ff; }
 
         .hidden { display: none !important; }
-        .modal { background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(6px); z-index: 1000; }
-        
+        .modal { background-color: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 1000; }
         .photo-scroller { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0 12px 0; }
         .photo-item { width: 90px; height: 90px; flex-shrink: 0; border-radius: 14px; overflow: hidden; background: #e2e8f0; position: relative; }
         .photo-item img { width: 100%; height: 100%; object-fit: cover; }
         .photo-del { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
-        /* 圓餅圖樣式 */
+        /* 圓餅圖 */
         .pie-chart-wrapper { position: relative; width: 180px; height: 180px; margin: 0 auto; }
-        .pie-chart { width: 100%; height: 100%; border-radius: 50%; background: #e2e8f0; }
+        .pie-chart { width: 100%; height: 100%; border-radius: 50%; background: #e2e8f0; } /* 預設底色 */
         .pie-chart-inner { position: absolute; inset: 25px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; }
     </style>
 </head>
-<body class="antialiased">
+<body>
 
     <!-- 0. Landing Page -->
     <div id="view-landing" class="view-section min-h-screen flex flex-col items-center justify-center p-8 bg-white">
@@ -135,7 +110,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V39.5 終極修復版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V40.0 絕對重構版</p>
             <div class="space-y-4 w-full">
                 <button onclick="switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">房東登入</button>
                 <button onclick="switchView('tenant-login')" class="w-full btn btn-outline py-4 text-lg">房客查詢</button>
@@ -158,11 +133,11 @@
     <div id="view-tenant-login" class="view-section hidden min-h-screen bg-white flex flex-col items-center justify-center p-8">
         <div class="w-full max-w-sm">
             <button onclick="switchView('landing')" class="mb-10 text-slate-400 font-bold"><i class="fa-solid fa-chevron-left mr-2"></i>返回</button>
-            <h2 class="text-2xl font-black text-slate-800 mb-2">房客查詢</h2>
-            <p class="text-slate-400 mb-8 text-sm font-bold">請輸入手機號碼</p>
-            <input type="tel" id="tenant-phone-input" class="input-field text-center text-2xl h-16 mb-4" placeholder="09xxxxxxxx">
+            <h2 class="text-3xl font-extrabold text-gray-900 mb-2">房客查詢</h2>
+            <p class="text-gray-500 mb-8 text-sm">請輸入您的手機號碼</p>
+            <input type="tel" id="tenant-phone-input" class="input-field text-center text-2xl mb-4 h-16" placeholder="09xxxxxxxx">
             <p id="tenant-login-error" class="text-red-500 text-center font-bold mb-6 text-sm hidden"></p>
-            <button onclick="tenantLogin()" class="btn btn-primary w-full py-4 text-lg shadow-lg">查詢</button>
+            <button onclick="tenantLogin()" class="btn btn-primary w-full py-4 text-lg shadow-lg">查詢我的房間</button>
         </div>
     </div>
 
@@ -185,22 +160,15 @@
                     <div class="text-indigo-100 text-xs font-bold mb-1 uppercase tracking-widest">本月預估淨利</div>
                     <div class="text-4xl font-black mb-6 tracking-tight" id="dash-net">$0</div>
                     <div class="grid grid-cols-2 gap-3">
-                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-indigo-100 text-[10px] mb-1">已收租金</div><div class="text-lg font-bold" id="dash-income">$0</div></div>
-                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-pink-100 text-[10px] mb-1">待收總額</div><div class="text-lg font-bold" id="dash-pending">$0</div></div>
+                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-blue-200 text-[10px] mb-1">已收租金</div><div class="text-lg font-bold" id="dash-income">$0</div></div>
+                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-red-300 text-[10px] mb-1">待收總額</div><div class="text-lg font-bold text-red-100" id="dash-pending">$0</div></div>
+                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-yellow-300 text-[10px] mb-1">⚡ 電費利潤</div><div class="text-lg font-bold" id="dash-elec-profit">$0</div></div>
+                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-cyan-300 text-[10px] mb-1">💧 水費利潤</div><div class="text-lg font-bold" id="dash-water-profit">$0</div></div>
+                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-orange-300 text-[10px] mb-1">🔧 修繕成本</div><div class="text-lg font-bold" id="dash-repair-cost">$0</div></div>
+                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-gray-300 text-[10px] mb-1">🔔 待處理報修</div><div class="text-lg font-bold" id="dash-repair-notify">0 件</div></div>
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                     <div class="card p-4 flex flex-col justify-center items-center">
-                        <div class="text-xs text-slate-400 font-bold mb-1">電費淨利</div>
-                        <div class="text-xl font-black text-slate-700" id="dash-elec-profit">$0</div>
-                     </div>
-                     <div class="card p-4 flex flex-col justify-center items-center">
-                        <div class="text-xs text-slate-400 font-bold mb-1">修繕/水費支出</div>
-                        <div class="text-xl font-black text-slate-700" id="dash-repair-cost">$0</div>
-                     </div>
-                </div>
-
                 <div id="dashboard-meter-container" class="hidden mb-6">
                     <h3 class="text-sm font-bold text-slate-500 mb-3 ml-1">待辦事項</h3>
                     <div id="dashboard-meter-list" class="space-y-3"></div>
@@ -238,10 +206,10 @@
                 
                 <div class="card p-6 mb-6">
                     <label class="input-label mb-3">介面字體大小</label>
-                    <div class="font-size-group">
-                        <button onclick="setFontSize(16)" id="font-size-16" class="font-size-btn">小</button>
-                        <button onclick="setFontSize(18)" id="font-size-18" class="font-size-btn">中</button>
-                        <button onclick="setFontSize(22)" id="font-size-22" class="font-size-btn">大</button>
+                    <div class="font-btn-container">
+                        <button onclick="setFontSize(16)" id="font-size-16" class="font-btn">小</button>
+                        <button onclick="setFontSize(18)" id="font-size-18" class="font-btn">中</button>
+                        <button onclick="setFontSize(22)" id="font-size-22" class="font-btn">大</button>
                     </div>
                 </div>
 
@@ -258,16 +226,20 @@
                 </div>
 
                 <div class="card p-6 mb-6 border-2 border-indigo-50 bg-indigo-50/30">
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-xs font-bold text-slate-500">Project ID</span>
-                        <span id="set-project-id" class="text-xs font-mono text-indigo-600 bg-white px-2 py-1 rounded">---</span>
+                    <h3 class="font-bold text-indigo-900 mb-4 text-sm flex items-center"><i class="fa-solid fa-cloud mr-2"></i>雲端資料同步</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-xs font-bold text-gray-500 mb-1">
+                            <span>專案 ID: <span id="set-project-id" class="text-indigo-600">---</span></span>
+                            <span id="auth-status" class="text-orange-500">未驗證</span>
+                        </div>
+                        <div id="cloud-status-text" class="text-center text-xs font-bold text-gray-400 mb-3"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> 連線狀態偵測中...</div>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="forceUploadAllLocalData()" class="btn bg-white text-indigo-600 text-xs py-2 shadow-sm">強制上傳</button>
+                            <button onclick="forceDownloadCloudData()" class="btn bg-white text-indigo-600 text-xs py-2 shadow-sm">強制下載</button>
+                        </div>
+                        <button onclick="clearCacheAndReload()" class="w-full btn bg-red-50 text-red-500 text-xs py-2 mt-3">清除暫存重載</button>
                     </div>
-                    <div id="cloud-status-text" class="text-center text-xs font-bold text-slate-400 mb-3">連線狀態偵測中...</div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="forceUploadAllLocalData()" class="btn bg-white text-indigo-600 text-xs py-2 shadow-sm">強制上傳</button>
-                        <button onclick="forceDownloadCloudData()" class="btn bg-white text-indigo-600 text-xs py-2 shadow-sm">強制下載</button>
-                    </div>
-                    <button onclick="clearCacheAndReload()" class="w-full btn bg-red-50 text-red-500 text-xs py-2 mt-3">清除暫存重載</button>
                 </div>
                 
                 <button onclick="exportData()" class="w-full btn btn-outline mb-3">匯出備份</button>
@@ -286,7 +258,6 @@
 
     <!-- 房客介面 -->
     <div id="app-tenant" class="view-section hidden min-h-screen">
-        <!-- (簡化以節省空間，保持功能不變) -->
         <div class="bg-slate-900 p-8 pt-12 pb-16 text-white rounded-b-[40px] shadow-2xl mb-6 relative">
              <div class="flex justify-between items-start relative z-10"><div><h1 class="text-4xl font-black mb-1" id="t-room-name">--</h1><p class="text-slate-400 font-bold" id="t-tenant-name">房客</p></div><button onclick="confirmExit()" class="bg-white/20 p-3 rounded-xl"><i class="fa-solid fa-right-from-bracket"></i></button></div>
         </div>
@@ -301,7 +272,6 @@
     </div>
 
     <!-- Modals -->
-    <!-- 抄表計費 -->
     <div id="modal-bill" class="modal fixed inset-0 hidden flex items-center justify-center p-6">
         <div class="bg-white w-full max-w-sm rounded-[24px] p-6 animate-slide-up shadow-2xl flex flex-col max-h-[90vh]">
             <h3 class="text-xl font-black mb-4 text-center">抄表計費</h3>
@@ -318,7 +288,7 @@
                     <div class="text-xs font-bold text-slate-400 border-b pb-1">本月費率與成本</div>
                     <div class="grid grid-cols-2 gap-3">
                         <div><label class="input-label">房客電價</label><input id="bill-elec-rate" type="number" class="input-field bg-white text-sm font-bold text-center" value="3.5" disabled></div>
-                        <div><label class="input-label text-indigo-600">台電成本</label><input id="bill-elec-cost-rate" type="number" step="0.1" class="input-field bg-white text-sm text-center border-indigo-200"></div>
+                        <div><label class="input-label text-indigo-600">台電成本/度</label><input id="bill-elec-cost-rate" type="number" step="0.1" class="input-field bg-white text-sm text-center border-indigo-200"></div>
                         <div class="col-span-2"><label class="input-label text-indigo-600">水費總成本 (房東付)</label><input id="bill-water-cost" type="number" class="input-field bg-white text-sm text-center border-indigo-200"></div>
                         <input type="hidden" id="bill-water-fee" value="0">
                     </div>
@@ -329,7 +299,6 @@
         </div>
     </div>
 
-    <!-- 財務詳情 (圓餅圖) -->
     <div id="modal-finance-detail" class="modal fixed inset-0 hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-[24px] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
             <div class="bg-slate-800 p-5 text-white flex justify-between items-center"><h3 class="text-xl font-bold" id="fin-detail-month">---</h3><button onclick="closeModal('modal-finance-detail')" class="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full"><i class="fa-solid fa-xmark"></i></button></div>
@@ -400,7 +369,6 @@
         </div>
     </div>
     
-    <!-- 其他必要的 Modals (Pay, Notify, Repair Process) ... 略以節省篇幅，確保 id 對應 -->
     <div id="modal-pay-confirm" class="modal fixed inset-0 hidden flex items-center justify-center p-6"><div class="bg-white w-full max-w-sm rounded-[24px] shadow-2xl p-6"><div class="text-center mb-4"><i class="fa-solid fa-circle-check text-5xl text-green-500"></i></div><div class="text-center text-3xl font-black mb-4" id="pay-amount">$0</div><div><label class="input-label">收款日期</label><input type="date" id="pay-date" class="input-field text-center font-bold"></div><div class="flex gap-3 mt-6"><button onclick="closeModal('modal-pay-confirm')" class="btn btn-outline flex-1">取消</button><button onclick="confirmPay()" class="btn btn-success flex-1 shadow-lg">確認</button></div></div></div>
     <div id="modal-notify" class="modal fixed inset-0 hidden flex items-center justify-center p-4"><div class="bg-white w-full max-w-md rounded-[24px] shadow-2xl p-5"><h3 class="font-bold text-lg mb-4">帳單通知</h3><div class="flex gap-2 mb-3"><button onclick="aiRewrite('warm')" class="btn-ai flex-1 py-2 text-xs rounded-lg">溫馨</button><button onclick="aiRewrite('formal')" class="btn-ai flex-1 py-2 text-xs rounded-lg">正式</button></div><textarea id="notify-text" class="w-full h-40 p-3 bg-slate-50 border rounded-xl resize-none"></textarea><div class="flex gap-2 mt-4"><button onclick="copyNotify()" class="btn btn-outline flex-1">複製</button><button onclick="markNotified()" class="btn btn-success flex-1">已通知</button></div><button onclick="closeModal('modal-notify')" class="absolute top-4 right-4"><i class="fa-solid fa-xmark"></i></button></div></div>
     <div id="modal-repair-process" class="modal fixed inset-0 hidden flex items-center justify-center p-4"><div class="bg-white w-full max-w-sm rounded-[24px] p-5 flex flex-col max-h-[90vh]"><h3 class="text-xl font-bold mb-4">報修處理</h3><div class="overflow-y-auto space-y-4"><div id="repair-desc-display" class="bg-orange-50 p-3 rounded-xl text-sm"></div><div id="repair-photos-container" class="hidden"><div id="repair-photos-display" class="photo-scroller"></div></div><textarea id="repair-reply-input" class="input-field h-20" placeholder="回覆..."></textarea><input type="number" id="repair-cost-input" class="input-field" placeholder="維修費"><div class="flex items-center gap-2"><input type="checkbox" id="repair-done-check"><label>完工</label></div></div><div class="flex gap-3 mt-4"><button onclick="closeModal('modal-repair-process')" class="btn btn-outline flex-1">取消</button><button onclick="saveRepairProcess()" class="btn btn-primary flex-1">儲存</button></div></div></div>
@@ -408,7 +376,6 @@
 
     <div id="toast" class="fixed top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-2xl z-[1100] hidden font-bold flex items-center"><i class="fa-solid fa-check mr-2"></i> <span id="toast-msg">成功</span></div>
 
-    <!-- Scripts -->
     <script>
         const GEMINI_API_KEY = "AIzaSyBxoXwUu1lvvscKz68Ck2w2JA-mNm8L264";
         const USER_PROJECT_ID = "test-cb845"; 
@@ -427,7 +394,7 @@
         let db = null, currentRoomId = null, currentBillRoomId = null, currentTenantRoom = null, currentNotifyRecordId = null;
         let tempMonthlyData = {}, tempEditPhotos = { furn: [], cont: [] }, tempTenantRepairPhotos = [];
 
-        // --- Functions Declarations ---
+        // --- Functions ---
         function applySettingsUI() { 
             const s = window.state.settings;
             if(document.getElementById('set-project-id')) document.getElementById('set-project-id').innerText = s.projectId;
@@ -447,7 +414,6 @@
             document.querySelectorAll('.font-size-btn').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById('font-size-' + size);
             if(activeBtn) activeBtn.classList.add('active');
-            // Don't call save here to avoid loop, save only on specific action
         }
         
         function switchView(view) { document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden')); document.getElementById(`view-${view}`).classList.remove('hidden'); }
@@ -527,20 +493,60 @@
             document.getElementById('fin-detail-cost').innerText = `-$${d.cost}`;
             document.getElementById('fin-detail-net').innerText = `$${d.income - d.cost}`;
             
+            // Fix: Pie Chart logic even if data is 0
             const total = d.income || 1;
             const profitPct = Math.max(0, ((d.income - d.cost) / total) * 100);
             const utilityPct = (d.utilityCost / total) * 100;
-            const stop1 = profitPct;
-            const stop2 = profitPct + utilityPct;
+            const stop1 = isNaN(profitPct) ? 0 : profitPct;
+            const stop2 = isNaN(utilityPct) ? stop1 : stop1 + utilityPct;
             
             const chart = document.getElementById('pie-chart');
-            chart.style.background = `conic-gradient(#10b981 0% ${stop1}%, #3b82f6 ${stop1}% ${stop2}%, #f97316 ${stop2}% 100%)`;
+            // Default gray if no data
+            if (d.income === 0 && d.cost === 0) {
+                 chart.style.background = '#e5e7eb';
+            } else {
+                 chart.style.background = `conic-gradient(#10b981 0% ${stop1}%, #3b82f6 ${stop1}% ${stop2}%, #f97316 ${stop2}% 100%)`;
+            }
             
             document.getElementById('fin-detail-list').innerHTML = d.items.map(r => `<div class="flex justify-between py-2 border-b border-slate-100 last:border-0"><span class="font-bold text-slate-700">${r.roomName}</span><span>$${r.total}</span></div>`).join('');
             document.getElementById('modal-finance-detail').classList.remove('hidden');
         }
 
-        // ... 省略部分重複函式，但確保核心邏輯存在 ...
+        function renderDashboard() {
+            // ... (Same logic as V39.2) ...
+            const income = window.state.records.filter(r => r.paid).reduce((s, r) => s + (Number(r.total) || 0), 0);
+            const pending = window.state.records.filter(r => !r.paid).reduce((s, r) => s + (Number(r.total) || 0), 0);
+            const repairCost = window.state.repairs.reduce((s, r) => s + (Number(r.cost) || 0), 0);
+            
+            let totalProfit = 0, totalElecProfit = 0, totalWaterProfit = 0;
+            window.state.records.filter(r => r.paid).forEach(r => {
+                 const eCostRate = r.elecCostRate !== undefined ? r.elecCostRate : (window.state.settings.elecCostRate || 2.1);
+                 const wCost = r.waterCost !== undefined ? r.waterCost : (window.state.settings.waterCostRate || 50);
+                 const eRev = r.elecCost || 0; 
+                 const eCost = (r.usage || 0) * eCostRate; 
+                 const wRev = r.waterFee || 0; 
+                 totalElecProfit += (eRev - eCost);
+                 totalWaterProfit += (wRev - wCost);
+                 totalProfit += (r.total - eCost - wCost);
+            });
+            const net = totalProfit - repairCost;
+
+            if(document.getElementById('dash-income')) document.getElementById('dash-income').innerText = `$${Math.round(income).toLocaleString()}`;
+            if(document.getElementById('dash-pending')) document.getElementById('dash-pending').innerText = `$${Math.round(pending).toLocaleString()}`;
+            if(document.getElementById('dash-repair-cost')) document.getElementById('dash-repair-cost').innerText = `$${Math.round(repairCost).toLocaleString()}`;
+            if(document.getElementById('dash-elec-profit')) document.getElementById('dash-elec-profit').innerText = `$${Math.round(totalElecProfit).toLocaleString()}`;
+            if(document.getElementById('dash-water-profit')) document.getElementById('dash-water-profit').innerText = `$${Math.round(totalWaterProfit).toLocaleString()}`;
+            if(document.getElementById('dash-net')) document.getElementById('dash-net').innerText = `$${Math.round(net).toLocaleString()}`;
+
+            const list = document.getElementById('dashboard-bills-list');
+            const unpaidRecs = window.state.records.filter(r => !r.paid);
+            if(list) {
+                if(unpaidRecs.length === 0) list.innerHTML = `<div class="text-center py-10 text-slate-300 font-bold text-sm">無待收帳單 🎉</div>`;
+                else { list.innerHTML = unpaidRecs.map(r => `<div class="card p-5 flex justify-between items-center mb-3"><div><div class="text-lg font-bold text-slate-800">${r.roomName}</div><div class="text-xs text-slate-400">${r.billingMonth}</div></div><div class="text-right"><div class="text-xl font-black text-pink-500">$${Math.round(r.total)}</div><div class="text-[10px] text-slate-300">未繳</div></div></div>`).join(''); }
+            }
+        }
+
+        // ... (Other functions strictly using function declarations) ...
         function checkLockout(type) { const now = Date.now(); if (window.state.lockoutUntil[type] > now) { alert('請稍後再試'); return true; } return false; }
         function verifyOwner() { if(checkLockout('owner')) return; if(document.getElementById('owner-pwd-input').value === window.state.settings.password) { window.state.loginAttempts.owner=0; saveLoginState(); switchView('landlord'); switchTab('dashboard'); } else { window.state.loginAttempts.owner++; alert('密碼錯誤'); saveLoginState(); } }
         function tenantLogin() { if(checkLockout('tenant')) return; const r = window.state.rooms.find(x=>x.phone===document.getElementById('tenant-phone-input').value); if(r) { window.state.loginAttempts.tenant=0; saveLoginState(); currentTenantRoom=r; renderTenantDashboard(); switchView('tenant'); } else { window.state.loginAttempts.tenant++; alert('查無此號碼'); saveLoginState(); } }
@@ -550,7 +556,6 @@
         
         async function initCloud() {
             const statusEl = document.getElementById('status-indicator');
-            const cloudStatusText = document.getElementById('cloud-status-text');
             if(typeof firebase === 'undefined') return;
             try {
                 if(!firebase.apps.length) firebase.initializeApp(userFirebaseConfig);
@@ -564,42 +569,59 @@
                         renderRooms(); renderDashboard();
                     }
                     statusEl.innerText = '● 已連線'; statusEl.className = "text-[10px] font-bold bg-green-100 text-green-600 px-3 py-1 rounded-full cursor-pointer";
-                    if(cloudStatusText) { cloudStatusText.innerText = "✅ 雲端連線正常"; cloudStatusText.className = "text-center text-xs font-bold text-green-500 mb-3"; }
-                    if(document.getElementById('auth-status')) { document.getElementById('auth-status').innerText = "已驗證"; document.getElementById('auth-status').className="text-[10px] bg-green-50 text-green-600 px-2 py-1 rounded border border-green-200"; }
+                    if(document.getElementById('cloud-status-text')) document.getElementById('cloud-status-text').innerText = "✅ 連線正常";
+                    if(document.getElementById('auth-status')) document.getElementById('auth-status').innerText = "已驗證";
                 });
-                // Sync other collections...
                 db.collection('records').onSnapshot(snap => { if(!snap.empty && !snap.metadata.hasPendingWrites) { window.state.records = snap.docs.map(d => d.data()); renderDashboard(); if(!document.getElementById('tab-finance').classList.contains('hidden')) renderFinance(); } });
                 db.collection('repairs').onSnapshot(snap => { if(!snap.empty && !snap.metadata.hasPendingWrites) { window.state.repairs = snap.docs.map(d => d.data()); renderDashboard(); } });
             } catch(e) { console.error(e); statusEl.innerText = '連線失敗'; }
         }
 
-        // 綁定漏掉的函式
+        // Binding
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function showRoomDetail(id) { currentRoomId=id; const r=window.state.rooms.find(x=>x.id==id); document.getElementById('detail-room-title').innerText=r.name; document.getElementById('detail-photo').src=r.photo||''; document.getElementById('modal-room-detail').classList.remove('hidden'); }
         function openEditRoom() { const r=window.state.rooms.find(x=>x.id==currentRoomId); document.getElementById('edit-name').value=r.name; document.getElementById('edit-room-id').value=r.id; document.getElementById('modal-room-detail').classList.add('hidden'); document.getElementById('modal-room-edit').classList.remove('hidden'); }
         function openRoomModal() { currentRoomId=null; document.getElementById('edit-room-id').value=""; document.getElementById('modal-room-edit').classList.remove('hidden'); }
         async function saveRoom() { const btn=document.getElementById('btn-save-room'); btn.disabled=true; btn.innerText="處理中..."; /* ... logic ... */  saveData(); if(db) await db.collection('rooms').doc(document.getElementById('edit-room-id').value || Date.now().toString()).set({/*data*/}); btn.disabled=false; btn.innerText="儲存"; closeModal('modal-room-edit'); }
-        
-        // 確保按鈕能呼叫
-        window.closeModal = closeModal;
-        window.showRoomDetail = showRoomDetail;
-        window.openEditRoom = openEditRoom;
-        window.openRoomModal = openRoomModal;
-        window.saveRoom = saveRoom;
-        window.deleteRoom = () => {}; // 需補全
-        window.saveSettings = () => { /* save logic */ saveData(); };
-        window.exportData = () => { /* export logic */ };
-        window.forceUploadAllLocalData = async () => { /* sync logic */ };
-        window.forceDownloadCloudData = async () => { /* sync logic */ };
-        window.clearCacheAndReload = () => { localStorage.clear(); location.reload(); };
+        function deleteRoom() { if(confirm('刪除？')){ const id=document.getElementById('edit-room-id').value; window.state.rooms=window.state.rooms.filter(x=>x.id!=id); saveData(); deleteFromCloud('rooms',id); closeModal('modal-room-edit'); } }
+        function moveOutTenant() { if(confirm('退租？')){ const id=document.getElementById('edit-room-id').value; const r=window.state.rooms.find(x=>x.id==id); r.tenant=""; r.phone=""; r.start=""; r.end=""; r.contPhotos=[]; saveData(); syncToCloud('rooms',id,r); closeModal('modal-room-edit'); } }
+        function handleAddPhoto(input, type) { if(input.files[0]) { compressImage(input.files[0], (base64) => { tempEditPhotos[type].push(base64); renderEditPhotoList(type); input.value = ''; }); } }
+        function renderEditPhotoList(type) { const container = document.getElementById(`edit-list-${type}`); const list = tempEditPhotos[type]; container.innerHTML = list.map((src, index) => `<div class="photo-item"><img src="${src}"><div class="photo-del" onclick="removeEditPhoto('${type}', ${index})"><i class="fa-solid fa-xmark"></i></div></div>`).join(''); }
+        function removeEditPhoto(type, index) { tempEditPhotos[type].splice(index, 1); renderEditPhotoList(type); }
+        function viewBigImage(src) { document.getElementById('lightbox-img').src = src; document.getElementById('modal-lightbox').classList.remove('hidden'); }
+        function triggerFile(id) { document.getElementById(id).click(); }
+        function handlePhoto(input, id) { if(input.files[0]) { compressImage(input.files[0], (base64) => { const img=document.getElementById(id); img.src=base64; img.classList.remove('hidden'); }); } }
+        function compressImage(file, callback) { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = event => { const img = new Image(); img.src = event.target.result; img.onload = () => { const canvas = document.createElement('canvas'); const MAX_WIDTH = 600; const scaleSize = MAX_WIDTH / img.width; if (scaleSize >= 1) { canvas.width = img.width; canvas.height = img.height; } else { canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize; } const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); callback(canvas.toDataURL('image/jpeg', 0.5)); } } }
+        function openBillFromDetail() { closeModal('modal-room-detail'); openBillModal(currentRoomId); }
+        function openBillModal(id) { const r=window.state.rooms.find(x=>x.id==id); currentBillRoomId=id; document.getElementById('bill-last').innerText=r.meter; document.getElementById('bill-curr').value=""; document.getElementById('bill-elec-rate').value=3.5; document.getElementById('bill-elec-cost-rate').value=window.state.settings.elecCostRate||2.1; document.getElementById('bill-water-fee').value=0; document.getElementById('bill-water-cost').value=window.state.settings.waterCostRate||50; document.getElementById('bill-mgmt').value=r.mgmtFee||0; const now=new Date(); document.getElementById('bill-month').value=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,'0'); document.getElementById('modal-bill').classList.remove('hidden'); }
+        function createBill() { const r=window.state.rooms.find(x=>x.id==currentBillRoomId); const c=Number(document.getElementById('bill-curr').value); const m=document.getElementById('bill-month').value; const er=3.5; const wf=0; const mf=Number(document.getElementById('bill-mgmt').value); const eCostRate = Number(document.getElementById('bill-elec-cost-rate').value); const wCost = Number(document.getElementById('bill-water-cost').value); if(!c)return alert('度數?'); if(!m)return alert('月份?'); const u=c-(r.meter||0); const e=u*er; const t=parseInt(r.rent)+e+wf+mf; const rec={id:Date.now().toString(), roomId:r.id, roomName:r.name, tenant:r.tenant, total:t, paid:false, date:new Date().toLocaleDateString('zh-TW'), billingMonth:m, elecCost:e, waterFee:wf, rent:r.rent, usage:u, elecCostRate: eCostRate, waterCost: wCost}; r.meter=c; window.state.records.unshift(rec); saveData(); syncToCloud('rooms',r.id,r); syncToCloud('records',rec.id,rec); closeModal('modal-bill'); showToast('生成'); }
+        function openPayModal(id) { const r=window.state.records.find(x=>x.id==id); if(r){ document.getElementById('pay-record-id').value=id; document.getElementById('pay-amount').innerText=`$${Math.round(r.total)}`; document.getElementById('pay-date').valueAsDate=new Date(); document.getElementById('modal-pay-confirm').classList.remove('hidden'); } }
+        function confirmPay() { const id=document.getElementById('pay-record-id').value; const r=window.state.records.find(x=>x.id==id); if(r){ r.paid=true; saveData(); syncToCloud('records',id,r); closeModal('modal-pay-confirm'); showToast('收款成功'); } }
+        function openNotifyModal(id) { currentNotifyRecordId = id; const r = window.state.records.find(x => x.id == id); const text = `Hi ${r.tenant || '房客'}，${r.billingMonth} 的租金帳單已出爐。\n\n房號：${r.roomName}\n本期電度：${r.usage} 度\n\n總金額：$${Math.round(r.total)}\n\n請於 ${new Date().getDate() + 3} 日內匯款，謝謝！`; document.getElementById('notify-text').value = text; document.getElementById('modal-notify').classList.remove('hidden'); }
+        function copyNotify() { const text = document.getElementById('notify-text'); text.select(); document.execCommand('copy'); showToast('已複製'); }
+        function markNotified() { closeModal('modal-notify'); showToast('已標記通知'); }
+        function openRepairProcess(id) { const r = window.state.repairs.find(x => x.id == id); if (!r) return; document.getElementById('repair-process-id').value = id; document.getElementById('repair-desc-display').innerText = r.desc; document.getElementById('repair-reply-input').value = r.reply || ""; document.getElementById('repair-cost-input').value = r.cost || 0; document.getElementById('repair-done-check').checked = (r.status === 'done'); const photoContainer = document.getElementById('repair-photos-container'); const photoDisplay = document.getElementById('repair-photos-display'); if (r.photos && r.photos.length > 0) { photoContainer.classList.remove('hidden'); photoDisplay.innerHTML = r.photos.map(src => `<div class="photo-item" onclick="viewBigImage('${src}')"><img src="${src}"></div>`).join(''); } else { photoContainer.classList.add('hidden'); } document.getElementById('modal-repair-process').classList.remove('hidden'); }
+        function saveRepairProcess() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if (r) { r.reply = document.getElementById('repair-reply-input').value; r.cost = Number(document.getElementById('repair-cost-input').value); r.status = document.getElementById('repair-done-check').checked ? 'done' : 'pending'; saveData(); syncToCloud('repairs', id, r); closeModal('modal-repair-process'); showToast('更新成功'); renderDashboard(); } }
+        async function analyzeRepair() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if(!r) return; const replyBox = document.getElementById('repair-reply-input'); const originalVal = replyBox.value; replyBox.value = "🤖 AI 診斷中..."; const prompt = `房客報修：「${r.desc}」。請以專業房東角度，條列式提供：1.可能原因 2.建議處理方式 3.預估費用(台幣)。`; const result = await callGemini(prompt); replyBox.value = (originalVal ? originalVal + "\n\n" : "") + result; }
+        function saveSettings() { window.state.settings.elecRate=Number(document.getElementById('set-elec').value); window.state.settings.elecCostRate=Number(document.getElementById('set-elec-cost').value); window.state.settings.waterRate=Number(document.getElementById('set-water').value); window.state.settings.waterCostRate=Number(document.getElementById('set-water-cost').value); window.state.settings.bankAccount=document.getElementById('set-bank').value; window.state.settings.password=document.getElementById('set-pwd').value; const pidInput = document.getElementById('set-project-id').value; if(pidInput) window.state.settings.projectId = pidInput; saveData(); }
+        async function syncToCloud(coll, id, data) { if(db) { try { await db.collection(coll).doc(String(id)).set(data); } catch (e) { console.error(e); } } }
+        async function deleteFromCloud(coll, id) { if(db) try { await db.collection(coll).doc(String(id)).delete(); } catch(e) {} }
+        function handleTenantRepairPhotos(input) { if (input.files) { Array.from(input.files).forEach(file => { compressImage(file, (base64) => { tempTenantRepairPhotos.push(base64); const container = document.getElementById('t-repair-photo-preview'); if(container.innerHTML.includes('span')) container.innerHTML = ''; container.innerHTML += `<div class="photo-item"><img src="${base64}"></div>`; }); }); } }
+        function exportData() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "rental_manager_backup_" + new Date().toISOString() + ".json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
+        function showToast(m) { const t=document.getElementById('toast'); document.getElementById('toast-msg').innerText=m; t.classList.remove('hidden','opacity-0'); setTimeout(()=>{t.classList.add('opacity-0','hidden')},2000); }
+        function clearCacheAndReload() { if(confirm("確定？")) { localStorage.clear(); location.reload(); } }
+        async function forceUploadAllLocalData() { if(!db) return; if(!confirm("上傳？")) return; try { for(const r of window.state.rooms) await syncToCloud('rooms', r.id, r); for(const r of window.state.records) await syncToCloud('records', r.id, r); for(const r of window.state.repairs) await syncToCloud('repairs', r.id, r); alert('完成'); } catch(e){alert('失敗');} }
+        async function forceDownloadCloudData() { if(!db) return; if(!confirm("下載？")) return; try { const snap = await db.collection('rooms').get(); window.state.rooms = snap.docs.map(d=>d.data()); localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms)); alert('完成'); location.reload(); } catch(e){alert('失敗');} }
 
-        // 最終初始化
         window.onload = function() {
-            applySettingsUI();
-            initCloud();
-            // 先渲染一次本機資料
-            renderRooms();
-            renderDashboard();
+            try {
+                document.getElementById('landing-id').innerText = window.state.settings.projectId;
+                setFontSize(window.state.settings.fontSize || 16);
+                applySettingsUI();
+                initCloud();
+            } catch (e) {
+                console.error("Init Error:", e);
+            }
         };
     </script>
 </body>
