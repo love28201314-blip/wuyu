@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V38.6 字體美化版</title>
+    <title>租屋管家 Pro - V38.7 暫存清除版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -319,6 +319,9 @@
                             <button onclick="window.forceUploadAllLocalData()" class="btn bg-indigo-600 text-white shadow-md text-xs py-3"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> 強制上傳</button>
                             <button onclick="window.forceDownloadCloudData()" class="btn bg-white text-indigo-600 border border-indigo-200 shadow-sm text-xs py-3"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> 強制下載</button>
                         </div>
+                        <div class="grid grid-cols-1 gap-3">
+                            <button onclick="window.clearCacheAndReload()" class="btn bg-red-100 text-red-600 border border-red-200 shadow-sm text-xs py-3"><i class="fa-solid fa-trash-can mr-1"></i> 清除暫存並重載</button>
+                        </div>
                         <p class="text-[10px] text-gray-400 text-center mt-1">⚠️ 換手機時，請先在舊機「強制上傳」，再用新機「強制下載」</p>
                     </div>
                 </div>
@@ -449,7 +452,7 @@
                 <div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-slate-400 ml-2 mb-1 block">房號</label><input id="edit-name" class="input-field" placeholder="101"></div><div><label class="text-[10px] font-bold text-slate-400 ml-2 mb-1 block">月租</label><input id="edit-rent" type="number" class="input-field" placeholder="6000"></div></div><div class="bg-blue-50 p-6 rounded-3xl space-y-4 border border-blue-100 shadow-sm"><h4 class="font-black text-blue-800 text-sm mb-2"><i class="fa-solid fa-user-edit mr-2"></i>合約資料</h4><input id="edit-tenant" class="input-field bg-white" placeholder="房客姓名"><div class="grid grid-cols-2 gap-3"><input id="edit-phone" class="input-field bg-white" placeholder="電話"><input id="edit-payday" type="number" class="input-field bg-white" placeholder="繳款日"></div><div class="grid grid-cols-2 gap-3"><div><label class="text-[10px] font-bold text-indigo-400 ml-1">起租</label><input id="edit-start" type="date" class="input-field bg-white text-sm"></div><div><label class="text-[10px] font-bold text-indigo-400 ml-1">到期</label><input id="edit-end" type="date" class="input-field bg-white text-sm"></div></div></div><div class="grid grid-cols-2 gap-3"><div><label class="text-[10px] font-bold text-gray-400 ml-1">當前電表</label><input id="edit-meter" type="number" class="input-field"></div><div><label class="text-[10px] font-bold text-gray-400 ml-1">水費設定</label><input id="edit-water-fee" type="number" class="input-field"></div><div class="col-span-2"><label class="text-[10px] font-bold text-gray-400 ml-1">管理費</label><input id="edit-mgmt" type="number" class="input-field"></div></div></div><div class="p-4 border-t bg-gray-50 flex gap-3 rounded-b-[32px]">
                 <button id="edit-btn-del" onclick="window.deleteRoom()" class="w-12 btn btn-danger"><i class="fa-solid fa-trash"></i></button>
                 <button id="edit-btn-moveout" onclick="window.moveOutTenant()" class="w-24 btn btn-warning text-sm">退租</button>
-                <button onclick="window.saveRoom()" class="flex-1 btn btn-primary shadow-lg">儲存</button>
+                <button id="btn-save-room" onclick="window.saveRoom()" class="flex-1 btn btn-primary shadow-lg">儲存</button>
             </div>
         </div>
     </div>
@@ -575,6 +578,13 @@
 
         // --- GLOBAL FUNCTIONS (Function Expressions on Window) ---
 
+        window.clearCacheAndReload = function() {
+            if(confirm("確定要清除所有本機暫存並重新載入嗎？\n這將強制從雲端抓取最新資料。")) {
+                localStorage.clear();
+                window.location.reload();
+            }
+        };
+
         window.applySettingsUI = function() { 
             const s = window.state.settings;
             if(window.state.settings.projectId && document.getElementById('set-project-id')) {
@@ -637,6 +647,32 @@
                     repList.innerHTML = pendingReps.map(r => `<div class="bg-orange-50 p-3 rounded-xl border border-orange-100 flex justify-between items-center mb-2"><div><div class="font-bold text-gray-800 text-sm">${window.state.rooms.find(rm=>rm.id==r.roomId)?.name || '未知'}房 報修</div><div class="text-xs text-gray-500 mt-1">${r.desc}</div></div><button onclick='window.openRepairProcess("${r.id}")' class="btn bg-orange-500 text-white text-xs px-3 py-1 shadow-sm">處理</button></div>`).join(''); 
                 } else { 
                     document.getElementById('dashboard-repairs-container').classList.add('hidden'); 
+                }
+            }
+
+            // Meter Reading Reminder Logic
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const meterReminders = window.state.rooms.filter(r => {
+                if(!r.tenant || !r.paymentDay) return false;
+                const pDay = parseInt(r.paymentDay);
+                let nextPayDate = new Date(today.getFullYear(), today.getMonth(), pDay);
+                if (nextPayDate < today) {
+                    nextPayDate.setMonth(nextPayDate.getMonth() + 1);
+                }
+                const diffTime = nextPayDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays <= 5 && diffDays >= 0;
+            });
+            const meterContainer = document.getElementById('dashboard-meter-container');
+            if (meterContainer) {
+                if (meterReminders.length > 0) {
+                    meterContainer.classList.remove('hidden');
+                    document.getElementById('dashboard-meter-list').innerHTML = meterReminders.map(r => 
+                        `<div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200 flex justify-between items-center"><div><div class="font-bold text-gray-800">${r.name} 房</div><div class="text-xs text-gray-500">繳費日：${r.paymentDay} 號</div></div><button onclick="window.showRoomDetail('${r.id}'); window.setTimeout(() => window.openBillFromDetail(), 300)" class="text-xs bg-yellow-400 text-white px-3 py-2 rounded-lg font-bold shadow-sm">去抄表</button></div>`
+                    ).join('');
+                } else {
+                    meterContainer.classList.add('hidden');
                 }
             }
 
@@ -959,6 +995,8 @@
                                  localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
                                  window.renderRooms(); 
                                  window.renderDashboard();
+                                 // New: If cloud data is detected, auto-refresh finance if needed
+                                 if(!document.getElementById('tab-finance').classList.contains('hidden')) window.renderFinance();
                              }
                         }
                         statusEl.innerHTML = '<i class="fa-solid fa-cloud mr-1"></i> 已連線';
