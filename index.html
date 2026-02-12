@@ -1119,7 +1119,7 @@
             const btn = event.target; const originalContent = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 處理中...'; btn.disabled = true;
             const toneMap = { 'warm': '溫馨親切、不要給人壓力', 'formal': '正式、專業、有禮貌' };
-            const prompt = `請將以下租屋通知訊息改寫為「${toneMap[tone]}」的語氣。請務必保留所有的金額、帳單月份、房號與匯款銀行帳號等重要資訊，使用繁體中文：\n\n${originalText}`;
+            const prompt = `請將以下租屋通知訊息改寫為「${toneMap[tone]}」的語氣。請務必保留所有的金額、帳單月份、房號與匯款銀行帳號等重要資訊，使用繁體中文。請直接輸出改寫後的內容，不要加上「好的」、「這是一則...」等開場白，也不要加上任何結尾預留欄位，讓我能直接複製貼上：\n\n${originalText}`;
             textarea.value = await window.callGemini(prompt);
             btn.innerHTML = originalContent; btn.disabled = false;
         }
