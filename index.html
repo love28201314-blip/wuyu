@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V40.4 穩定修復版</title>
+    <title>租屋管家 Pro - V42.2 雲端與 AI 修復版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -47,6 +47,7 @@
         }
         .card:active { transform: scale(0.99); }
 
+        /* 輸入框 - 蘋果風 */
         .input-label { font-size: 0.85em; font-weight: 700; color: #64748b; margin-bottom: 4px; display: block; margin-left: 4px; }
         .input-field { 
             width: 100%; padding: 14px 16px; font-size: 1em; font-weight: 600; color: #0f172a; 
@@ -56,6 +57,7 @@
         .input-field:focus { background-color: #ffffff; border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
         .input-highlight { background-color: #eef2ff; color: #4338ca; font-family: monospace; font-weight: 700; font-size: 1.5em; }
 
+        /* 按鈕 */
         .btn { display: flex; align-items: center; justify-content: center; padding: 14px; font-size: 1em; font-weight: 700; border-radius: 16px; transition: all 0.2s; cursor: pointer; border: none; }
         .btn:active { transform: scale(0.96); opacity: 0.9; }
         .btn-primary { background: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
@@ -64,6 +66,7 @@
         .btn-warning { background: #ffedd5; color: #c2410c; }
         .btn-outline { background: white; color: #4f46e5; border: 2px solid #e0e7ff; }
 
+        /* 字體大小按鈕 */
         .font-btn-container { display: flex; gap: 10px; margin-top: 5px; }
         .font-btn {
             flex: 1; padding: 15px; border-radius: 16px; border: 2px solid #e2e8f0; background: white;
@@ -72,6 +75,7 @@
         }
         .font-btn.active { border-color: #6366f1; color: #4338ca; background-color: #eef2ff; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); }
 
+        /* 導航 */
         .floating-nav {
             position: fixed; bottom: 20px; left: 16px; right: 16px;
             background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px);
@@ -104,7 +108,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V40.4 穩定修復版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V42.2 雲端與 AI 修復版</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">房東登入</button>
                 <button onclick="window.switchView('tenant-login')" class="w-full btn btn-outline py-4 text-lg">房客查詢</button>
@@ -317,7 +321,6 @@
                     </div>
                 </div>
                 
-                <!-- 隱藏實際成本輸入，因為改在水電分頁統一輸入了 -->
                 <input type="hidden" id="bill-elec-cost-total" value="0">
                 <input type="hidden" id="bill-water-cost-total" value="0">
                 
@@ -340,8 +343,8 @@
 
     <script>
         const GEMINI_API_KEY = "AIzaSyBxoXwUu1lvvscKz68Ck2w2JA-mNm8L264";
-        const USER_PROJECT_ID = "test-cb845"; 
         
+        // --- 核心設定配置 ---
         const userFirebaseConfig = {
           apiKey: "AIzaSyCNC58tKKVOH09gohIgt9n5p03mMVAkMZM",
           authDomain: "test-cb845.firebaseapp.com",
@@ -351,24 +354,27 @@
           appId: "1:23211542320:web:c81d782bc3c8c208006af5",
           measurementId: "G-2TLK0PM3PZ"
         };
+        const USER_PROJECT_ID = userFirebaseConfig.projectId;
 
+        // --- 初始化 State ---
         window.state = {
             rooms: JSON.parse(localStorage.getItem('rental_rooms') || '[]'),
             records: JSON.parse(localStorage.getItem('rental_records') || '[]'),
             repairs: JSON.parse(localStorage.getItem('rental_repairs') || '[]'),
             utilityRates: JSON.parse(localStorage.getItem('rental_utility_rates') || '{}'),
-            settings: JSON.parse(localStorage.getItem('rental_settings') || '{"elecRate": 3.5, "elecCostRate": 2.1, "waterRate": 0, "waterCostRate": 50, "mgmtFee": 500, "bankAccount": "", "projectId": "test-cb845", "password": "0000", "fontSize": 16}'),
+            settings: JSON.parse(localStorage.getItem('rental_settings') || `{"elecRate": 3.5, "elecCostRate": 2.1, "waterRate": 0, "waterCostRate": 50, "mgmtFee": 500, "bankAccount": "", "projectId": "${USER_PROJECT_ID}", "password": "0000", "fontSize": 16}`),
             loginAttempts: JSON.parse(localStorage.getItem('rental_login_attempts') || '{"owner":0,"tenant":0}'),
             lockoutUntil: JSON.parse(localStorage.getItem('rental_lockout_until') || '{"owner":0,"tenant":0}')
         };
         window.state.settings.projectId = USER_PROJECT_ID;
 
+        // --- 全域變數 ---
         let db = null;
         let currentRoomId = null, currentBillRoomId = null, currentTenantRoom = null, currentNotifyRecordId = null;
         let tempMonthlyData = {}, tempEditPhotos = { furn: [], cont: [] }, tempTenantRepairPhotos = [];
 
         // ==========================================
-        // 1. 核心基礎函式 (不依賴 DOM)
+        // 1. 核心儲存與輔助工具 (不依賴 DOM)
         // ==========================================
         function saveData() { 
             try {
@@ -412,8 +418,32 @@
             return false; 
         }
 
+        function compressImage(file, callback) { 
+            const reader = new FileReader(); 
+            reader.readAsDataURL(file); 
+            reader.onload = event => { 
+                const img = new Image(); 
+                img.src = event.target.result; 
+                img.onload = () => { 
+                    const canvas = document.createElement('canvas'); 
+                    const MAX_WIDTH = 600; 
+                    const scaleSize = MAX_WIDTH / img.width; 
+                    if (scaleSize >= 1) { 
+                        canvas.width = img.width; 
+                        canvas.height = img.height; 
+                    } else { 
+                        canvas.width = MAX_WIDTH; 
+                        canvas.height = img.height * scaleSize; 
+                    } 
+                    const ctx = canvas.getContext('2d'); 
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
+                    callback(canvas.toDataURL('image/jpeg', 0.5)); 
+                } 
+            } 
+        }
+
         // ==========================================
-        // 2. 視窗與 UI 切換
+        // 2. 視窗、Tab 與 UI 設定
         // ==========================================
         function switchView(viewName) { 
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
@@ -441,7 +471,7 @@
             document.querySelectorAll('.font-size-btn').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById('font-size-' + size);
             if(activeBtn) activeBtn.classList.add('active');
-            window.saveData();
+            saveData();
         }
 
         function applySettingsUI() { 
@@ -454,7 +484,7 @@
             document.getElementById('set-water-cost').value = s.waterCostRate;
             document.getElementById('set-bank').value = s.bankAccount;
             document.getElementById('set-pwd').value = s.password;
-            window.setFontSize(s.fontSize || 16);
+            setFontSize(s.fontSize || 16);
             
             const now = new Date();
             const monthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -468,7 +498,7 @@
         // 3. 登入與權限
         // ==========================================
         function verifyOwner() { 
-            if(window.checkLockout('owner')) return;
+            if(checkLockout('owner')) return;
             const input = document.getElementById('owner-pwd-input');
             const pwd = input ? input.value.trim() : ''; 
             
@@ -476,8 +506,8 @@
                 const err = document.getElementById('owner-login-error');
                 if(err) err.classList.add('hidden');
                 
-                window.state.loginAttempts.owner = 0; window.saveLoginState();
-                window.switchView('landlord'); window.switchTab('dashboard'); 
+                window.state.loginAttempts.owner = 0; saveLoginState();
+                switchView('landlord'); switchTab('dashboard'); 
                 if(input) input.value = '';
             } else { 
                 window.state.loginAttempts.owner++;
@@ -488,21 +518,21 @@
                     err.innerText = `密碼錯誤，剩餘 ${5 - window.state.loginAttempts.owner} 次`;
                     err.classList.remove('hidden');
                 }
-                window.saveLoginState();
+                saveLoginState();
             } 
         }
 
         function tenantLogin() { 
-             if(window.checkLockout('tenant')) return;
+             if(checkLockout('tenant')) return;
              const input = document.getElementById('tenant-phone-input');
              if(!input) return;
              const p = input.value.trim();
              const r = window.state.rooms.find(x=>x.phone===p); 
              if(r){ 
-                 window.state.loginAttempts.tenant = 0; window.saveLoginState(); 
+                 window.state.loginAttempts.tenant = 0; saveLoginState(); 
                  currentTenantRoom=r; 
                  if(typeof window.renderTenantDashboard === 'function') window.renderTenantDashboard(); 
-                 window.switchView('tenant'); 
+                 switchView('tenant'); 
              } else { 
                  window.state.loginAttempts.tenant++;
                  if(window.state.loginAttempts.tenant >= 5) { window.state.lockoutUntil.tenant = Date.now() + 300000; }
@@ -511,25 +541,25 @@
                      err.innerText = `查無此號碼，剩餘 ${5 - window.state.loginAttempts.tenant} 次`;
                      err.classList.remove('hidden');
                  }
-                 window.saveLoginState();
+                 saveLoginState();
              } 
         }
         
         function resetSystemSettings() {
              if(confirm("確定重置系統設定與密碼？(資料保留)")) {
                  window.state.settings = {"elecRate": 3.5, "elecCostRate": 2.1, "waterRate": 0, "waterCostRate": 50, "mgmtFee": 500, "bankAccount": "", "projectId": USER_PROJECT_ID, "password": "0000", "fontSize": 16};
-                 window.saveData(); 
+                 saveData(); 
                  alert("重置完成，密碼: 0000"); 
                  location.reload();
              }
         }
 
         function confirmExit() { 
-            if (confirm('確定要登出並返回首頁嗎？')) window.switchView('landing'); 
+            if (confirm('確定要登出並返回首頁嗎？')) switchView('landing'); 
         }
 
         // ==========================================
-        // 4. 房東功能 (渲染)
+        // 4. 房東功能 (渲染與邏輯)
         // ==========================================
         function renderRooms() { 
             const c=document.getElementById('rooms-list'); if(!c)return; 
@@ -587,7 +617,7 @@
             
             paidRecs.forEach(r => {
                 const y = (r.billingMonth || r.date).split('-')[0].split('/')[0];
-                const monthKey = r.billingMonth; // YYYY-MM
+                const monthKey = r.billingMonth; 
                 
                 if(!yearlyData[y]) yearlyData[y] = { income: 0, cost: 0 };
                 if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, items: [], repairCost: 0, utilityCost: 0 };
@@ -612,7 +642,7 @@
             
             window.state.repairs.forEach(r => {
                 if(r.cost && r.date) {
-                    const parts = r.date.split('/'); // 2024/06/01
+                    const parts = r.date.split('/'); 
                     if(parts.length < 2) return;
                     const y = parts[0];
                     const monthKey = parts[0] + '-' + parts[1].padStart(2, '0'); 
@@ -676,10 +706,9 @@
             }
             
             document.getElementById('fin-detail-list').innerHTML = d.items.map(r => `<div class="flex justify-between py-2 border-b border-slate-100 last:border-0"><span class="font-bold text-slate-700">${r.roomName}</span><span>$${r.total}</span></div>`).join('');
-            window.document.getElementById('modal-finance-detail').classList.remove('hidden');
+            document.getElementById('modal-finance-detail').classList.remove('hidden');
         }
 
-        // --- 房東功能 (業務邏輯) ---
         function loadUtilityRatesForMonth() {
             const picker = document.getElementById('util-month-picker');
             if(!picker) return;
@@ -702,16 +731,16 @@
             const water = Number(document.getElementById('util-water-total-cost').value);
             
             window.state.utilityRates[month] = { elecTotal: elec, waterTotal: water };
-            window.saveData(); // saves to local storage
+            saveData(); 
             
             if(db) {
                  db.collection('config').doc('rates').set(window.state.utilityRates).then(() => {
-                     window.showToast("月度成本已儲存至雲端");
+                     showToast("月度成本已儲存至雲端");
                  }).catch(e => {
-                     window.showToast("已儲存 (僅本機)");
+                     showToast("已儲存 (僅本機)");
                  });
             } else {
-                 window.showToast("已儲存 (僅本機)");
+                 showToast("已儲存 (僅本機)");
             }
         }
 
@@ -729,31 +758,28 @@
                 if(!rd.name) { alert('房號必填'); return; }
                 const idx=window.state.rooms.findIndex(x=>x.id==id); 
                 if(idx>-1) window.state.rooms[idx]=rd; else window.state.rooms.push(rd); 
-                window.saveData(); 
+                saveData(); 
                 if(db) await db.collection('rooms').doc(String(id)).set(rd); 
-                window.closeModal('modal-room-edit'); 
-                window.showToast('房訊儲存成功'); 
+                closeModal('modal-room-edit'); 
+                showToast('房訊儲存成功'); 
             } catch(e) { console.error(e); alert("儲存錯誤"); } finally { if(btn) { btn.disabled=false; btn.innerText="儲存"; } }
         }
         
-        function deleteRoom() { if(confirm('確定要刪除此房間嗎？')){ const id=document.getElementById('edit-room-id').value; window.state.rooms=window.state.rooms.filter(x=>x.id!=id); window.saveData(); window.deleteFromCloud('rooms',id); window.closeModal('modal-room-edit'); } }
-        function moveOutTenant() { if(confirm('退租？')){ const id=document.getElementById('edit-room-id').value; const r=window.state.rooms.find(x=>x.id==id); r.tenant=""; r.phone=""; r.start=""; r.end=""; r.contPhotos=[]; window.saveData(); window.syncToCloud('rooms',id,r); window.closeModal('modal-room-edit'); window.showToast('退租成功'); } }
-        function handleAddPhoto(input, type) { if(input.files[0]) { window.compressImage(input.files[0], (base64) => { tempEditPhotos[type].push(base64); window.renderEditPhotoList(type); input.value = ''; }); } }
+        function deleteRoom() { if(confirm('確定要刪除此房間嗎？')){ const id=document.getElementById('edit-room-id').value; window.state.rooms=window.state.rooms.filter(x=>x.id!=id); saveData(); deleteFromCloud('rooms',id); closeModal('modal-room-edit'); } }
+        function moveOutTenant() { if(confirm('退租？')){ const id=document.getElementById('edit-room-id').value; const r=window.state.rooms.find(x=>x.id==id); r.tenant=""; r.phone=""; r.start=""; r.end=""; r.contPhotos=[]; saveData(); syncToCloud('rooms',id,r); closeModal('modal-room-edit'); showToast('退租成功'); } }
+        function handleAddPhoto(input, type) { if(input.files[0]) { compressImage(input.files[0], (base64) => { tempEditPhotos[type].push(base64); renderEditPhotoList(type); input.value = ''; }); } }
         function renderEditPhotoList(type) { const container = document.getElementById(`edit-list-${type}`); const list = tempEditPhotos[type]; container.innerHTML = list.map((src, index) => `<div class="photo-item"><img src="${src}"><div class="photo-del" onclick="window.removeEditPhoto('${type}', ${index})"><i class="fa-solid fa-xmark"></i></div></div>`).join(''); }
-        function removeEditPhoto(type, index) { tempEditPhotos[type].splice(index, 1); window.renderEditPhotoList(type); }
+        function removeEditPhoto(type, index) { tempEditPhotos[type].splice(index, 1); renderEditPhotoList(type); }
         function viewBigImage(src) { document.getElementById('lightbox-img').src = src; document.getElementById('modal-lightbox').classList.remove('hidden'); }
         function triggerFile(id) { document.getElementById(id).click(); }
-        function handlePhoto(input, id) { if(input.files[0]) { window.compressImage(input.files[0], (base64) => { const img=document.getElementById(id); img.src=base64; img.classList.remove('hidden'); }); } }
-        function compressImage(file, callback) { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = event => { const img = new Image(); img.src = event.target.result; img.onload = () => { const canvas = document.createElement('canvas'); const MAX_WIDTH = 600; const scaleSize = MAX_WIDTH / img.width; if (scaleSize >= 1) { canvas.width = img.width; canvas.height = img.height; } else { canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize; } const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); callback(canvas.toDataURL('image/jpeg', 0.5)); } } }
+        function handlePhoto(input, id) { if(input.files[0]) { compressImage(input.files[0], (base64) => { const img=document.getElementById(id); img.src=base64; img.classList.remove('hidden'); }); } }
         
         function onBillMonthChange() {
-             // Read defaults into the UI if any
-             // V40.3 logic: The user enters costs in the Utilities tab, so here we just display fixed revenue rates
              document.getElementById('bill-elec-rate').value = 3.5; 
              document.getElementById('bill-water-fee').value = 0;
         }
 
-        function openBillFromDetail() { window.closeModal('modal-room-detail'); window.openBillModal(currentRoomId); }
+        function openBillFromDetail() { closeModal('modal-room-detail'); openBillModal(currentRoomId); }
         function openBillModal(id) { 
             const r=window.state.rooms.find(x=>x.id==id); 
             currentBillRoomId=id; 
@@ -765,7 +791,7 @@
             const monthStr = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,'0');
             document.getElementById('bill-month').value = monthStr; 
             
-            window.onBillMonthChange();
+            onBillMonthChange();
             document.getElementById('modal-bill').classList.remove('hidden'); 
         }
 
@@ -787,21 +813,54 @@
             const rec={id:Date.now().toString(), roomId:r.id, roomName:r.name, tenant:r.tenant, total:t, paid:false, date:new Date().toLocaleDateString('zh-TW'), billingMonth:m, elecCost:e, waterFee:wf, rent:r.rent, usage:u}; 
             r.meter=c; 
             window.state.records.unshift(rec); 
-            window.saveData(); 
+            saveData(); 
             if(db){ db.collection('rooms').doc(String(r.id)).set(r); db.collection('records').doc(String(rec.id)).set(rec); } 
-            window.closeModal('modal-bill'); 
-            window.showToast('帳單已生成'); 
+            closeModal('modal-bill'); 
+            showToast('帳單已生成'); 
         }
         
         function openPayModal(id) { const r=window.state.records.find(x=>x.id==id); if(r){ document.getElementById('pay-record-id').value=id; document.getElementById('pay-amount').innerText=`$${Math.round(r.total)}`; document.getElementById('pay-date').valueAsDate=new Date(); document.getElementById('modal-pay-confirm').classList.remove('hidden'); } }
-        function confirmPay() { const id=document.getElementById('pay-record-id').value; const r=window.state.records.find(x=>x.id==id); if(r){ r.paid=true; window.saveData(); if(db) db.collection('records').doc(String(id)).set(r); window.closeModal('modal-pay-confirm'); window.showToast('收款成功'); } }
+        function confirmPay() { const id=document.getElementById('pay-record-id').value; const r=window.state.records.find(x=>x.id==id); if(r){ r.paid=true; saveData(); if(db) db.collection('records').doc(String(id)).set(r); closeModal('modal-pay-confirm'); showToast('收款成功'); } }
         function openNotifyModal(id) { currentNotifyRecordId = id; const r = window.state.records.find(x => x.id == id); const text = `Hi ${r.tenant || '房客'}，${r.billingMonth} 的租金帳單已出爐。\n\n房號：${r.roomName}\n本期電度：${r.usage} 度\n\n總金額：$${Math.round(r.total)}\n\n請於 ${new Date().getDate() + 3} 日內匯款，謝謝！`; document.getElementById('notify-text').value = text; document.getElementById('modal-notify').classList.remove('hidden'); }
-        function copyNotify() { const text = document.getElementById('notify-text'); text.select(); document.execCommand('copy'); window.showToast('已複製'); }
-        function markNotified() { window.closeModal('modal-notify'); window.showToast('已標記通知'); }
+        function copyNotify() { const text = document.getElementById('notify-text'); text.select(); document.execCommand('copy'); showToast('已複製'); }
+        function markNotified() { closeModal('modal-notify'); showToast('已標記通知'); }
         function openRepairProcess(id) { const r = window.state.repairs.find(x => x.id == id); if (!r) return; document.getElementById('repair-process-id').value = id; document.getElementById('repair-desc-display').innerText = r.desc; document.getElementById('repair-reply-input').value = r.reply || ""; document.getElementById('repair-cost-input').value = r.cost || 0; document.getElementById('repair-done-check').checked = (r.status === 'done'); const photoContainer = document.getElementById('repair-photos-container'); const photoDisplay = document.getElementById('repair-photos-display'); if (r.photos && r.photos.length > 0) { photoContainer.classList.remove('hidden'); photoDisplay.innerHTML = r.photos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join(''); } else { photoContainer.classList.add('hidden'); } document.getElementById('modal-repair-process').classList.remove('hidden'); }
-        function saveRepairProcess() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if (r) { r.reply = document.getElementById('repair-reply-input').value; r.cost = Number(document.getElementById('repair-cost-input').value); r.status = document.getElementById('repair-done-check').checked ? 'done' : 'pending'; window.saveData(); if(db) db.collection('repairs').doc(String(id)).set(r); window.closeModal('modal-repair-process'); window.showToast('更新成功'); } }
-        async function analyzeRepair() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if(!r) return; const replyBox = document.getElementById('repair-reply-input'); const originalVal = replyBox.value; replyBox.value = "🤖 AI 診斷中..."; const prompt = `房客報修：「${r.desc}」。請以專業房東角度，條列式提供：1.可能原因 2.建議處理方式 3.預估費用(台幣)。`; const result = await callGemini(prompt); replyBox.value = (originalVal ? originalVal + "\n\n" : "") + result; }
-        function saveSettings() { window.state.settings.elecRate=Number(document.getElementById('set-elec').value); window.state.settings.elecCostRate=Number(document.getElementById('set-elec-cost').value); window.state.settings.waterRate=Number(document.getElementById('set-water').value); window.state.settings.waterCostRate=Number(document.getElementById('set-water-cost').value); window.state.settings.bankAccount=document.getElementById('set-bank').value; window.state.settings.password=document.getElementById('set-pwd').value; window.saveData(); }
+        function saveRepairProcess() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if (r) { r.reply = document.getElementById('repair-reply-input').value; r.cost = Number(document.getElementById('repair-cost-input').value); r.status = document.getElementById('repair-done-check').checked ? 'done' : 'pending'; saveData(); if(db) db.collection('repairs').doc(String(id)).set(r); closeModal('modal-repair-process'); showToast('更新成功'); renderDashboard(); } }
+        function saveSettings() { window.state.settings.elecRate=Number(document.getElementById('set-elec').value); window.state.settings.elecCostRate=Number(document.getElementById('set-elec-cost').value); window.state.settings.waterRate=Number(document.getElementById('set-water').value); window.state.settings.waterCostRate=Number(document.getElementById('set-water-cost').value); window.state.settings.bankAccount=document.getElementById('set-bank').value; window.state.settings.password=document.getElementById('set-pwd').value; const pidInput = document.getElementById('set-project-id').innerText; if(pidInput) window.state.settings.projectId = pidInput; saveData(); }
+
+        // --- AI API ---
+        const callGemini = async (prompt) => {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+            try {
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "AI 暫時無法回應";
+            } catch (e) { return "連線錯誤"; }
+        };
+
+        async function aiRewrite(tone) {
+            const textarea = document.getElementById('notify-text');
+            const originalText = textarea.value;
+            if(!originalText) return alert("請先選擇一筆帳單以生成內容");
+            const btn = event.target; const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>...'; btn.disabled = true;
+            const toneMap = { 'warm': '溫馨親切', 'formal': '正式有禮貌' };
+            const prompt = `改寫為「${toneMap[tone]}」語氣，保留金額與資訊：\n\n${originalText}`;
+            textarea.value = await callGemini(prompt);
+            btn.innerHTML = originalContent; btn.disabled = false;
+        }
+
+        async function analyzeRepair() { 
+            const id = document.getElementById('repair-process-id').value; 
+            const r = window.state.repairs.find(x => x.id == id); 
+            if(!r) return; 
+            const replyBox = document.getElementById('repair-reply-input'); 
+            const originalVal = replyBox.value; 
+            replyBox.value = "🤖 診斷中..."; 
+            const prompt = `房客報修：「${r.desc}」。請以房東角度，提供：1.可能原因 2.建議處理 3.預估費用。`; 
+            const result = await callGemini(prompt); 
+            replyBox.value = (originalVal ? originalVal + "\n\n" : "") + result; 
+        }
 
         // ==========================================
         // 5. 房客專用功能
@@ -844,7 +903,7 @@
         function handleTenantRepairPhotos(input) { 
             if (input.files) { 
                 Array.from(input.files).forEach(file => { 
-                    window.compressImage(file, (base64) => { 
+                    compressImage(file, (base64) => { 
                         tempTenantRepairPhotos.push(base64); 
                         const container = document.getElementById('t-repair-photo-preview'); 
                         if(container.innerHTML.includes('span')) container.innerHTML = ''; 
@@ -868,14 +927,14 @@
                 photos: [...tempTenantRepairPhotos] 
             }; 
             window.state.repairs.unshift(rp); 
-            window.saveData(); 
-            window.syncToCloud('repairs', rp.id, rp); 
+            saveData(); 
+            syncToCloud('repairs', rp.id, rp); 
             
             alert('報修已送出！'); 
             document.getElementById('t-repair-input').value = ''; 
             tempTenantRepairPhotos = [];
             document.getElementById('t-repair-photo-preview').innerHTML = '';
-            window.renderTenantDashboard(); 
+            renderTenantDashboard(); 
         }
 
         // ==========================================
@@ -885,7 +944,7 @@
             const statusEl = document.getElementById('status-indicator');
             if(typeof firebase === 'undefined') return;
             try {
-                if(!firebase.apps.length) firebase.initializeApp(window.userFirebaseConfig);
+                if(!firebase.apps.length) firebase.initializeApp(userFirebaseConfig); // Fixed: Use local userFirebaseConfig
                 await firebase.auth().signInAnonymously();
                 db = firebase.firestore();
                 
@@ -895,21 +954,22 @@
                         if (JSON.stringify(window.state.rooms) !== JSON.stringify(cloudRooms)) {
                             window.state.rooms = cloudRooms;
                             localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
-                            window.renderRooms(); window.renderDashboard();
+                            renderRooms(); renderDashboard();
                         }
                     }
-                    if(document.getElementById('status-indicator')) document.getElementById('status-indicator').innerHTML = '<i class="fa-solid fa-cloud mr-1"></i>已連線';
+                    if(statusEl) { statusEl.innerHTML = '<i class="fa-solid fa-cloud mr-1"></i>已連線'; statusEl.className = "text-[10px] font-bold bg-green-100 text-green-600 px-3 py-1 rounded-full cursor-pointer"; }
                     if(document.getElementById('cloud-status-text')) document.getElementById('cloud-status-text').innerText = "✅ 雲端連線正常";
                     if(document.getElementById('auth-status')) document.getElementById('auth-status').innerText = "已驗證";
                 });
-                db.collection('records').onSnapshot(snap => { if(!snap.empty) window.state.records = snap.docs.map(d => d.data()); window.renderDashboard(); });
-                db.collection('repairs').onSnapshot(snap => { if(!snap.empty) window.state.repairs = snap.docs.map(d => d.data()); window.renderDashboard(); });
+                db.collection('records').onSnapshot(snap => { if(!snap.empty) { window.state.records = snap.docs.map(d => d.data()); renderDashboard(); } });
+                db.collection('repairs').onSnapshot(snap => { if(!snap.empty) { window.state.repairs = snap.docs.map(d => d.data()); renderDashboard(); } });
+                db.collection('config').doc('rates').onSnapshot(snap => { if(snap.exists) { window.state.utilityRates = snap.data(); localStorage.setItem('rental_utility_rates', JSON.stringify(window.state.utilityRates)); }});
             } catch(e) { console.error(e); if(statusEl) statusEl.innerText = '連線失敗'; }
         }
         
         async function syncToCloud(coll, id, data) { if(db) { try { await db.collection(coll).doc(String(id)).set(data); } catch (e) { console.error(e); } } }
         async function deleteFromCloud(coll, id) { if(db) try { await db.collection(coll).doc(String(id)).delete(); } catch(e) {} }
-        async function forceUploadAllLocalData() { if(!db) return alert("❌ 未連線"); if(!confirm("上傳？")) return; try { for(const r of window.state.rooms) await syncToCloud('rooms', r.id, r); for(const r of window.state.records) await syncToCloud('records', r.id, r); for(const r of window.state.repairs) await syncToCloud('repairs', r.id, r); alert('完成'); } catch(e){alert('失敗');} }
+        async function forceUploadAllLocalData() { if(!db) return alert("❌ 未連線"); if(!confirm("上傳？")) return; try { for(const r of window.state.rooms) await syncToCloud('rooms', r.id, r); for(const r of window.state.records) await syncToCloud('records', r.id, r); for(const r of window.state.repairs) await syncToCloud('repairs', r.id, r); await syncToCloud('config', 'rates', window.state.utilityRates); alert('完成'); } catch(e){alert('失敗');} }
         async function forceDownloadCloudData() { if(!db) return alert("❌ 未連線"); if(!confirm("下載？")) return; try { const snap = await db.collection('rooms').get(); window.state.rooms = snap.docs.map(d=>d.data()); localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms)); alert('完成'); location.reload(); } catch(e){alert('失敗');} }
         function clearCacheAndReload() { if(confirm("確定？")) { localStorage.clear(); location.reload(); } }
         function exportData() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "rental_manager_backup_" + new Date().toISOString() + ".json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
@@ -933,9 +993,9 @@
         window.onload = function() {
             try {
                 if(document.getElementById('landing-id')) document.getElementById('landing-id').innerText = window.state.settings.projectId;
-                window.setFontSize(window.state.settings.fontSize || 16);
-                window.applySettingsUI();
-                window.initCloud();
+                setFontSize(window.state.settings.fontSize || 16);
+                applySettingsUI();
+                initCloud();
             } catch (e) {
                 console.error("Init Error:", e);
             }
