@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V47.0 正式上線版</title>
+    <title>租屋管家 Pro - V48.0 全面進化版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -91,8 +91,18 @@
         .photo-item img { width: 100%; height: 100%; object-fit: cover; }
         .photo-del { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
-        .pie-chart-wrapper { position: relative; width: 180px; height: 180px; margin: 0 auto; }
+        /* 圖表 */
+        .pie-chart-wrapper { position: relative; width: 160px; height: 160px; margin: 0 auto; }
         .pie-chart { width: 100%; height: 100%; border-radius: 50%; background: #e5e7eb; } 
+        .pie-chart-inner { position: absolute; inset: 25px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        
+        .bar-chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 120px; padding-top: 20px; gap: 8px; }
+        .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .bar { width: 100%; background: #e2e8f0; border-radius: 6px 6px 0 0; transition: height 0.5s ease; min-height: 4px; position: relative; }
+        .bar.positive { background: #10b981; }
+        .bar.negative { background: #ef4444; }
+        .bar-label { font-size: 0.6rem; color: #94a3b8; font-weight: 700; }
+        .bar-val { font-size: 0.6rem; color: #64748b; font-weight: 700; margin-bottom: 2px; }
     </style>
 </head>
 <body>
@@ -104,7 +114,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V47.0 正式上線版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V48.0 全面進化版</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">管理系統登入</button>
             </div>
@@ -112,7 +122,7 @@
         </div>
     </div>
 
-    <!-- 1. Login Page -->
+    <!-- 1. Login Pages -->
     <div id="view-owner-login" class="view-section hidden min-h-screen bg-white flex flex-col items-center justify-center p-8">
         <div class="w-full max-w-sm">
             <button onclick="window.switchView('landing')" class="mb-10 text-slate-400 font-bold"><i class="fa-solid fa-chevron-left mr-2"></i>返回</button>
@@ -163,14 +173,21 @@
                 </div>
                 
                 <h3 class="text-sm font-bold text-slate-500 mb-3 ml-1">待收款項</h3>
-                <div id="dashboard-bills-list" class="space-y-3"></div>
+                <div id="dashboard-bills-list" class="space-y-3 pb-24"></div>
             </div>
 
             <!-- ROOMS -->
             <div id="tab-rooms" class="landlord-tab hidden">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-black text-slate-800">房間管理</h2>
-                    <button onclick="window.openRoomModal()" class="btn btn-primary text-sm px-4 shadow-md">+ 新增</button>
+                <div class="flex flex-col gap-3 mb-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-black text-slate-800">房間管理</h2>
+                        <button onclick="window.openRoomModal()" class="btn btn-primary text-sm px-4 shadow-md">+ 新增</button>
+                    </div>
+                    <!-- 搜尋快篩 -->
+                    <div class="relative">
+                        <input type="text" id="room-search-input" class="input-field !py-3 !pl-10 shadow-sm" placeholder="🔍 搜尋房號或房客..." oninput="window.renderRooms()">
+                        <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    </div>
                 </div>
                 <div id="rooms-list" class="space-y-3 pb-24"></div>
             </div>
@@ -204,6 +221,13 @@
             <div id="tab-finance" class="landlord-tab hidden">
                 <h2 class="text-2xl font-black text-slate-800 mb-4">財務報表</h2>
                 <div id="yearly-summary-container" class="mb-6"></div>
+                
+                <!-- 趨勢圖 -->
+                <div class="card p-5 mb-6 shadow-md border-b-4 border-emerald-400">
+                    <h3 class="text-sm font-bold text-slate-600 mb-4">近 6 個月淨利趨勢</h3>
+                    <div id="finance-trend-chart" class="bar-chart-container"></div>
+                </div>
+
                 <h3 class="text-sm font-bold text-slate-500 mb-3 ml-1">月度明細</h3>
                 <div id="finance-list" class="space-y-3 pb-24"></div>
                 <div id="empty-finance-msg" class="hidden text-center py-20 text-slate-300 font-bold">尚無數據</div>
@@ -230,7 +254,7 @@
                 </div>
 
                 <div class="card p-6 mb-6 space-y-5">
-                    <div class="border-b pb-2 mb-2"><span class="text-sm font-black text-slate-800">帳號與安全 (將同步至雲端)</span></div>
+                    <div class="border-b pb-2 mb-2"><span class="text-sm font-black text-slate-800">帳號與安全</span></div>
                     <div><label class="input-label">房東密碼</label><input type="text" id="set-pwd" class="input-field" onchange="window.saveSettings()"></div>
                     
                     <div class="pt-2">
@@ -255,13 +279,10 @@
                         <label class="input-label">匯款帳號</label>
                         <input type="text" id="set-bank-account" class="input-field" placeholder="請輸入帳號" onchange="window.saveSettings()">
                     </div>
-                    
-                    <!-- 新增的強制儲存按鈕 -->
-                    <button onclick="window.saveSettings()" class="w-full btn btn-primary shadow-md mt-4">儲存設定並同步至雲端</button>
                 </div>
 
                 <div class="card p-6 mb-6 border-2 border-indigo-50 bg-indigo-50/30">
-                    <h3 class="font-bold text-indigo-900 mb-4 text-sm flex items-center"><i class="fa-solid fa-cloud mr-2"></i>雲端資料同步</h3>
+                    <h3 class="font-bold text-indigo-900 mb-4 text-sm flex items-center"><i class="fa-solid fa-cloud mr-2"></i>資料備份與還原</h3>
                     <div class="space-y-3">
                         <div class="flex justify-between text-xs font-bold text-gray-500 mb-1">
                             <span>專案 ID: <span id="set-project-id" class="text-indigo-600">---</span></span>
@@ -277,7 +298,13 @@
                     </div>
                 </div>
                 
-                <button onclick="window.exportData()" class="w-full btn btn-outline mb-3">匯出備份 JSON</button>
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                     <button onclick="window.exportData()" class="w-full btn btn-outline text-xs">匯出備份 (JSON)</button>
+                     <button onclick="document.getElementById('import-file').click()" class="w-full btn btn-outline text-xs">匯入還原 (JSON)</button>
+                     <input type="file" id="import-file" class="hidden" accept=".json" onchange="window.importData(this)">
+                </div>
+
+                <button onclick="window.saveSettings()" class="w-full btn btn-primary shadow-md mb-3">儲存設定並同步至雲端</button>
                 <button onclick="window.confirmExit()" class="w-full text-red-400 font-bold text-sm py-4">登出系統</button>
             </div>
         </main>
@@ -420,34 +447,16 @@
         };
         const USER_PROJECT_ID = userFirebaseConfig.projectId;
 
-        // 防損毀 JSON 讀取機制
-        const safeJSONParse = (key, defaultVal) => {
-            try { 
-                const data = JSON.parse(localStorage.getItem(key)); 
-                return data !== null ? data : defaultVal;
-            } catch(e) { return defaultVal; }
-        };
-
         // --- 初始化 State ---
         window.state = {
-            rooms: safeJSONParse('rental_rooms', []),
-            records: safeJSONParse('rental_records', []),
-            repairs: safeJSONParse('rental_repairs', []),
-            utilityRates: safeJSONParse('rental_utility_rates', {}),
-            settings: safeJSONParse('rental_settings', {
-                elecRate: 3.5, elecCostRate: 2.1, waterRate: 0, waterCostRate: 50, 
-                mgmtFee: 500, bankCode: "", bankAccount: "", projectId: USER_PROJECT_ID, 
-                password: "0000", fontSize: 16, geminiApiKey: ""
-            }),
-            loginAttempts: safeJSONParse('rental_login_attempts', {"owner":0}),
-            lockoutUntil: safeJSONParse('rental_lockout_until', {"owner":0})
+            rooms: JSON.parse(localStorage.getItem('rental_rooms') || '[]'),
+            records: JSON.parse(localStorage.getItem('rental_records') || '[]'),
+            repairs: JSON.parse(localStorage.getItem('rental_repairs') || '[]'),
+            utilityRates: JSON.parse(localStorage.getItem('rental_utility_rates') || '{}'),
+            settings: JSON.parse(localStorage.getItem('rental_settings') || `{"elecRate": 3.5, "elecCostRate": 2.1, "waterRate": 0, "waterCostRate": 50, "mgmtFee": 500, "bankCode": "", "bankAccount": "", "projectId": "${USER_PROJECT_ID}", "password": "0000", "fontSize": 16, "geminiApiKey": ""}`),
+            loginAttempts: JSON.parse(localStorage.getItem('rental_login_attempts') || '{"owner":0,"tenant":0}'),
+            lockoutUntil: JSON.parse(localStorage.getItem('rental_lockout_until') || '{"owner":0,"tenant":0}')
         };
-        
-        // 確保 rooms 與 records 是陣列（防禦型賦值）
-        if (!Array.isArray(window.state.rooms)) window.state.rooms = [];
-        if (!Array.isArray(window.state.records)) window.state.records = [];
-        if (!Array.isArray(window.state.repairs)) window.state.repairs = [];
-        
         window.state.settings.projectId = USER_PROJECT_ID;
 
         // --- 全域變數 ---
@@ -655,7 +664,26 @@
         // ==========================================
         window.renderRooms = function() { 
             const c=document.getElementById('rooms-list'); if(!c)return; 
-            c.innerHTML=window.state.rooms.map(r=>{ 
+            
+            // 搜尋過濾
+            const searchInput = document.getElementById('room-search-input');
+            const query = searchInput ? searchInput.value.toLowerCase() : '';
+            
+            const filteredRooms = window.state.rooms.filter(r => {
+                const name = (r.name || '').toLowerCase();
+                const tenant = (r.tenant || '').toLowerCase();
+                return name.includes(query) || tenant.includes(query);
+            });
+            
+            // 排序：房號
+            filteredRooms.sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
+
+            if(filteredRooms.length === 0) {
+                c.innerHTML = '<div class="text-center py-10 text-slate-300">查無房間</div>';
+                return;
+            }
+
+            c.innerHTML=filteredRooms.map(r=>{ 
                 const unpaidRecs = window.state.records.filter(x=>x.roomId==r.id&&!x.paid);
                 const unpaid=unpaidRecs.reduce((a,b)=>a+b.total,0); 
                 const hasNotified = unpaidRecs.some(x => x.notified); 
@@ -783,6 +811,44 @@
             const yStat = yearlyData[currentYear] || { income: 0, cost: 0 };
             const yNet = yStat.income - yStat.cost;
             
+            // 趨勢圖 (Bar Chart) 繪製
+            const trendContainer = document.getElementById('finance-trend-chart');
+            if(trendContainer) {
+                // 取最近6個月
+                let months = [];
+                for(let i=5; i>=0; i--) {
+                    const d = new Date();
+                    d.setMonth(d.getMonth() - i);
+                    const mk = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                    months.push(mk);
+                }
+                
+                let maxVal = 1;
+                months.forEach(m => {
+                    const d = grouped[m];
+                    if(d) {
+                        const net = d.income - d.cost;
+                        if(Math.abs(net) > maxVal) maxVal = Math.abs(net);
+                    }
+                });
+
+                let barsHTML = months.map(m => {
+                    const d = grouped[m] || { income:0, cost:0 };
+                    const net = d.income - d.cost;
+                    const heightPct = Math.max(10, Math.min(100, (Math.abs(net) / maxVal) * 100));
+                    const colorClass = net >= 0 ? 'positive' : 'negative';
+                    const shortMonth = m.split('-')[1];
+                    return `
+                    <div class="bar-group">
+                        <div class="bar-val">$${Math.round(Math.abs(net)/1000)}k</div>
+                        <div class="bar ${colorClass}" style="height: ${heightPct}%"></div>
+                        <div class="bar-label">${shortMonth}月</div>
+                    </div>`;
+                }).join('');
+                trendContainer.innerHTML = barsHTML;
+            }
+
+            // 更新年度總結
             const totalYearly = yStat.income || 1;
             const costPct = Math.min(100, (yStat.cost / totalYearly) * 100);
             const netPct = Math.max(0, 100 - costPct);
@@ -1081,9 +1147,7 @@
             
             const u=c-(r.meter||0); 
             const e=u*er; 
-            
-            // 安全的整數運算
-            const t = Math.round(Number(r.rent) + e + wf + mf); 
+            const t=parseInt(r.rent)+e+wf+mf; 
             
             const rec={id:Date.now().toString(), roomId:r.id, roomName:r.name, tenant:r.tenant, total:t, paid:false, date:new Date().toLocaleDateString('zh-TW'), billingMonth:m, elecCost:e, waterFee:wf, rent:r.rent, usage:u, notified: false}; 
             r.meter=c; 
@@ -1149,20 +1213,7 @@
             window.showToast('已標記為催繳'); 
         }
         
-        window.openRepairProcess = function(id) { 
-            const r = window.state.repairs.find(x => x.id == id); 
-            if (!r) return; 
-            document.getElementById('repair-process-id').value = id; 
-            document.getElementById('repair-desc-display').innerText = r.desc; 
-            document.getElementById('repair-reply-input').value = r.reply || ""; 
-            document.getElementById('repair-cost-input').value = r.cost || 0; 
-            document.getElementById('repair-done-check').checked = (r.status === 'done'); 
-            
-            const photoContainer = document.getElementById('repair-photos-container');
-            if (photoContainer) photoContainer.classList.add('hidden');
-            
-            document.getElementById('modal-repair-process').classList.remove('hidden'); 
-        }
+        window.openRepairProcess = function(id) { const r = window.state.repairs.find(x => x.id == id); if (!r) return; document.getElementById('repair-process-id').value = id; document.getElementById('repair-desc-display').innerText = r.desc; document.getElementById('repair-reply-input').value = r.reply || ""; document.getElementById('repair-cost-input').value = r.cost || 0; document.getElementById('repair-done-check').checked = (r.status === 'done'); const photoContainer = document.getElementById('repair-photos-container'); const photoDisplay = document.getElementById('repair-photos-display'); if (r.photos && r.photos.length > 0) { photoContainer.classList.remove('hidden'); photoDisplay.innerHTML = r.photos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join(''); } else { photoContainer.classList.add('hidden'); } document.getElementById('modal-repair-process').classList.remove('hidden'); }
         
         window.saveRepairProcess = function() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if (r) { r.reply = document.getElementById('repair-reply-input').value; r.cost = Number(document.getElementById('repair-cost-input').value); r.status = document.getElementById('repair-done-check').checked ? 'done' : 'pending'; window.saveData(); if(db) db.collection('repairs').doc(String(id)).set(r); window.closeModal('modal-repair-process'); window.showToast('更新成功'); } }
 
@@ -1220,7 +1271,7 @@
             const statusEl = document.getElementById('status-indicator');
             if(typeof firebase === 'undefined') return;
             try {
-                if(!firebase.apps.length) firebase.initializeApp(userFirebaseConfig);
+                if(!firebase.apps.length) firebase.initializeApp(userFirebaseConfig); // 無需 window.
                 await firebase.auth().signInAnonymously();
                 db = firebase.firestore();
                 
@@ -1251,69 +1302,10 @@
             } catch(e) { console.error(e); if(statusEl) statusEl.innerText = '連線失敗'; }
         }
         
-        window.forceUploadAllLocalData = async function() { 
-            if(!db) return alert("❌ 未連線"); 
-            if(!confirm("確定要將本機資料覆蓋到雲端嗎？")) return; 
-            try { 
-                window.showToast("🚀 正在極速上傳中...");
-                
-                const promises = [];
-                
-                // Pack all rooms
-                window.state.rooms.forEach(r => {
-                    promises.push(db.collection('rooms').doc(String(r.id)).set(r));
-                });
-                
-                // Pack all records
-                window.state.records.forEach(r => {
-                    promises.push(db.collection('records').doc(String(r.id)).set(r));
-                });
-                
-                // Pack all repairs
-                window.state.repairs.forEach(r => {
-                    promises.push(db.collection('repairs').doc(String(r.id)).set(r));
-                });
-                
-                // Pack configs
-                promises.push(db.collection('config').doc('rates').set(window.state.utilityRates));
-                promises.push(db.collection('config').doc('settings').set(window.state.settings));
-
-                await Promise.all(promises);
-                alert('✅ 所有資料上傳完成'); 
-            } catch(e){
-                console.error(e);
-                alert('❌ 上傳失敗: ' + e.message);
-            } 
-        }
-        
-        window.forceDownloadCloudData = async function() { 
-            if(!db) return alert("❌ 未連線"); 
-            if(!confirm("確定要下載雲端資料並覆蓋本機嗎？")) return; 
-            try { 
-                window.showToast("🚀 正在極速下載中...");
-                const [snap1, snap2, snap3, snap4, snap5] = await Promise.all([
-                    db.collection('rooms').get(),
-                    db.collection('records').get(),
-                    db.collection('repairs').get(),
-                    db.collection('config').doc('rates').get(),
-                    db.collection('config').doc('settings').get()
-                ]);
-                
-                window.state.rooms = snap1.docs.map(d=>d.data()); 
-                window.state.records = snap2.docs.map(d=>d.data()); 
-                window.state.repairs = snap3.docs.map(d=>d.data()); 
-                if(snap4.exists) window.state.utilityRates = snap4.data(); 
-                if(snap5.exists) window.state.settings = { ...window.state.settings, ...snap5.data() }; 
-                
-                window.saveData(); 
-                alert('✅ 下載完成，即將重整畫面'); 
-                location.reload(); 
-            } catch(e){
-                console.error(e);
-                alert('❌ 下載失敗: ' + e.message);
-            } 
-        }
-        
+        window.syncToCloud = async function(coll, id, data) { if(db) { try { await db.collection(coll).doc(String(id)).set(data); } catch (e) { console.error(e); } } }
+        window.deleteFromCloud = async function(coll, id) { if(db) try { await db.collection(coll).doc(String(id)).delete(); } catch(e) {} }
+        window.forceUploadAllLocalData = async function() { if(!db) return alert("❌ 未連線"); if(!confirm("上傳？")) return; try { for(const r of window.state.rooms) await window.syncToCloud('rooms', r.id, r); for(const r of window.state.records) await window.syncToCloud('records', r.id, r); for(const r of window.state.repairs) await window.syncToCloud('repairs', r.id, r); await window.syncToCloud('config', 'rates', window.state.utilityRates); alert('完成'); } catch(e){alert('失敗');} }
+        window.forceDownloadCloudData = async function() { if(!db) return alert("❌ 未連線"); if(!confirm("下載？")) return; try { const snap = await db.collection('rooms').get(); window.state.rooms = snap.docs.map(d=>d.data()); localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms)); alert('完成'); location.reload(); } catch(e){alert('失敗');} }
         window.clearCacheAndReload = function() { if(confirm("確定清除暫存重載？(將從雲端抓取最新資料)")) { localStorage.clear(); location.reload(); } }
         window.exportData = function() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "rental_manager_backup_" + new Date().toISOString() + ".json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
 
