@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V46.1 雲端渲染修復版</title>
+    <title>租屋管家 Pro - V46.2 設定雲端同步版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -93,6 +93,7 @@
 
         .pie-chart-wrapper { position: relative; width: 180px; height: 180px; margin: 0 auto; }
         .pie-chart { width: 100%; height: 100%; border-radius: 50%; background: #e5e7eb; } 
+        .pie-chart-inner { position: absolute; inset: 25px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; }
     </style>
 </head>
 <body>
@@ -104,7 +105,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V46.1 雲端渲染修復版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V46.2 設定雲端同步版</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">管理系統登入</button>
             </div>
@@ -230,7 +231,7 @@
                 </div>
 
                 <div class="card p-6 mb-6 space-y-5">
-                    <div class="border-b pb-2 mb-2"><span class="text-sm font-black text-slate-800">帳號與安全</span></div>
+                    <div class="border-b pb-2 mb-2"><span class="text-sm font-black text-slate-800">帳號與安全 (將同步至雲端)</span></div>
                     <div><label class="input-label">房東密碼</label><input type="text" id="set-pwd" class="input-field" onchange="window.saveSettings()"></div>
                     
                     <div class="pt-2">
@@ -255,6 +256,9 @@
                         <label class="input-label">匯款帳號</label>
                         <input type="text" id="set-bank-account" class="input-field" placeholder="請輸入帳號" onchange="window.saveSettings()">
                     </div>
+                    
+                    <!-- 新增的強制儲存按鈕 -->
+                    <button onclick="window.saveSettings()" class="w-full btn btn-primary shadow-md mt-4">儲存設定並同步至雲端</button>
                 </div>
 
                 <div class="card p-6 mb-6 border-2 border-indigo-50 bg-indigo-50/30">
@@ -574,7 +578,17 @@
             if (apiKeyEl) window.state.settings.geminiApiKey = apiKeyEl.value;
             
             window.saveData(); 
-            window.showToast('設定已儲存');
+
+            // 同步至雲端設定
+            if(db) {
+                 db.collection('config').doc('settings').set(window.state.settings).then(() => {
+                     window.showToast('設定已儲存並同步至雲端');
+                 }).catch(e => {
+                     window.showToast('設定已儲存 (僅本機)');
+                 });
+            } else {
+                 window.showToast('設定已儲存 (僅本機)');
+            }
         }
 
         // ==========================================
@@ -661,7 +675,6 @@
             const pendingReps = window.state.repairs.filter(r => r.status === 'pending');
             if(document.getElementById('dash-repair-notify')) document.getElementById('dash-repair-notify').innerText = `${pendingReps.length} 件`;
             
-            // Dashboard Net Profit (Approximate: Revenue - Repair)
             if(document.getElementById('dash-net')) document.getElementById('dash-net').innerText = `$${Math.round(income - repairCost).toLocaleString()}`;
 
             const list = document.getElementById('dashboard-bills-list');
@@ -1116,28 +1129,19 @@
             window.showToast('已標記為催繳'); 
         }
         
-        window.openRepairProcess = function(id) { 
-            const r = window.state.repairs.find(x => x.id == id); 
-            if (!r) return; 
-            document.getElementById('repair-process-id').value = id; 
-            document.getElementById('repair-desc-display').innerText = r.desc; 
-            document.getElementById('repair-reply-input').value = r.reply || ""; 
-            document.getElementById('repair-cost-input').value = r.cost || 0; 
-            document.getElementById('repair-done-check').checked = (r.status === 'done'); 
-            
-            // This fix handles the fact that the tenant view was removed
-            // so we don't display photos dynamically for now, to prevent missing elements error
-            const photoContainer = document.getElementById('repair-photos-container');
-            if (photoContainer) photoContainer.classList.add('hidden');
-            
-            document.getElementById('modal-repair-process').classList.remove('hidden'); 
-        }
+        window.openRepairProcess = function(id) { const r = window.state.repairs.find(x => x.id == id); if (!r) return; document.getElementById('repair-process-id').value = id; document.getElementById('repair-desc-display').innerText = r.desc; document.getElementById('repair-reply-input').value = r.reply || ""; document.getElementById('repair-cost-input').value = r.cost || 0; document.getElementById('repair-done-check').checked = (r.status === 'done'); const photoContainer = document.getElementById('repair-photos-container'); const photoDisplay = document.getElementById('repair-photos-display'); if (r.photos && r.photos.length > 0) { photoContainer.classList.remove('hidden'); photoDisplay.innerHTML = r.photos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join(''); } else { photoContainer.classList.add('hidden'); } document.getElementById('modal-repair-process').classList.remove('hidden'); }
         
         window.saveRepairProcess = function() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if (r) { r.reply = document.getElementById('repair-reply-input').value; r.cost = Number(document.getElementById('repair-cost-input').value); r.status = document.getElementById('repair-done-check').checked ? 'done' : 'pending'; window.saveData(); if(db) db.collection('repairs').doc(String(id)).set(r); window.closeModal('modal-repair-process'); window.showToast('更新成功'); } }
 
-        // --- AI API ---
+        // --- AI API (讀取環境變數或自訂設定) ---
         window.callGemini = async function(prompt) {
-            const apiKey = GEMINI_API_KEY; 
+            // 優先讀取用戶在系統設定中填入的 API Key，若無則使用預設 Key
+            const apiKey = window.state.settings.geminiApiKey || GEMINI_API_KEY; 
+            
+            if (!apiKey) {
+                alert("請先至「設定」頁面輸入 Gemini API Key 以啟用 AI 功能！\n(可在 Google AI Studio 免費申請)");
+                return "API Key 尚未設定，請至設定頁面輸入。";
+            }
             
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             try {
@@ -1146,7 +1150,7 @@
                     headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
                 });
-                if (!response.ok) return "API 權限錯誤 (403/401)，無法執行 AI";
+                if (!response.ok) return "API 權限錯誤 (403/401)，請檢查 Key 是否正確";
                 const data = await response.json();
                 return data.candidates?.[0]?.content?.parts?.[0]?.text || "AI 暫時無法回應";
             } catch (e) { return "連線錯誤，請檢查網路狀態"; }
@@ -1159,7 +1163,7 @@
             const btn = event.target; const originalContent = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 處理中...'; btn.disabled = true;
             const toneMap = { 'warm': '溫馨親切、不要給人壓力', 'formal': '正式、專業、有禮貌' };
-            const prompt = `請將以下租屋通知訊息改寫為「${toneMap[tone]}」的語氣。請務必保留所有的金額、帳單月份、房號與匯款銀行帳號等重要資訊，使用繁體中文。請直接輸出改寫後的內容，不要加上「好的」、「這是一則...」等開場白，也不要加上任何結尾預留欄位，讓我能直接複製貼上：\n\n${originalText}`;
+            const prompt = `請將以下租屋通知訊息改寫為「${toneMap[tone]}」的語氣。請務必保留所有的金額、帳單月份、房號與匯款銀行帳號等重要資訊，使用繁體中文：\n\n${originalText}`;
             textarea.value = await window.callGemini(prompt);
             btn.innerHTML = originalContent; btn.disabled = false;
         }
@@ -1183,10 +1187,18 @@
             const statusEl = document.getElementById('status-indicator');
             if(typeof firebase === 'undefined') return;
             try {
-                if(!firebase.apps.length) firebase.initializeApp(userFirebaseConfig); // 無需 window.
+                if(!firebase.apps.length) firebase.initializeApp(userFirebaseConfig);
                 await firebase.auth().signInAnonymously();
                 db = firebase.firestore();
                 
+                // Fetch settings once upon cloud connection
+                const settingsSnap = await db.collection('config').doc('settings').get();
+                if(settingsSnap.exists) {
+                    window.state.settings = { ...window.state.settings, ...settingsSnap.data() };
+                    localStorage.setItem('rental_settings', JSON.stringify(window.state.settings));
+                    window.applySettingsUI();
+                }
+
                 db.collection('rooms').onSnapshot(snap => {
                     if(!snap.empty) {
                         const cloudRooms = snap.docs.map(d => d.data());
@@ -1200,16 +1212,80 @@
                     if(document.getElementById('cloud-status-text')) document.getElementById('cloud-status-text').innerText = "✅ 雲端連線正常";
                     if(document.getElementById('auth-status')) document.getElementById('auth-status').innerText = "已驗證";
                 });
-                db.collection('records').onSnapshot(snap => { window.state.records = snap.docs.map(d => d.data()); window.renderDashboard(); window.renderRooms(); });
-                db.collection('repairs').onSnapshot(snap => { window.state.repairs = snap.docs.map(d => d.data()); window.renderDashboard(); });
+                db.collection('records').onSnapshot(snap => { if(!snap.empty) { window.state.records = snap.docs.map(d => d.data()); window.renderDashboard(); window.renderRooms(); } });
+                db.collection('repairs').onSnapshot(snap => { if(!snap.empty) { window.state.repairs = snap.docs.map(d => d.data()); window.renderDashboard(); } });
                 db.collection('config').doc('rates').onSnapshot(snap => { if(snap.exists) { window.state.utilityRates = snap.data(); localStorage.setItem('rental_utility_rates', JSON.stringify(window.state.utilityRates)); }});
             } catch(e) { console.error(e); if(statusEl) statusEl.innerText = '連線失敗'; }
         }
         
         window.syncToCloud = async function(coll, id, data) { if(db) { try { await db.collection(coll).doc(String(id)).set(data); } catch (e) { console.error(e); } } }
         window.deleteFromCloud = async function(coll, id) { if(db) try { await db.collection(coll).doc(String(id)).delete(); } catch(e) {} }
-        window.forceUploadAllLocalData = async function() { if(!db) return alert("❌ 未連線"); if(!confirm("上傳？")) return; try { for(const r of window.state.rooms) await window.syncToCloud('rooms', r.id, r); for(const r of window.state.records) await window.syncToCloud('records', r.id, r); for(const r of window.state.repairs) await window.syncToCloud('repairs', r.id, r); await window.syncToCloud('config', 'rates', window.state.utilityRates); alert('完成'); } catch(e){alert('失敗');} }
-        window.forceDownloadCloudData = async function() { if(!db) return alert("❌ 未連線"); if(!confirm("下載？")) return; try { const snap1 = await db.collection('rooms').get(); window.state.rooms = snap1.docs.map(d=>d.data()); const snap2 = await db.collection('records').get(); window.state.records = snap2.docs.map(d=>d.data()); const snap3 = await db.collection('repairs').get(); window.state.repairs = snap3.docs.map(d=>d.data()); const snap4 = await db.collection('config').doc('rates').get(); if(snap4.exists) window.state.utilityRates = snap4.data(); window.saveData(); alert('完成'); location.reload(); } catch(e){alert('失敗');} }
+        
+        window.forceUploadAllLocalData = async function() { 
+            if(!db) return alert("❌ 未連線"); 
+            if(!confirm("確定要將本機資料覆蓋到雲端嗎？")) return; 
+            try { 
+                window.showToast("🚀 正在極速上傳中...");
+                const batch = db.batch();
+                
+                // Pack all rooms
+                window.state.rooms.forEach(r => {
+                    const ref = db.collection('rooms').doc(String(r.id));
+                    batch.set(ref, r);
+                });
+                
+                // Pack all records
+                window.state.records.forEach(r => {
+                    const ref = db.collection('records').doc(String(r.id));
+                    batch.set(ref, r);
+                });
+                
+                // Pack all repairs
+                window.state.repairs.forEach(r => {
+                    const ref = db.collection('repairs').doc(String(r.id));
+                    batch.set(ref, r);
+                });
+                
+                // Pack configs
+                batch.set(db.collection('config').doc('rates'), window.state.utilityRates);
+                batch.set(db.collection('config').doc('settings'), window.state.settings);
+
+                await batch.commit();
+                alert('✅ 所有資料上傳完成'); 
+            } catch(e){
+                console.error(e);
+                alert('❌ 上傳失敗: ' + e.message);
+            } 
+        }
+        
+        window.forceDownloadCloudData = async function() { 
+            if(!db) return alert("❌ 未連線"); 
+            if(!confirm("確定要下載雲端資料並覆蓋本機嗎？")) return; 
+            try { 
+                window.showToast("🚀 正在極速下載中...");
+                const [snap1, snap2, snap3, snap4, snap5] = await Promise.all([
+                    db.collection('rooms').get(),
+                    db.collection('records').get(),
+                    db.collection('repairs').get(),
+                    db.collection('config').doc('rates').get(),
+                    db.collection('config').doc('settings').get()
+                ]);
+                
+                window.state.rooms = snap1.docs.map(d=>d.data()); 
+                window.state.records = snap2.docs.map(d=>d.data()); 
+                window.state.repairs = snap3.docs.map(d=>d.data()); 
+                if(snap4.exists) window.state.utilityRates = snap4.data(); 
+                if(snap5.exists) window.state.settings = { ...window.state.settings, ...snap5.data() }; 
+                
+                window.saveData(); 
+                alert('✅ 下載完成，即將重整畫面'); 
+                location.reload(); 
+            } catch(e){
+                console.error(e);
+                alert('❌ 下載失敗: ' + e.message);
+            } 
+        }
+        
         window.clearCacheAndReload = function() { if(confirm("確定清除暫存重載？(將從雲端抓取最新資料)")) { localStorage.clear(); location.reload(); } }
         window.exportData = function() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "rental_manager_backup_" + new Date().toISOString() + ".json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
 
