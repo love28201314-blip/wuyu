@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V45.1 銀行與滑動修復版</title>
+    <title>租屋管家 Pro - V45.2 雲端極速同步版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -33,7 +33,6 @@
             font-size: var(--base-font-size); 
             -webkit-tap-highlight-color: transparent; 
             padding-top: env(safe-area-inset-top);
-            /* Removed fixed padding-bottom here to rely on container padding */
         }
 
         .card { 
@@ -103,7 +102,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V45.1 銀行與滑動修復版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V45.2 雲端極速同步版</p>
             <div class="space-y-4 w-full">
                 <button onclick="switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">房東登入</button>
                 <button onclick="switchView('tenant-login')" class="w-full btn btn-outline py-4 text-lg">房客查詢</button>
@@ -149,7 +148,6 @@
             <div id="status-indicator" class="text-[10px] font-bold bg-slate-100 text-slate-400 px-3 py-1.5 rounded-full cursor-pointer" onclick="initCloud()">連線中...</div>
         </header>
 
-        <!-- 加入 pb-32 確保底部留白，讓內容可順利滾動至導航列之上 -->
         <main class="container mx-auto p-4 max-w-lg pb-32">
             <!-- DASHBOARD -->
             <div id="tab-dashboard" class="landlord-tab">
@@ -353,7 +351,7 @@
     <!-- 財務詳情 -->
     <div id="modal-finance-detail" class="modal fixed inset-0 hidden flex items-center justify-center p-4 z-50"><div class="bg-white w-full max-w-md rounded-[24px] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]"><div class="bg-slate-800 p-5 text-white flex justify-between items-center"><h3 class="text-xl font-bold" id="fin-detail-month">---</h3><button onclick="closeModal('modal-finance-detail')" class="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full"><i class="fa-solid fa-xmark"></i></button></div><div class="p-6 overflow-y-auto space-y-6 flex-1"><div class="flex flex-col items-center"><div class="pie-chart-wrapper mb-4"><div id="pie-chart" class="pie-chart"></div></div><div class="flex gap-3 text-xs font-bold text-slate-500"><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-green-500 mr-1"></div>淨利</div><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>成本</div><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-orange-500 mr-1"></div>修繕</div></div></div><div class="grid grid-cols-3 gap-2 text-center bg-slate-50 p-4 rounded-xl"><div><div class="text-[10px] text-slate-400 mb-1">總收(含電)</div><div id="fin-detail-income" class="font-bold">$0</div></div><div><div class="text-[10px] text-red-400 mb-1">總支(水電修)</div><div id="fin-detail-cost" class="font-bold text-red-500">$0</div></div><div><div class="text-[10px] text-green-500 mb-1">淨賺</div><div id="fin-detail-net" class="font-bold text-green-600">$0</div></div></div><div id="fin-detail-list" class="space-y-2"></div></div></div></div>
     
-    <!-- 房間詳情 (已加上 overflow-y-auto 與 flex-1 確保可滑動) -->
+    <!-- 房間詳情 -->
     <div id="modal-room-detail" class="modal fixed inset-0 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white w-full max-w-md rounded-[24px] overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
             <div class="h-48 bg-slate-200 relative shrink-0">
@@ -695,6 +693,7 @@
             
             const pendingReps = window.state.repairs.filter(r => r.status === 'pending');
             if(document.getElementById('dash-repair-notify')) document.getElementById('dash-repair-notify').innerText = `${pendingReps.length} 件`;
+            
             if(document.getElementById('dash-net')) document.getElementById('dash-net').innerText = `$${Math.round(income - repairCost).toLocaleString()}`;
 
             const list = document.getElementById('dashboard-bills-list');
@@ -988,7 +987,7 @@
                 if(db) await db.collection('rooms').doc(String(id)).set(rd); 
                 window.closeModal('modal-room-edit'); 
                 window.showToast('房訊儲存成功'); 
-            } catch(e) { console.error(e); alert("儲存錯誤"); } finally { if(btn) { btn.disabled=false; btn.innerText="儲存"; } }
+            } catch(e) { console.error(e); alert("儲存錯誤"); } finally { if(btn) { btn.disabled=false; btn.innerText="儲存房訊"; } }
         }
         
         window.deleteRoom = function() { if(confirm('確定要刪除此房間嗎？')){ const id=document.getElementById('edit-room-id').value; window.state.rooms=window.state.rooms.filter(x=>x.id!=id); window.saveData(); if(db) db.collection('rooms').doc(String(id)).delete(); window.closeModal('modal-room-edit'); } }
@@ -1206,7 +1205,7 @@
             const statusEl = document.getElementById('status-indicator');
             if(typeof firebase === 'undefined') return;
             try {
-                if(!firebase.apps.length) firebase.initializeApp(userFirebaseConfig);
+                if(!firebase.apps.length) firebase.initializeApp(userFirebaseConfig); // 無需 window.
                 await firebase.auth().signInAnonymously();
                 db = firebase.firestore();
                 
