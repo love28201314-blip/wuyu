@@ -383,11 +383,12 @@
                 <div>
                     <label class="text-xs font-bold text-slate-500 mb-2 flex justify-between items-center ml-1">
                         <span>通知內容預覽 (可手動修改)</span>
-                        <div class="flex gap-2">
-                            <button onclick="window.aiRewrite('warm')" class="px-2 py-1 bg-white border border-blue-200 text-blue-600 rounded-lg text-[10px] hover:bg-blue-50 shadow-sm transition">✨ AI 溫馨改寫</button>
-                            <button onclick="window.aiRewrite('formal')" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 rounded-lg text-[10px] hover:bg-slate-100 shadow-sm transition">👔 AI 正式改寫</button>
-                        </div>
                     </label>
+                    <div class="flex gap-2 flex-wrap mb-2">
+                        <button onclick="window.aiRewrite('warm')" class="px-2 py-1 bg-white border border-blue-200 text-blue-600 rounded-lg text-[10px] hover:bg-blue-50 shadow-sm transition">✨ 溫馨</button>
+                        <button onclick="window.aiRewrite('formal')" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 rounded-lg text-[10px] hover:bg-slate-100 shadow-sm transition">👔 正式</button>
+                        <button onclick="window.aiRewrite('ultimatum')" class="px-2 py-1 bg-white border border-red-300 text-red-600 rounded-lg text-[10px] hover:bg-red-50 shadow-sm transition">🚨 最後通牒</button>
+                    </div>
                     <textarea id="notify-text" class="input-field !py-3 h-48 text-sm shadow-inner resize-none font-mono text-slate-700"></textarea>
                 </div>
                 <div class="flex gap-3 pt-2">
@@ -1133,15 +1134,9 @@
         
         window.saveRepairProcess = function() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if (r) { r.reply = document.getElementById('repair-reply-input').value; r.cost = Number(document.getElementById('repair-cost-input').value); r.status = document.getElementById('repair-done-check').checked ? 'done' : 'pending'; window.saveData(); if(db) db.collection('repairs').doc(String(id)).set(r); window.closeModal('modal-repair-process'); window.showToast('更新成功'); } }
 
-        // --- AI API (讀取環境變數或自訂設定) ---
+        // --- AI API ---
         window.callGemini = async function(prompt) {
-            // 優先讀取用戶在系統設定中填入的 API Key，若無則使用預設 Key
-            const apiKey = window.state.settings.geminiApiKey || GEMINI_API_KEY; 
-            
-            if (!apiKey) {
-                alert("請先至「設定」頁面輸入 Gemini API Key 以啟用 AI 功能！\n(可在 Google AI Studio 免費申請)");
-                return "API Key 尚未設定，請至設定頁面輸入。";
-            }
+            const apiKey = GEMINI_API_KEY; 
             
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             try {
@@ -1150,7 +1145,7 @@
                     headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
                 });
-                if (!response.ok) return "API 權限錯誤 (403/401)，請檢查 Key 是否正確";
+                if (!response.ok) return "API 權限錯誤 (403/401)，無法執行 AI";
                 const data = await response.json();
                 return data.candidates?.[0]?.content?.parts?.[0]?.text || "AI 暫時無法回應";
             } catch (e) { return "連線錯誤，請檢查網路狀態"; }
@@ -1162,8 +1157,14 @@
             if(!originalText) return alert("請先產生一筆帳單的內容");
             const btn = event.target; const originalContent = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 處理中...'; btn.disabled = true;
-            const toneMap = { 'warm': '溫馨親切、不要給人壓力', 'formal': '正式、專業、有禮貌' };
-            const prompt = `請將以下租屋通知訊息改寫為「${toneMap[tone]}」的語氣。請務必保留所有的金額、帳單月份、房號與匯款銀行帳號等重要資訊，使用繁體中文：\n\n${originalText}`;
+            
+            const toneMap = { 
+                'warm': '溫馨親切、不要給人壓力', 
+                'formal': '正式、專業、有禮貌',
+                'ultimatum': '嚴厲警告、帶有法律後果提示（如存證信函或終止合約準備）的最後通牒'
+            };
+            
+            const prompt = `請將以下租屋通知訊息改寫為「${toneMap[tone]}」的語氣。請務必保留所有的金額、帳單月份、房號與匯款銀行帳號等重要資訊，使用繁體中文。請直接輸出改寫後的內容，不要加上「好的」、「這是一則...」等開場白，也不要加上任何結尾預留欄位，讓我能直接複製貼上：\n\n${originalText}`;
             textarea.value = await window.callGemini(prompt);
             btn.innerHTML = originalContent; btn.disabled = false;
         }
