@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V46.2 設定雲端同步版</title>
+    <title>租屋管家 Pro - V47.0 正式上線版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -93,7 +93,6 @@
 
         .pie-chart-wrapper { position: relative; width: 180px; height: 180px; margin: 0 auto; }
         .pie-chart { width: 100%; height: 100%; border-radius: 50%; background: #e5e7eb; } 
-        .pie-chart-inner { position: absolute; inset: 25px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; }
     </style>
 </head>
 <body>
@@ -105,7 +104,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V46.2 設定雲端同步版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V47.0 正式上線版</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">管理系統登入</button>
             </div>
@@ -113,7 +112,7 @@
         </div>
     </div>
 
-    <!-- 1. Login Pages -->
+    <!-- 1. Login Page -->
     <div id="view-owner-login" class="view-section hidden min-h-screen bg-white flex flex-col items-center justify-center p-8">
         <div class="w-full max-w-sm">
             <button onclick="window.switchView('landing')" class="mb-10 text-slate-400 font-bold"><i class="fa-solid fa-chevron-left mr-2"></i>返回</button>
@@ -383,12 +382,12 @@
                 <div>
                     <label class="text-xs font-bold text-slate-500 mb-2 flex justify-between items-center ml-1">
                         <span>通知內容預覽 (可手動修改)</span>
+                        <div class="flex gap-2">
+                            <button onclick="window.aiRewrite('warm')" class="px-2 py-1 bg-white border border-blue-200 text-blue-600 rounded-lg text-[10px] hover:bg-blue-50 shadow-sm transition">✨ AI 溫馨改寫</button>
+                            <button onclick="window.aiRewrite('formal')" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 rounded-lg text-[10px] hover:bg-slate-100 shadow-sm transition">👔 AI 正式改寫</button>
+                            <button onclick="window.aiRewrite('ultimatum')" class="px-2 py-1 bg-white border border-red-300 text-red-600 rounded-lg text-[10px] hover:bg-red-50 shadow-sm transition">🚨 最後通牒</button>
+                        </div>
                     </label>
-                    <div class="flex gap-2 flex-wrap mb-2">
-                        <button onclick="window.aiRewrite('warm')" class="px-2 py-1 bg-white border border-blue-200 text-blue-600 rounded-lg text-[10px] hover:bg-blue-50 shadow-sm transition">✨ 溫馨</button>
-                        <button onclick="window.aiRewrite('formal')" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 rounded-lg text-[10px] hover:bg-slate-100 shadow-sm transition">👔 正式</button>
-                        <button onclick="window.aiRewrite('ultimatum')" class="px-2 py-1 bg-white border border-red-300 text-red-600 rounded-lg text-[10px] hover:bg-red-50 shadow-sm transition">🚨 最後通牒</button>
-                    </div>
                     <textarea id="notify-text" class="input-field !py-3 h-48 text-sm shadow-inner resize-none font-mono text-slate-700"></textarea>
                 </div>
                 <div class="flex gap-3 pt-2">
@@ -421,16 +420,34 @@
         };
         const USER_PROJECT_ID = userFirebaseConfig.projectId;
 
+        // 防損毀 JSON 讀取機制
+        const safeJSONParse = (key, defaultVal) => {
+            try { 
+                const data = JSON.parse(localStorage.getItem(key)); 
+                return data !== null ? data : defaultVal;
+            } catch(e) { return defaultVal; }
+        };
+
         // --- 初始化 State ---
         window.state = {
-            rooms: JSON.parse(localStorage.getItem('rental_rooms') || '[]'),
-            records: JSON.parse(localStorage.getItem('rental_records') || '[]'),
-            repairs: JSON.parse(localStorage.getItem('rental_repairs') || '[]'),
-            utilityRates: JSON.parse(localStorage.getItem('rental_utility_rates') || '{}'),
-            settings: JSON.parse(localStorage.getItem('rental_settings') || `{"elecRate": 3.5, "elecCostRate": 2.1, "waterRate": 0, "waterCostRate": 50, "mgmtFee": 500, "bankCode": "", "bankAccount": "", "projectId": "${USER_PROJECT_ID}", "password": "0000", "fontSize": 16, "geminiApiKey": ""}`),
-            loginAttempts: JSON.parse(localStorage.getItem('rental_login_attempts') || '{"owner":0}'),
-            lockoutUntil: JSON.parse(localStorage.getItem('rental_lockout_until') || '{"owner":0}')
+            rooms: safeJSONParse('rental_rooms', []),
+            records: safeJSONParse('rental_records', []),
+            repairs: safeJSONParse('rental_repairs', []),
+            utilityRates: safeJSONParse('rental_utility_rates', {}),
+            settings: safeJSONParse('rental_settings', {
+                elecRate: 3.5, elecCostRate: 2.1, waterRate: 0, waterCostRate: 50, 
+                mgmtFee: 500, bankCode: "", bankAccount: "", projectId: USER_PROJECT_ID, 
+                password: "0000", fontSize: 16, geminiApiKey: ""
+            }),
+            loginAttempts: safeJSONParse('rental_login_attempts', {"owner":0}),
+            lockoutUntil: safeJSONParse('rental_lockout_until', {"owner":0})
         };
+        
+        // 確保 rooms 與 records 是陣列（防禦型賦值）
+        if (!Array.isArray(window.state.rooms)) window.state.rooms = [];
+        if (!Array.isArray(window.state.records)) window.state.records = [];
+        if (!Array.isArray(window.state.repairs)) window.state.repairs = [];
+        
         window.state.settings.projectId = USER_PROJECT_ID;
 
         // --- 全域變數 ---
@@ -655,7 +672,7 @@
                         </div>
                     </div>
                     <div class="flex flex-col items-end gap-1 shrink-0">
-                        ${unpaid>0?`<span class="badge badge-red shadow-sm px-3 py-1 text-[11px] font-black border-red-300">欠 $${unpaid}</span>`:'<span class="badge badge-green shadow-sm px-3 py-1 text-[11px] font-black border-green-300">正常</span>'}
+                        ${unpaid>0?`<span class="badge badge-red shadow-sm px-3 py-1 text-[11px] font-black border-red-300">欠 $${Math.round(unpaid)}</span>`:'<span class="badge badge-green shadow-sm px-3 py-1 text-[11px] font-black border-green-300">正常</span>'}
                         ${hasNotified ? `<span class="badge badge-orange shadow-sm px-2 py-1 mt-1 text-[10px] font-black border-orange-300"><i class="fa-solid fa-bell mr-1"></i>已催繳</span>` : ''}
                     </div>
                 </div>`; 
@@ -837,7 +854,7 @@
                  chart.style.background = `conic-gradient(#10b981 0% ${stop1}%, #3b82f6 ${stop1}% ${stop2}%, #f97316 ${stop2}% 100%)`;
             }
             
-            document.getElementById('fin-detail-list').innerHTML = d.items.map(r => `<div class="flex justify-between py-2 border-b border-slate-100 last:border-0"><span class="font-bold text-slate-700">${r.roomName}</span><span>$${r.total}</span></div>`).join('');
+            document.getElementById('fin-detail-list').innerHTML = d.items.map(r => `<div class="flex justify-between py-2 border-b border-slate-100 last:border-0"><span class="font-bold text-slate-700">${r.roomName}</span><span>$${Math.round(r.total)}</span></div>`).join('');
             document.getElementById('modal-finance-detail').classList.remove('hidden');
         }
 
@@ -1064,7 +1081,9 @@
             
             const u=c-(r.meter||0); 
             const e=u*er; 
-            const t=parseInt(r.rent)+e+wf+mf; 
+            
+            // 安全的整數運算
+            const t = Math.round(Number(r.rent) + e + wf + mf); 
             
             const rec={id:Date.now().toString(), roomId:r.id, roomName:r.name, tenant:r.tenant, total:t, paid:false, date:new Date().toLocaleDateString('zh-TW'), billingMonth:m, elecCost:e, waterFee:wf, rent:r.rent, usage:u, notified: false}; 
             r.meter=c; 
@@ -1130,7 +1149,20 @@
             window.showToast('已標記為催繳'); 
         }
         
-        window.openRepairProcess = function(id) { const r = window.state.repairs.find(x => x.id == id); if (!r) return; document.getElementById('repair-process-id').value = id; document.getElementById('repair-desc-display').innerText = r.desc; document.getElementById('repair-reply-input').value = r.reply || ""; document.getElementById('repair-cost-input').value = r.cost || 0; document.getElementById('repair-done-check').checked = (r.status === 'done'); const photoContainer = document.getElementById('repair-photos-container'); const photoDisplay = document.getElementById('repair-photos-display'); if (r.photos && r.photos.length > 0) { photoContainer.classList.remove('hidden'); photoDisplay.innerHTML = r.photos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join(''); } else { photoContainer.classList.add('hidden'); } document.getElementById('modal-repair-process').classList.remove('hidden'); }
+        window.openRepairProcess = function(id) { 
+            const r = window.state.repairs.find(x => x.id == id); 
+            if (!r) return; 
+            document.getElementById('repair-process-id').value = id; 
+            document.getElementById('repair-desc-display').innerText = r.desc; 
+            document.getElementById('repair-reply-input').value = r.reply || ""; 
+            document.getElementById('repair-cost-input').value = r.cost || 0; 
+            document.getElementById('repair-done-check').checked = (r.status === 'done'); 
+            
+            const photoContainer = document.getElementById('repair-photos-container');
+            if (photoContainer) photoContainer.classList.add('hidden');
+            
+            document.getElementById('modal-repair-process').classList.remove('hidden'); 
+        }
         
         window.saveRepairProcess = function() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if (r) { r.reply = document.getElementById('repair-reply-input').value; r.cost = Number(document.getElementById('repair-cost-input').value); r.status = document.getElementById('repair-done-check').checked ? 'done' : 'pending'; window.saveData(); if(db) db.collection('repairs').doc(String(id)).set(r); window.closeModal('modal-repair-process'); window.showToast('更新成功'); } }
 
@@ -1219,39 +1251,34 @@
             } catch(e) { console.error(e); if(statusEl) statusEl.innerText = '連線失敗'; }
         }
         
-        window.syncToCloud = async function(coll, id, data) { if(db) { try { await db.collection(coll).doc(String(id)).set(data); } catch (e) { console.error(e); } } }
-        window.deleteFromCloud = async function(coll, id) { if(db) try { await db.collection(coll).doc(String(id)).delete(); } catch(e) {} }
-        
         window.forceUploadAllLocalData = async function() { 
             if(!db) return alert("❌ 未連線"); 
             if(!confirm("確定要將本機資料覆蓋到雲端嗎？")) return; 
             try { 
                 window.showToast("🚀 正在極速上傳中...");
-                const batch = db.batch();
+                
+                const promises = [];
                 
                 // Pack all rooms
                 window.state.rooms.forEach(r => {
-                    const ref = db.collection('rooms').doc(String(r.id));
-                    batch.set(ref, r);
+                    promises.push(db.collection('rooms').doc(String(r.id)).set(r));
                 });
                 
                 // Pack all records
                 window.state.records.forEach(r => {
-                    const ref = db.collection('records').doc(String(r.id));
-                    batch.set(ref, r);
+                    promises.push(db.collection('records').doc(String(r.id)).set(r));
                 });
                 
                 // Pack all repairs
                 window.state.repairs.forEach(r => {
-                    const ref = db.collection('repairs').doc(String(r.id));
-                    batch.set(ref, r);
+                    promises.push(db.collection('repairs').doc(String(r.id)).set(r));
                 });
                 
                 // Pack configs
-                batch.set(db.collection('config').doc('rates'), window.state.utilityRates);
-                batch.set(db.collection('config').doc('settings'), window.state.settings);
+                promises.push(db.collection('config').doc('rates').set(window.state.utilityRates));
+                promises.push(db.collection('config').doc('settings').set(window.state.settings));
 
-                await batch.commit();
+                await Promise.all(promises);
                 alert('✅ 所有資料上傳完成'); 
             } catch(e){
                 console.error(e);
