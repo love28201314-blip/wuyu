@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V50.3 資料顯示修復版</title>
+    <title>租屋管家 Pro - V50.4 AI模型修正版</title>
     <link rel="icon" href="data:,">
     
     <!-- PWA Settings -->
@@ -101,6 +101,7 @@
         .photo-item img { width: 100%; height: 100%; object-fit: cover; }
         .photo-del { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
+        /* 圖表 */
         .pie-chart-wrapper { position: relative; width: 160px; height: 160px; margin: 0 auto; }
         .pie-chart { width: 100%; height: 100%; border-radius: 50%; background: #e5e7eb; } 
         .pie-chart-inner { position: absolute; inset: 25px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; }
@@ -123,7 +124,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V50.3 資料顯示修復版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V50.4 AI模型修正版</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">管理系統登入</button>
             </div>
@@ -422,7 +423,7 @@
         </div>
     </div>
     
-    <!-- 房間詳情 (修復：現在可以正確顯示租金、日期等詳細資訊) -->
+    <!-- 房間詳情 -->
     <div id="modal-room-detail" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-room-detail')">
         <div class="sheet-container">
             <div class="h-48 bg-slate-200 relative shrink-0">
@@ -1702,60 +1703,8 @@
         
         window.syncToCloud = async function(coll, id, data) { if(db) { try { await db.collection(coll).doc(String(id)).set(data); } catch (e) { console.error(e); } } }
         window.deleteFromCloud = async function(coll, id) { if(db) try { await db.collection(coll).doc(String(id)).delete(); } catch(e) {} }
-        
-        window.forceUploadAllLocalData = async function() { 
-            if(!db) return alert("❌ 未連線"); 
-            if(!confirm("上傳？")) return; 
-            try { 
-                window.showToast("🚀 正在極速上傳中...");
-                
-                const promises = [];
-                // Pack all rooms
-                window.state.rooms.forEach(r => promises.push(db.collection('rooms').doc(String(r.id)).set(r)));
-                window.state.records.forEach(r => promises.push(db.collection('records').doc(String(r.id)).set(r)));
-                window.state.repairs.forEach(r => promises.push(db.collection('repairs').doc(String(r.id)).set(r)));
-                window.state.expenses.forEach(e => promises.push(db.collection('expenses').doc(String(e.id)).set(e)));
-                promises.push(db.collection('config').doc('rates').set(window.state.utilityRates));
-                promises.push(db.collection('config').doc('settings').set(window.state.settings));
-
-                await Promise.all(promises);
-                alert('✅ 所有資料上傳完成'); 
-            } catch(e){
-                console.error(e);
-                alert('❌ 上傳失敗: ' + e.message);
-            } 
-        }
-        
-        window.forceDownloadCloudData = async function() { 
-            if(!db) return alert("❌ 未連線"); 
-            if(!confirm("下載？")) return; 
-            try { 
-                window.showToast("🚀 正在極速下載中...");
-                const [snap1, snap2, snap3, snap4, snap5, snap6] = await Promise.all([
-                    db.collection('rooms').get(),
-                    db.collection('records').get(),
-                    db.collection('repairs').get(),
-                    db.collection('config').doc('rates').get(),
-                    db.collection('config').doc('settings').get(),
-                    db.collection('expenses').get()
-                ]);
-                
-                window.state.rooms = snap1.docs.map(d=>d.data()); 
-                window.state.records = snap2.docs.map(d=>d.data()); 
-                window.state.repairs = snap3.docs.map(d=>d.data()); 
-                if(snap4.exists) window.state.utilityRates = snap4.data(); 
-                if(snap5.exists) window.state.settings = { ...window.state.settings, ...snap5.data() }; 
-                window.state.expenses = snap6.docs.map(d=>d.data());
-
-                window.saveData(); 
-                alert('✅ 下載完成，即將重整畫面'); 
-                location.reload(); 
-            } catch(e){
-                console.error(e);
-                alert('❌ 下載失敗: ' + e.message);
-            } 
-        }
-        
+        window.forceUploadAllLocalData = async function() { if(!db) return alert("❌ 未連線"); if(!confirm("上傳？")) return; try { for(const r of window.state.rooms) await window.syncToCloud('rooms', r.id, r); for(const r of window.state.records) await window.syncToCloud('records', r.id, r); for(const r of window.state.repairs) await window.syncToCloud('repairs', r.id, r); await window.syncToCloud('config', 'rates', window.state.utilityRates); alert('完成'); } catch(e){alert('失敗');} }
+        window.forceDownloadCloudData = async function() { if(!db) return alert("❌ 未連線"); if(!confirm("下載？")) return; try { const snap = await db.collection('rooms').get(); window.state.rooms = snap.docs.map(d=>d.data()); localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms)); alert('完成'); location.reload(); } catch(e){alert('失敗');} }
         window.clearCacheAndReload = function() { if(confirm("確定清除暫存重載？(將從雲端抓取最新資料)")) { localStorage.clear(); location.reload(); } }
         window.exportData = function() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "rental_manager_backup_" + new Date().toISOString() + ".json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
         
