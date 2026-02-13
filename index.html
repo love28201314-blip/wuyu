@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V49.2 帳務重置版</title>
+    <title>租屋管家 Pro - V49.3 帳務重置修復版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -115,7 +115,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V49.2 帳務重置版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V49.3 帳務重置修復版</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">管理系統登入</button>
             </div>
@@ -1064,6 +1064,47 @@
             window.showToast("記帳成功");
             window.renderFinance();
         }
+        
+        // Reset Financial Data (Keep Rooms & Settings)
+        window.resetFinancialData = async function() {
+            if(!confirm("⚠️ 確定要清除所有「帳務紀錄」嗎？\n(房間資料與設定將會保留)\n此動作無法復原！")) return;
+            
+            // Clear Local State first
+            window.state.records = [];
+            window.state.repairs = [];
+            window.state.expenses = [];
+            window.state.utilityRates = {};
+            window.saveData();
+
+            if(db && confirm("是否一併清除雲端上的帳務資料？")) {
+                window.showToast("正在清除雲端資料...");
+                try {
+                    const promises = [];
+                    // Delete Records
+                    const recSnap = await db.collection('records').get();
+                    recSnap.forEach(doc => promises.push(doc.ref.delete()));
+                    
+                    // Delete Repairs
+                    const repSnap = await db.collection('repairs').get();
+                    repSnap.forEach(doc => promises.push(doc.ref.delete()));
+                    
+                    // Delete Expenses
+                    const expSnap = await db.collection('expenses').get();
+                    expSnap.forEach(doc => promises.push(doc.ref.delete()));
+                    
+                    // Delete Rates
+                    promises.push(db.collection('config').doc('rates').delete());
+                    
+                    await Promise.all(promises);
+                    alert("✅ 帳務資料已完全清除");
+                } catch(e) {
+                    alert("⚠️ 雲端部分資料清除失敗: " + e.message);
+                }
+            } else {
+                window.showToast("已清除本機資料");
+            }
+            location.reload();
+        }
 
         window.loadUtilityRatesForMonth = function() {
             const picker = document.getElementById('util-month-picker');
@@ -1336,7 +1377,7 @@
             
             const u=c-(r.meter||0); 
             const e=u*er; 
-            const t=parseInt(r.rent)+e+wf+mf; 
+            const t=Math.round(Number(r.rent)+e+wf+mf); 
             
             const rec={id:Date.now().toString(), roomId:r.id, roomName:r.name, tenant:r.tenant, total:t, paid:false, date:new Date().toLocaleDateString('zh-TW'), billingMonth:m, elecCost:e, waterFee:wf, rent:r.rent, usage:u, notified: false}; 
             r.meter=c; 
@@ -1581,6 +1622,47 @@
                 location.reload();
             }
         }
+        
+        // Reset Financial Data Only (New Function)
+        window.resetFinancialData = async function() {
+            if(!confirm("⚠️ 確定要清除所有「帳務紀錄」嗎？\n(房間資料與設定將會保留)\n此動作無法復原！")) return;
+            
+            // Clear Local State first
+            window.state.records = [];
+            window.state.repairs = [];
+            window.state.expenses = [];
+            window.state.utilityRates = {};
+            window.saveData();
+
+            if(db && confirm("是否一併清除雲端上的帳務資料？")) {
+                window.showToast("正在清除雲端資料...");
+                try {
+                    const promises = [];
+                    // Delete Records
+                    const recSnap = await db.collection('records').get();
+                    recSnap.forEach(doc => promises.push(doc.ref.delete()));
+                    
+                    // Delete Repairs
+                    const repSnap = await db.collection('repairs').get();
+                    repSnap.forEach(doc => promises.push(doc.ref.delete()));
+                    
+                    // Delete Expenses
+                    const expSnap = await db.collection('expenses').get();
+                    expSnap.forEach(doc => promises.push(doc.ref.delete()));
+                    
+                    // Delete Rates
+                    promises.push(db.collection('config').doc('rates').delete());
+                    
+                    await Promise.all(promises);
+                    alert("✅ 帳務資料已完全清除");
+                } catch(e) {
+                    alert("⚠️ 雲端部分資料清除失敗: " + e.message);
+                }
+            } else {
+                window.showToast("已清除本機資料");
+            }
+            location.reload();
+        }
 
         // ==========================================
         // 7. 將所有函式強制掛載到 Window 以供 HTML 呼叫
@@ -1594,7 +1676,7 @@
             onBillMonthChange, openBillFromDetail, openBillModal, createBill, openPayModal, confirmPay, openNotifyModal, copyNotify, markNotified,
             openRepairProcess, saveRepairProcess, analyzeRepair, saveSettings,
             initCloud, syncToCloud, deleteFromCloud, forceUploadAllLocalData, forceDownloadCloudData, clearCacheAndReload, exportData, aiRewrite,
-            openAddExpenseModal, saveExpense, importData, resetAllData
+            openAddExpenseModal, saveExpense, importData, resetAllData, resetFinancialData
         });
         
         // Final Init
