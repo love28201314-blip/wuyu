@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V49.0 全能管家版</title>
+    <title>租屋管家 Pro - V49.1 正式上崗版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -115,7 +115,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V49.0 全能管家版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V49.1 正式上崗版</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">管理系統登入</button>
             </div>
@@ -275,6 +275,7 @@
                             <option value="009 彰化銀行">009 彰化銀行</option>
                             <option value="017 兆豐銀行">017 兆豐銀行</option>
                             <option value="050 台灣企銀">050 台灣企銀</option>
+                            <option value="216 花蓮二信">216 花蓮二信</option>
                             <option value="808 玉山銀行">808 玉山銀行</option>
                             <option value="812 台新銀行">812 台新銀行</option>
                             <option value="700 中華郵政">700 中華郵政</option>
@@ -309,6 +310,7 @@
                 </div>
 
                 <button onclick="window.saveSettings()" class="w-full btn btn-primary shadow-md mb-3">儲存設定並同步至雲端</button>
+                <button onclick="window.resetAllData()" class="w-full btn btn-danger shadow-md mb-3">⚠️ 清空所有資料 (重置系統)</button>
                 <button onclick="window.confirmExit()" class="w-full text-red-400 font-bold text-sm py-4">登出系統</button>
             </div>
         </main>
@@ -481,7 +483,7 @@
             records: safeJSONParse('rental_records', []),
             repairs: safeJSONParse('rental_repairs', []),
             utilityRates: safeJSONParse('rental_utility_rates', {}),
-            expenses: safeJSONParse('rental_expenses', []), // New: General Expenses
+            expenses: safeJSONParse('rental_expenses', []), 
             settings: safeJSONParse('rental_settings', {
                 elecRate: 3.5, elecCostRate: 2.1, waterRate: 0, waterCostRate: 50, 
                 mgmtFee: 500, bankCode: "", bankAccount: "", projectId: USER_PROJECT_ID, 
@@ -1232,7 +1234,55 @@
             } catch(e) { console.error(e); alert("儲存錯誤"); } finally { if(btn) { btn.disabled=false; btn.innerText="儲存"; } }
         }
         
-        window.deleteRoom = function() { if(confirm('確定要刪除此房間嗎？')){ const id=document.getElementById('edit-room-id').value; window.state.rooms=window.state.rooms.filter(x=>x.id!=id); window.saveData(); if(db) db.collection('rooms').doc(String(id)).delete(); window.closeModal('modal-room-edit'); } }
+        window.deleteRoom = async function() { 
+            if(!confirm('確定要刪除此房間嗎？\n注意：這將一併刪除該房間的所有「帳單」與「報修紀錄」！')) return;
+            
+            const btn = document.getElementById('edit-btn-del');
+            if(btn) { btn.disabled = true; btn.innerText = "刪除中..."; }
+            
+            try {
+                const id = document.getElementById('edit-room-id').value; 
+                
+                // 1. Identify items to delete
+                const recordsToDelete = window.state.records.filter(r => r.roomId == id);
+                const repairsToDelete = window.state.repairs.filter(r => r.roomId == id);
+                
+                // 2. Update Local State
+                window.state.rooms = window.state.rooms.filter(x => x.id != id); 
+                window.state.records = window.state.records.filter(x => x.roomId != id);
+                window.state.repairs = window.state.repairs.filter(x => x.roomId != id);
+                
+                window.saveData(); 
+                
+                // 3. Delete from Cloud
+                if(db) {
+                    const batch = db.batch();
+                    const roomRef = db.collection('rooms').doc(String(id));
+                    batch.delete(roomRef);
+                    
+                    recordsToDelete.forEach(r => {
+                        const ref = db.collection('records').doc(String(r.id));
+                        batch.delete(ref);
+                    });
+                    
+                    repairsToDelete.forEach(r => {
+                        const ref = db.collection('repairs').doc(String(r.id));
+                        batch.delete(ref);
+                    });
+                    
+                    await batch.commit();
+                }
+                
+                window.closeModal('modal-room-edit'); 
+                window.showToast('房間及相關資料已清除');
+            } catch(e) {
+                console.error(e);
+                alert("刪除失敗: " + e.message);
+            } finally {
+                 if(btn) { btn.disabled = false; btn.innerText = '<i class="fa-solid fa-trash"></i>'; }
+            }
+        }
+        
         window.moveOutTenant = function() { if(confirm('退租？')){ const id=document.getElementById('edit-room-id').value; const r=window.state.rooms.find(x=>x.id==id); r.tenant=""; r.phone=""; r.start=""; r.end=""; r.contPhotos=[]; window.saveData(); if(db) db.collection('rooms').doc(String(id)).set(r); window.closeModal('modal-room-edit'); window.showToast('退租成功'); } }
         window.handleAddPhoto = function(input, type) { if(input.files[0]) { window.compressImage(input.files[0], (base64) => { tempEditPhotos[type].push(base64); window.renderEditPhotoList(type); input.value = ''; }); } }
         window.renderEditPhotoList = function(type) { const container = document.getElementById(`edit-list-${type}`); const list = tempEditPhotos[type]; container.innerHTML = list.map((src, index) => `<div class="photo-item"><img src="${src}"><div class="photo-del" onclick="window.removeEditPhoto('${type}', ${index})"><i class="fa-solid fa-xmark"></i></div></div>`).join(''); }
@@ -1510,6 +1560,36 @@
         
         window.clearCacheAndReload = function() { if(confirm("確定清除暫存重載？(將從雲端抓取最新資料)")) { localStorage.clear(); location.reload(); } }
         window.exportData = function() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "rental_manager_backup_" + new Date().toISOString() + ".json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
+        
+        // Reset All Data (New Function)
+        window.resetAllData = function() {
+            if(!confirm("⚠️ 警告：您確定要清空所有資料嗎？\n這將會刪除所有房間、帳單、報修紀錄與設定。\n此動作無法復原！")) return;
+            
+            // Clear Cloud if connected
+            if(db) {
+                if(!confirm("是否同時刪除雲端資料庫的所有資料？")) {
+                     localStorage.clear();
+                     location.reload();
+                     return;
+                }
+                // We can't easily delete whole collections from client, 
+                // so we will just clear local storage and force upload empty arrays
+                window.state.rooms = [];
+                window.state.records = [];
+                window.state.repairs = [];
+                window.state.expenses = [];
+                // Reset settings to default
+                window.state.settings = {"elecRate": 3.5, "elecCostRate": 2.1, "waterRate": 0, "waterCostRate": 50, "mgmtFee": 500, "bankCode": "", "bankAccount": "", "projectId": USER_PROJECT_ID, "password": "0000", "fontSize": 16, "geminiApiKey": ""};
+                
+                window.forceUploadAllLocalData().then(() => {
+                    localStorage.clear();
+                    location.reload();
+                });
+            } else {
+                localStorage.clear();
+                location.reload();
+            }
+        }
 
         // ==========================================
         // 7. 將所有函式強制掛載到 Window 以供 HTML 呼叫
@@ -1523,7 +1603,7 @@
             onBillMonthChange, openBillFromDetail, openBillModal, createBill, openPayModal, confirmPay, openNotifyModal, copyNotify, markNotified,
             openRepairProcess, saveRepairProcess, analyzeRepair, saveSettings,
             initCloud, syncToCloud, deleteFromCloud, forceUploadAllLocalData, forceDownloadCloudData, clearCacheAndReload, exportData, aiRewrite,
-            openAddExpenseModal, saveExpense, importData
+            openAddExpenseModal, saveExpense, importData, resetAllData
         });
         
         // Final Init
