@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V50.0 正式旗艦版</title>
-    <link rel="icon" href="data:,"> <!-- 防止 Favicon 404 -->
+    <title>租屋管家 Pro - V49.4 雲端同步修復版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -116,7 +115,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V50.0 正式旗艦版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V49.4 雲端同步修復版</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">管理系統登入</button>
             </div>
@@ -671,7 +670,17 @@
             if (apiKeyEl) window.state.settings.geminiApiKey = apiKeyEl.value;
             
             window.saveData(); 
-            window.showToast('設定已儲存');
+
+            // 同步至雲端設定
+            if(db) {
+                 db.collection('config').doc('settings').set(window.state.settings).then(() => {
+                     window.showToast('設定已儲存並同步至雲端');
+                 }).catch(e => {
+                     window.showToast('設定已儲存 (僅本機)');
+                 });
+            } else {
+                 window.showToast('設定已儲存 (僅本機)');
+            }
         }
 
         // ==========================================
@@ -1504,52 +1513,8 @@
         
         window.syncToCloud = async function(coll, id, data) { if(db) { try { await db.collection(coll).doc(String(id)).set(data); } catch (e) { console.error(e); } } }
         window.deleteFromCloud = async function(coll, id) { if(db) try { await db.collection(coll).doc(String(id)).delete(); } catch(e) {} }
-        
-        window.forceUploadAllLocalData = async function() { 
-            if(!db) return alert("❌ 未連線"); 
-            if(!confirm("上傳？")) return; 
-            try { 
-                const promises = [];
-                window.state.rooms.forEach(r => promises.push(db.collection('rooms').doc(String(r.id)).set(r)));
-                window.state.records.forEach(r => promises.push(db.collection('records').doc(String(r.id)).set(r)));
-                window.state.repairs.forEach(r => promises.push(db.collection('repairs').doc(String(r.id)).set(r)));
-                window.state.expenses.forEach(e => promises.push(db.collection('expenses').doc(String(e.id)).set(e)));
-                promises.push(db.collection('config').doc('rates').set(window.state.utilityRates));
-                promises.push(db.collection('config').doc('settings').set(window.state.settings));
-
-                await Promise.all(promises);
-                alert('完成'); 
-            } catch(e){alert('失敗');} 
-        }
-        
-        window.forceDownloadCloudData = async function() { 
-            if(!db) return alert("❌ 未連線"); 
-            if(!confirm("下載？")) return; 
-            try { 
-                const snap1 = await db.collection('rooms').get(); 
-                window.state.rooms = snap1.docs.map(d=>d.data()); 
-                
-                const snap2 = await db.collection('records').get(); 
-                window.state.records = snap2.docs.map(d=>d.data()); 
-                
-                const snap3 = await db.collection('repairs').get(); 
-                window.state.repairs = snap3.docs.map(d=>d.data()); 
-                
-                const snap4 = await db.collection('config').doc('rates').get(); 
-                if(snap4.exists) window.state.utilityRates = snap4.data(); 
-                
-                const snap5 = await db.collection('config').doc('settings').get();
-                if(snap5.exists) window.state.settings = { ...window.state.settings, ...snap5.data() };
-                
-                const snap6 = await db.collection('expenses').get();
-                window.state.expenses = snap6.docs.map(d=>d.data());
-
-                window.saveData(); 
-                alert('完成'); 
-                location.reload(); 
-            } catch(e){alert('失敗');} 
-        }
-        
+        window.forceUploadAllLocalData = async function() { if(!db) return alert("❌ 未連線"); if(!confirm("上傳？")) return; try { for(const r of window.state.rooms) await window.syncToCloud('rooms', r.id, r); for(const r of window.state.records) await window.syncToCloud('records', r.id, r); for(const r of window.state.repairs) await window.syncToCloud('repairs', r.id, r); await window.syncToCloud('config', 'rates', window.state.utilityRates); alert('完成'); } catch(e){alert('失敗');} }
+        window.forceDownloadCloudData = async function() { if(!db) return alert("❌ 未連線"); if(!confirm("下載？")) return; try { const snap = await db.collection('rooms').get(); window.state.rooms = snap.docs.map(d=>d.data()); localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms)); alert('完成'); location.reload(); } catch(e){alert('失敗');} }
         window.clearCacheAndReload = function() { if(confirm("確定清除暫存重載？(將從雲端抓取最新資料)")) { localStorage.clear(); location.reload(); } }
         window.exportData = function() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "rental_manager_backup_" + new Date().toISOString() + ".json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
         
