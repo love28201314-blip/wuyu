@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V50.4 AI模型修正版</title>
+    <title>租屋管家 Pro - V50.5 AI連線修正版</title>
     <link rel="icon" href="data:,">
     
     <!-- PWA Settings -->
@@ -34,6 +34,7 @@
             font-size: var(--base-font-size); 
             -webkit-tap-highlight-color: transparent; 
             padding-top: env(safe-area-inset-top);
+            padding-bottom: 110px;
             overscroll-behavior-y: none;
         }
 
@@ -67,7 +68,7 @@
         .btn-outline { background: white; color: #4f46e5; border: 2px solid #e0e7ff; }
 
         /* 狀態標籤 */
-        .badge { padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; }
+        .badge { padding: 6px 14px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; border: 2px solid transparent; }
         .badge-red { background: #fef2f2; color: #ef4444; border-color: #fca5a5; }
         .badge-green { background: #ecfdf5; color: #10b981; border-color: #6ee7b7; }
         .badge-orange { background: #fff7ed; color: #ea580c; border-color: #fdba74; }
@@ -79,23 +80,14 @@
         .font-btn.active { border-color: #6366f1; color: #4338ca; background-color: #eef2ff; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); }
 
         /* 導航 */
-        .floating-nav { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom)); left: 16px; right: 16px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border-radius: 24px; padding: 10px; display: flex; justify-content: space-around; box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15); border: 1px solid rgba(255,255,255,0.5); z-index: 40; max-width: 500px; margin: 0 auto; }
-        .nav-btn { color: #94a3b8; transition: all 0.2s; padding: 8px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; }
-        .nav-btn i { font-size: 1.25rem; }
-        .nav-btn span { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; }
+        .floating-nav { position: fixed; bottom: 20px; left: 16px; right: 16px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border-radius: 24px; padding: 10px; display: flex; justify-content: space-around; box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15); border: 1px solid rgba(255,255,255,0.5); z-index: 50; max-width: 500px; margin: 0 auto; }
+        .nav-btn { color: #94a3b8; transition: all 0.2s; padding: 10px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; }
+        .nav-btn i { font-size: 1.2rem; }
+        .nav-btn span { font-size: 0.65rem; font-weight: 700; }
         .nav-btn.active { color: #4f46e5; background: #eef2ff; }
 
         .hidden { display: none !important; }
-        .modal { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 1000; transition: opacity 0.2s; }
-        
-        .sheet-container { width: 100%; max-height: 90vh; background: white; border-radius: 32px 32px 0 0; overflow: hidden; display: flex; flex-direction: column; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); padding-bottom: env(safe-area-inset-bottom); }
-        @media (min-width: 640px) { .sheet-container { max-width: 28rem; border-radius: 24px; max-height: 85vh; animation: zoomIn 0.2s ease-out; padding-bottom: 0; } }
-
-        .sheet-handle { width: 40px; height: 5px; background: #e2e8f0; border-radius: 100px; margin: 12px auto 8px auto; flex-shrink: 0; }
-
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
+        .modal { background-color: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 1000; }
         .photo-scroller { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0 12px 0; }
         .photo-item { width: 90px; height: 90px; flex-shrink: 0; border-radius: 14px; overflow: hidden; background: #e2e8f0; position: relative; }
         .photo-item img { width: 100%; height: 100%; object-fit: cover; }
@@ -124,7 +116,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V50.4 AI模型修正版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V50.5 AI連線修正版</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">管理系統登入</button>
             </div>
@@ -132,7 +124,7 @@
         </div>
     </div>
 
-    <!-- 1. Login Page -->
+    <!-- 1. Login Pages -->
     <div id="view-owner-login" class="view-section hidden min-h-screen bg-white flex flex-col items-center justify-center p-8">
         <div class="w-full max-w-sm">
             <button onclick="window.switchView('landing')" class="mb-10 text-slate-400 font-bold"><i class="fa-solid fa-chevron-left mr-2"></i>返回</button>
@@ -337,95 +329,62 @@
 
     <!-- Modals -->
     <!-- 雜支記帳 -->
-    <div id="modal-add-expense" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-add-expense')">
-        <div class="sheet-container">
-            <div class="sheet-handle"></div>
-            <div class="p-6 h-full flex flex-col">
-                <h3 class="text-xl font-black mb-4 text-center text-orange-600">新增雜支</h3>
-                <div class="space-y-4 flex-1">
-                    <div><label class="input-label">日期</label><input type="date" id="exp-date" class="input-field"></div>
-                    <div><label class="input-label">項目名稱</label><input type="text" id="exp-title" class="input-field" placeholder="例如: 網路費、稅金"></div>
-                    <div><label class="input-label">金額</label><input type="number" id="exp-amount" class="input-field font-bold text-lg" placeholder="0"></div>
-                </div>
-                <div class="flex gap-3 mt-6">
-                    <button onclick="window.closeModal('modal-add-expense')" class="btn btn-outline flex-1">取消</button>
-                    <button onclick="window.saveExpense()" class="btn btn-warning flex-1 shadow-lg text-white">儲存</button>
-                </div>
+    <div id="modal-add-expense" class="modal fixed inset-0 hidden flex items-center justify-center p-6 z-50" onclick="if(event.target === this) window.closeModal('modal-add-expense')">
+        <div class="bg-white w-full max-w-sm rounded-[24px] p-6 animate-slide-up shadow-2xl">
+            <h3 class="text-xl font-black mb-4 text-center text-orange-600">新增雜支</h3>
+            <div class="space-y-4">
+                <div><label class="input-label">日期</label><input type="date" id="exp-date" class="input-field"></div>
+                <div><label class="input-label">項目名稱</label><input type="text" id="exp-title" class="input-field" placeholder="例如: 網路費、稅金"></div>
+                <div><label class="input-label">金額</label><input type="number" id="exp-amount" class="input-field font-bold text-lg" placeholder="0"></div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="window.closeModal('modal-add-expense')" class="btn btn-outline flex-1">取消</button>
+                <button onclick="window.saveExpense()" class="btn btn-warning flex-1 shadow-lg text-white">儲存</button>
             </div>
         </div>
     </div>
 
     <!-- 抄表計費 -->
-    <div id="modal-bill" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-bill')">
-        <div class="sheet-container">
-            <div class="sheet-handle"></div>
-            <div class="p-6 h-full flex flex-col">
-                <h3 class="text-xl font-black mb-4 text-center">抄表計費</h3>
-                <div class="space-y-4 overflow-y-auto flex-1">
-                    <input type="hidden" id="bill-room-id">
-                    <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl">
-                        <span class="text-xs text-slate-400 font-bold">上期度數</span>
-                        <span id="bill-last" class="text-xl font-bold">0</span>
-                    </div>
-                    <div>
-                        <label class="input-label">帳單月份</label>
-                        <input id="bill-month" type="month" class="input-field" onchange="window.onBillMonthChange()">
-                        <!-- 帳單防呆警告訊息 -->
-                        <div id="bill-warning" class="text-red-500 bg-red-50 p-2 rounded-lg text-xs font-bold text-center mt-2 hidden"></div>
-                    </div>
-                    <div class="relative"><input id="bill-curr" type="number" class="input-field text-center text-4xl h-24 font-bold text-indigo-600 bg-indigo-50/50" placeholder="本期"><span class="absolute right-4 top-1/2 -translate-y-1/2 text-indigo-300 font-bold">度</span></div>
-                    
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                        <div class="text-xs font-bold text-slate-400 border-b pb-1 mb-2">固定費率 (向房客收)</div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div><label class="input-label">電價</label><input type="text" id="bill-elec-rate" class="input-field bg-white text-sm text-center font-bold" value="3.5" disabled></div>
-                            <div><label class="input-label">水費</label><input type="text" id="bill-water-fee" class="input-field bg-white text-sm text-center font-bold" value="0" disabled></div>
-                        </div>
-                    </div>
-                    
-                    <input type="hidden" id="bill-elec-cost-total" value="0">
-                    <input type="hidden" id="bill-water-cost-total" value="0">
-                    
-                    <div><label class="input-label">管理費</label><input id="bill-mgmt" type="number" class="input-field"></div>
+    <div id="modal-bill" class="modal fixed inset-0 hidden flex items-center justify-center p-6 z-50" onclick="if(event.target === this) window.closeModal('modal-bill')">
+        <div class="bg-white w-full max-w-sm rounded-[24px] p-6 animate-slide-up shadow-2xl flex flex-col max-h-[90vh]">
+            <h3 class="text-xl font-black mb-4 text-center">抄表計費</h3>
+            <div class="space-y-4 overflow-y-auto">
+                <input type="hidden" id="bill-room-id">
+                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl">
+                    <span class="text-xs text-slate-400 font-bold">上期度數</span>
+                    <span id="bill-last" class="text-xl font-bold">0</span>
                 </div>
-                <div class="flex gap-3 mt-4 shrink-0">
-                    <button onclick="window.closeModal('modal-bill')" class="btn btn-outline flex-1">取消</button>
-                    <button onclick="window.createBill()" class="btn btn-primary flex-1 shadow-lg">生成帳單</button>
+                <div>
+                    <label class="input-label">帳單月份</label>
+                    <input id="bill-month" type="month" class="input-field" onchange="window.onBillMonthChange()">
+                    <!-- 帳單防呆警告訊息 -->
+                    <div id="bill-warning" class="text-red-500 bg-red-50 p-2 rounded-lg text-xs font-bold text-center mt-2 hidden"></div>
                 </div>
+                <div class="relative"><input id="bill-curr" type="number" class="input-field text-center text-4xl h-24 font-bold text-indigo-600 bg-indigo-50/50" placeholder="本期"><span class="absolute right-4 top-1/2 -translate-y-1/2 text-indigo-300 font-bold">度</span></div>
+                
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                    <div class="text-xs font-bold text-slate-400 border-b pb-1 mb-2">固定費率 (向房客收)</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="input-label">電價</label><input type="text" id="bill-elec-rate" class="input-field bg-white text-sm text-center font-bold" value="3.5" disabled></div>
+                        <div><label class="input-label">水費</label><input type="text" id="bill-water-fee" class="input-field bg-white text-sm text-center font-bold" value="0" disabled></div>
+                    </div>
+                </div>
+                
+                <input type="hidden" id="bill-elec-cost-total" value="0">
+                <input type="hidden" id="bill-water-cost-total" value="0">
+                
+                <div><label class="input-label">管理費</label><input id="bill-mgmt" type="number" class="input-field"></div>
             </div>
+            <div class="flex gap-3 mt-6"><button onclick="window.closeModal('modal-bill')" class="btn btn-outline flex-1">取消</button><button onclick="window.createBill()" class="btn btn-primary flex-1 shadow-lg">生成帳單</button></div>
         </div>
     </div>
 
     <!-- 財務詳情 -->
-    <div id="modal-finance-detail" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-finance-detail')">
-        <div class="sheet-container">
-            <div class="sheet-handle"></div>
-            <div class="bg-slate-800 p-5 text-white flex justify-between items-center rounded-t-[32px] sm:rounded-t-[24px]">
-                <h3 class="text-xl font-bold" id="fin-detail-month">---</h3>
-                <button onclick="window.closeModal('modal-finance-detail')" class="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="p-6 overflow-y-auto space-y-6 flex-1">
-                <div class="flex flex-col items-center">
-                    <div class="pie-chart-wrapper mb-4"><div id="pie-chart" class="pie-chart"></div></div>
-                    <div class="flex gap-3 text-xs font-bold text-slate-500">
-                        <div class="flex items-center"><div class="w-2 h-2 rounded-full bg-green-500 mr-1"></div>淨利</div>
-                        <div class="flex items-center"><div class="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>成本</div>
-                        <div class="flex items-center"><div class="w-2 h-2 rounded-full bg-orange-500 mr-1"></div>修繕/雜支</div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-3 gap-2 text-center bg-slate-50 p-4 rounded-xl">
-                    <div><div class="text-[10px] text-slate-400 mb-1">總收(含電)</div><div id="fin-detail-income" class="font-bold">$0</div></div>
-                    <div><div class="text-[10px] text-red-400 mb-1">總支(含雜)</div><div id="fin-detail-cost" class="font-bold text-red-500">$0</div></div>
-                    <div><div class="text-[10px] text-green-500 mb-1">淨賺</div><div id="fin-detail-net" class="font-bold text-green-600">$0</div></div>
-                </div>
-                <div id="fin-detail-list" class="space-y-2"></div>
-            </div>
-        </div>
-    </div>
+    <div id="modal-finance-detail" class="modal fixed inset-0 hidden flex items-center justify-center p-4 z-50" onclick="if(event.target === this) window.closeModal('modal-finance-detail')"><div class="bg-white w-full max-w-md rounded-[24px] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]"><div class="bg-slate-800 p-5 text-white flex justify-between items-center"><h3 class="text-xl font-bold" id="fin-detail-month">---</h3><button onclick="window.closeModal('modal-finance-detail')" class="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full"><i class="fa-solid fa-xmark"></i></button></div><div class="p-6 overflow-y-auto space-y-6 flex-1"><div class="flex flex-col items-center"><div class="pie-chart-wrapper mb-4"><div id="pie-chart" class="pie-chart"></div></div><div class="flex gap-3 text-xs font-bold text-slate-500"><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-green-500 mr-1"></div>淨利</div><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>成本</div><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-orange-500 mr-1"></div>修繕/雜支</div></div></div><div class="grid grid-cols-3 gap-2 text-center bg-slate-50 p-4 rounded-xl"><div><div class="text-[10px] text-slate-400 mb-1">總收(含電)</div><div id="fin-detail-income" class="font-bold">$0</div></div><div><div class="text-[10px] text-red-400 mb-1">總支(水電修)</div><div id="fin-detail-cost" class="font-bold text-red-500">$0</div></div><div><div class="text-[10px] text-green-500 mb-1">淨賺</div><div id="fin-detail-net" class="font-bold text-green-600">$0</div></div></div><div id="fin-detail-list" class="space-y-2"></div></div></div></div>
     
     <!-- 房間詳情 -->
-    <div id="modal-room-detail" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-room-detail')">
-        <div class="sheet-container">
+    <div id="modal-room-detail" class="modal fixed inset-0 hidden flex items-center justify-center p-4 z-50" onclick="if(event.target === this) window.closeModal('modal-room-detail')">
+        <div class="bg-white w-full max-w-md rounded-[24px] overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
             <div class="h-48 bg-slate-200 relative shrink-0">
                 <img id="detail-photo" class="w-full h-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
@@ -458,81 +417,14 @@
     </div>
     
     <!-- 編輯房間 -->
-    <div id="modal-room-edit" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-room-edit')">
-        <div class="sheet-container">
-            <div class="sheet-handle"></div>
-            <div class="p-5 border-b flex justify-between items-center bg-slate-50">
-                <h3 class="text-xl font-bold text-slate-800">編輯房間</h3>
-                <button onclick="window.closeModal('modal-room-edit')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-            </div>
-            <div class="p-6 overflow-y-auto space-y-5 flex-1">
-                <input type="hidden" id="edit-room-id">
-                <div>
-                    <label class="input-label">封面照片</label>
-                    <div onclick="window.triggerFile('input-p-main')" class="aspect-video bg-slate-100 rounded-2xl flex flex-col items-center justify-center text-slate-400 font-bold border-2 border-dashed border-slate-200 overflow-hidden relative shadow-inner cursor-pointer">
-                        <input type="file" id="input-p-main" class="hidden" onchange="window.handlePhoto(this, 'edit-preview-main')">
-                        <img id="edit-preview-main" class="absolute inset-0 w-full h-full object-cover hidden">
-                        <i class="fa-solid fa-camera text-3xl mb-1"></i>
-                    </div>
-                </div>
-                <div>
-                    <div class="flex justify-between items-center mb-2"><label class="input-label">家具照片</label><button onclick="window.triggerFile('input-p-furn')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg font-bold">+ 新增</button></div>
-                    <input type="file" id="input-p-furn" class="hidden" multiple onchange="window.handleAddPhoto(this, 'furn')">
-                    <div id="edit-list-furn" class="photo-scroller"></div>
-                </div>
-                <div>
-                    <div class="flex justify-between items-center mb-2"><label class="input-label">合約照片</label><button onclick="window.triggerFile('input-p-cont')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg font-bold">+ 新增</button></div>
-                    <input type="file" id="input-p-cont" class="hidden" multiple onchange="window.handleAddPhoto(this, 'cont')">
-                    <div id="edit-list-cont" class="photo-scroller"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-[10px] font-bold text-slate-400 ml-2 mb-1 block">房號</label><input id="edit-name" class="input-field !py-3 !px-4 shadow-inner" placeholder="101"></div>
-                    <div><label class="text-[10px] font-bold text-slate-400 ml-2 mb-1 block">月租</label><input id="edit-rent" type="number" class="input-field !py-3 !px-4 shadow-inner" placeholder="6000"></div>
-                </div>
-                <div class="bg-indigo-50 p-5 rounded-2xl space-y-4 border border-indigo-100 shadow-sm">
-                    <h4 class="font-black text-indigo-800 text-sm flex items-center"><i class="fa-solid fa-user-edit mr-2"></i>合約資料</h4>
-                    <input id="edit-tenant" class="input-field bg-white !py-3 !px-4 shadow-sm" placeholder="房客姓名">
-                    <div class="grid grid-cols-2 gap-4">
-                        <input id="edit-phone" class="input-field bg-white !py-3 !px-4 shadow-sm" placeholder="電話">
-                        <input id="edit-payday" type="number" class="input-field bg-white !py-3 !px-4 shadow-sm" placeholder="繳款日">
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="text-[10px] font-bold text-blue-400 ml-2">起租日</label><input id="edit-start" type="date" class="input-field bg-white !py-3 !text-sm shadow-sm"></div>
-                        <div><label class="text-[10px] font-bold text-blue-400 ml-2">到期日</label><input id="edit-end" type="date" class="input-field bg-white !py-3 !text-sm shadow-sm"></div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-[10px] font-bold text-slate-400 ml-2 mb-1 block">當前電表</label><input id="edit-meter" type="number" class="input-field !py-3 !px-4 shadow-inner" value="0"></div>
-                    <div><label class="text-[10px] font-bold text-slate-400 ml-2 mb-1 block">水費(月/人)</label><input id="edit-water-fee" type="number" class="input-field !py-3 !px-4 shadow-inner" value="0"></div>
-                    <div class="col-span-2"><label class="text-[10px] font-bold text-slate-400 ml-2 mb-1 block">管理費</label><input id="edit-mgmt" type="number" class="input-field !py-3 !px-4 shadow-inner" value="0"></div>
-                </div>
-            </div>
-            <div class="p-6 border-t bg-slate-50 flex gap-3 shrink-0 rounded-b-[24px]">
-                <button id="edit-btn-del" onclick="window.deleteRoom()" class="w-1/4 btn btn-danger shadow-sm"><i class="fa-solid fa-trash"></i></button><button id="edit-btn-moveout" onclick="window.moveOutTenant()" class="w-1/4 btn btn-warning font-black text-xs shadow-sm">退租</button><button onclick="window.saveRoom()" id="btn-save-room" class="flex-1 btn btn-primary font-black shadow-lg">儲存房訊</button>
-            </div>
-        </div>
-    </div>
+    <div id="modal-room-edit" class="modal fixed inset-0 hidden flex items-center justify-center p-4 z-50" onclick="if(event.target === this) window.closeModal('modal-room-edit')"><div class="bg-white w-full max-w-md rounded-[24px] p-5 animate-slide-up flex flex-col max-h-[90vh]"><h3 class="text-xl font-bold mb-4 text-center shrink-0">編輯房間</h3><div class="overflow-y-auto space-y-4 flex-1"><input type="hidden" id="edit-room-id"><div><label class="input-label">房號</label><input id="edit-name" class="input-field"></div><div><label class="input-label">月租</label><input id="edit-rent" type="number" class="input-field"></div><div class="bg-slate-50 p-3 rounded-xl space-y-3"><input id="edit-tenant" class="input-field" placeholder="房客姓名"><input id="edit-phone" class="input-field" placeholder="電話"><div class="grid grid-cols-2 gap-2"><input id="edit-start" type="date" class="input-field"><input id="edit-end" type="date" class="input-field"></div><input id="edit-payday" type="number" class="input-field" placeholder="繳款日"></div><div class="grid grid-cols-2 gap-3"><div><label class="input-label">電表</label><input id="edit-meter" type="number" class="input-field"></div><div><label class="input-label">水費</label><input id="edit-water-fee" type="number" class="input-field" disabled value="0"></div><div class="col-span-2"><label class="input-label">管理費</label><input id="edit-mgmt" type="number" class="input-field"></div></div><div><label class="input-label">照片</label><div class="flex gap-2"><button onclick="window.triggerFile('input-p-main')" class="text-xs bg-slate-100 px-3 py-2 rounded">封面</button><button onclick="window.triggerFile('input-p-furn')" class="text-xs bg-slate-100 px-3 py-2 rounded">家具</button><button onclick="window.triggerFile('input-p-cont')" class="text-xs bg-slate-100 px-3 py-2 rounded">合約</button></div><input type="file" id="input-p-main" class="hidden" onchange="window.handlePhoto(this, 'edit-preview-main')"><input type="file" id="input-p-furn" class="hidden" multiple onchange="window.handleAddPhoto(this, 'furn')"><input type="file" id="input-p-cont" class="hidden" multiple onchange="window.handleAddPhoto(this, 'cont')"><div class="mt-2"><img id="edit-preview-main" class="w-full h-32 object-cover rounded-xl hidden"></div><div id="edit-list-furn" class="photo-scroller mt-2"></div><div id="edit-list-cont" class="photo-scroller mt-2"></div></div></div><div class="flex gap-2 mt-4 pt-2 border-t shrink-0"><button id="edit-btn-del" onclick="window.deleteRoom()" class="w-10 btn btn-danger hidden"><i class="fa-solid fa-trash"></i></button><button id="edit-btn-moveout" onclick="window.moveOutTenant()" class="w-20 btn btn-warning text-xs hidden">退租</button><button onclick="window.saveRoom()" id="btn-save-room" class="flex-1 btn btn-primary">儲存</button></div></div></div>
     
-    <div id="modal-pay-confirm" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-pay-confirm')">
-        <div class="sheet-container">
-            <div class="sheet-handle"></div>
-            <div class="p-6 text-center">
-                <input type="hidden" id="pay-record-id">
-                <div class="mb-4"><i class="fa-solid fa-circle-check text-5xl text-green-500"></i></div>
-                <div class="text-center text-3xl font-black mb-4" id="pay-amount">$0</div>
-                <div class="mb-6"><label class="input-label text-left">收款日期</label><input type="date" id="pay-date" class="input-field text-center font-bold"></div>
-                <div class="flex gap-3">
-                    <button onclick="window.closeModal('modal-pay-confirm')" class="btn btn-outline flex-1">取消</button>
-                    <button onclick="window.confirmPay()" class="btn btn-success flex-1 shadow-lg">確認收款</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="modal-pay-confirm" class="modal fixed inset-0 hidden flex items-center justify-center p-6 z-50" onclick="if(event.target === this) window.closeModal('modal-pay-confirm')"><div class="bg-white w-full max-w-sm rounded-[24px] shadow-2xl p-6"><input type="hidden" id="pay-record-id"><div class="text-center mb-4"><i class="fa-solid fa-circle-check text-5xl text-green-500"></i></div><div class="text-center text-3xl font-black mb-4" id="pay-amount">$0</div><div><label class="input-label">收款日期</label><input type="date" id="pay-date" class="input-field text-center font-bold"></div><div class="flex gap-3 mt-6"><button onclick="window.closeModal('modal-pay-confirm')" class="btn btn-outline flex-1">取消</button><button onclick="window.confirmPay()" class="btn btn-success flex-1 shadow-lg">確認</button></div></div></div>
     
     <!-- 催繳通知 -->
-    <div id="modal-notify" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-notify')">
-        <div class="sheet-container">
-            <div class="bg-blue-600 p-6 text-white text-center shrink-0 relative rounded-t-[32px] sm:rounded-t-[24px]">
+    <div id="modal-notify" class="modal fixed inset-0 hidden flex items-center justify-center p-4 z-50" onclick="if(event.target === this) window.closeModal('modal-notify')">
+        <div class="bg-white w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden animate-slide-up flex flex-col">
+            <div class="bg-blue-600 p-6 text-white text-center shrink-0 relative">
                 <i class="fa-solid fa-paper-plane text-5xl mb-3"></i>
                 <h3 class="text-2xl font-black tracking-tighter">發送通知</h3>
                 <button onclick="window.closeModal('modal-notify')" class="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center transition hover:bg-white/30"><i class="fa-solid fa-xmark"></i></button>
@@ -557,37 +449,7 @@
         </div>
     </div>
     
-    <div id="modal-repair-process" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-repair-process')">
-        <div class="sheet-container">
-            <div class="bg-orange-500 p-6 text-white text-center shrink-0">
-                <i class="fa-solid fa-screwdriver-wrench text-5xl mb-2"></i>
-                <h3 class="text-2xl font-bold">報修處理</h3>
-            </div>
-            <div class="p-6 overflow-y-auto space-y-4 flex-1">
-                <input type="hidden" id="repair-process-id">
-                <div>
-                    <label class="text-xs font-bold text-slate-400 mb-2 block ml-2">問題描述 <button onclick="window.analyzeRepair()" class="ml-2 px-2 py-1 bg-orange-100 text-orange-700 rounded text-[10px]">✨ AI 建議</button></label>
-                    <div id="repair-desc-display" class="bg-slate-100 p-4 rounded-2xl text-slate-700 font-bold text-sm shadow-inner">載入中...</div>
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-slate-400 mb-2 block ml-2">處理記錄 / 備註</label>
-                    <textarea id="repair-reply-input" class="input-field !py-3 h-24 text-sm shadow-inner" placeholder="輸入回覆訊息..."></textarea>
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-slate-400 mb-2 block ml-2">實際修繕花費 (元)</label>
-                    <input type="number" id="repair-cost-input" class="input-field !py-3 shadow-inner" placeholder="0">
-                </div>
-                <div class="flex items-center gap-3 ml-2">
-                    <input type="checkbox" id="repair-done-check" class="w-6 h-6 rounded-lg accent-green-600">
-                    <label for="repair-done-check" class="font-black text-slate-700">標記為已完工</label>
-                </div>
-            </div>
-            <div class="p-4 bg-slate-50 border-t flex gap-3 shrink-0">
-                <button onclick="window.closeModal('modal-repair-process')" class="btn btn-outline flex-1 font-black">取消</button>
-                <button onclick="window.saveRepairProcess()" class="btn btn-primary flex-1 font-black">儲存</button>
-            </div>
-        </div>
-    </div>
+    <div id="modal-repair-process" class="modal fixed inset-0 hidden flex items-center justify-center p-4 z-50" onclick="if(event.target === this) window.closeModal('modal-repair-process')"><div class="bg-white w-full max-w-sm rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"><div class="bg-orange-500 p-6 text-white text-center shrink-0"><i class="fa-solid fa-screwdriver-wrench text-5xl mb-2"></i><h3 class="text-2xl font-bold">報修處理</h3></div><div class="p-6 overflow-y-auto space-y-4 flex-1"><input type="hidden" id="repair-process-id"><div><label class="text-xs font-bold text-slate-400 mb-2 block ml-2">問題描述 <button onclick="window.analyzeRepair()" class="ml-2 px-2 py-1 bg-orange-100 text-orange-700 rounded text-[10px]">✨ AI 建議</button></label><div id="repair-desc-display" class="bg-slate-100 p-4 rounded-2xl text-slate-700 font-bold text-sm shadow-inner">載入中...</div></div><div><label class="text-xs font-bold text-slate-400 mb-2 block ml-2">處理記錄 / 備註</label><textarea id="repair-reply-input" class="input-field !py-3 h-24 text-sm shadow-inner" placeholder="輸入回覆訊息..."></textarea></div><div><label class="text-xs font-bold text-slate-400 mb-2 block ml-2">實際修繕花費 (元)</label><input type="number" id="repair-cost-input" class="input-field !py-3 shadow-inner" placeholder="0"></div><div class="flex items-center gap-3 ml-2"><input type="checkbox" id="repair-done-check" class="w-6 h-6 rounded-lg accent-green-600"><label for="repair-done-check" class="font-black text-slate-700">標記為已完工</label></div></div><div class="p-4 bg-slate-50 border-t flex gap-3 shrink-0"><button onclick="window.closeModal('modal-repair-process')" class="btn btn-outline flex-1 font-black">取消</button><button onclick="window.saveRepairProcess()" class="btn btn-primary flex-1 font-black">儲存</button></div></div></div>
     
     <div id="modal-lightbox" class="modal fixed inset-0 hidden flex items-center justify-center p-0 bg-black/95 z-[1100]" onclick="if(event.target === this) window.closeModal('modal-lightbox')"><button onclick="window.closeModal('modal-lightbox')" class="absolute top-5 right-5 text-white text-3xl z-50"><i class="fa-solid fa-xmark"></i></button><img id="lightbox-img" class="max-w-full max-h-[90vh] object-contain"></div>
 
@@ -808,7 +670,17 @@
             if (apiKeyEl) window.state.settings.geminiApiKey = apiKeyEl.value;
             
             window.saveData(); 
-            window.showToast('設定已儲存');
+            
+            // Sync Settings to Cloud immediately
+            if(db) {
+                 db.collection('config').doc('settings').set(window.state.settings).then(() => {
+                     window.showToast('設定已儲存並同步至雲端');
+                 }).catch(e => {
+                     window.showToast('設定已儲存 (僅本機)');
+                 });
+            } else {
+                 window.showToast('設定已儲存 (僅本機)');
+            }
         }
 
         // ==========================================
@@ -1283,12 +1155,8 @@
             if(!r) return;
             document.getElementById('detail-room-title').innerText=r.name; 
             document.getElementById('detail-photo').src=r.photo||''; 
-            document.getElementById('detail-tenant').innerText=r.tenant||'未租出';
-            document.getElementById('detail-rent').innerText=`$${r.rent||0}`;
-            document.getElementById('detail-water').innerText=`$${r.waterFee||0}`;
-            document.getElementById('detail-mgmt').innerText=`$${r.mgmtFee||0}`;
-            document.getElementById('detail-start').innerText=r.start||'--';
-            document.getElementById('detail-end').innerText=r.end||'--';
+            
+            // Tenant View Removed, but keeping logic for edit/bill
             
             const renderList = (elId, list) => {
                 const el = document.getElementById(elId);
@@ -1302,6 +1170,13 @@
             const cont = r.contPhotos || (r.photoCont ? [r.photoCont] : []);
             renderList('detail-furn-list', furn);
             renderList('detail-cont-list', cont);
+            
+            // Dynamic Details population
+            document.getElementById('detail-rent').innerText = r.rent || '--';
+            document.getElementById('detail-water').innerText = r.waterFee || '--';
+            document.getElementById('detail-mgmt').innerText = r.mgmtFee || '--';
+            document.getElementById('detail-start').innerText = r.start || '--';
+            document.getElementById('detail-end').innerText = r.end || '--';
 
             document.getElementById('modal-room-detail').classList.remove('hidden'); 
         }
@@ -1651,6 +1526,7 @@
                 
                 // Fetch Expenses
                 db.collection('expenses').onSnapshot(snap => {
+                    // Update regardless if empty or not to handle clears
                     const cloudExpenses = snap.empty ? [] : snap.docs.map(d => d.data());
                     window.state.expenses = cloudExpenses;
                     localStorage.setItem('rental_expenses', JSON.stringify(window.state.expenses));
@@ -1665,7 +1541,8 @@
                     if (JSON.stringify(window.state.rooms) !== JSON.stringify(cloudRooms)) {
                         window.state.rooms = cloudRooms;
                         localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
-                        window.renderRooms(); window.renderDashboard();
+                        window.renderRooms(); 
+                        window.renderDashboard();
                     }
                     if(statusEl) { statusEl.innerHTML = '<i class="fa-solid fa-cloud mr-1"></i>已連線'; statusEl.className = "text-[10px] font-bold bg-green-100 text-green-600 px-3 py-1 rounded-full cursor-pointer"; }
                     if(document.getElementById('cloud-status-text')) document.getElementById('cloud-status-text').innerText = "✅ 雲端連線正常";
@@ -1673,11 +1550,12 @@
                 });
                 
                 db.collection('records').onSnapshot(snap => { 
+                    // 修正：現在即使是空的，也會更新狀態，解決刪除後手機沒更新的問題
                     const cloudRecords = snap.empty ? [] : snap.docs.map(d => d.data());
                     window.state.records = cloudRecords;
                     localStorage.setItem('rental_records', JSON.stringify(window.state.records));
                     window.renderDashboard(); 
-                    window.renderRooms();
+                    window.renderRooms(); // Update unpaid badge
                     if(document.getElementById('tab-finance') && !document.getElementById('tab-finance').classList.contains('hidden')) {
                         window.renderFinance();
                     }
@@ -1703,8 +1581,60 @@
         
         window.syncToCloud = async function(coll, id, data) { if(db) { try { await db.collection(coll).doc(String(id)).set(data); } catch (e) { console.error(e); } } }
         window.deleteFromCloud = async function(coll, id) { if(db) try { await db.collection(coll).doc(String(id)).delete(); } catch(e) {} }
-        window.forceUploadAllLocalData = async function() { if(!db) return alert("❌ 未連線"); if(!confirm("上傳？")) return; try { for(const r of window.state.rooms) await window.syncToCloud('rooms', r.id, r); for(const r of window.state.records) await window.syncToCloud('records', r.id, r); for(const r of window.state.repairs) await window.syncToCloud('repairs', r.id, r); await window.syncToCloud('config', 'rates', window.state.utilityRates); alert('完成'); } catch(e){alert('失敗');} }
-        window.forceDownloadCloudData = async function() { if(!db) return alert("❌ 未連線"); if(!confirm("下載？")) return; try { const snap = await db.collection('rooms').get(); window.state.rooms = snap.docs.map(d=>d.data()); localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms)); alert('完成'); location.reload(); } catch(e){alert('失敗');} }
+        
+        window.forceUploadAllLocalData = async function() { 
+            if(!db) return alert("❌ 未連線"); 
+            if(!confirm("上傳？")) return; 
+            try { 
+                window.showToast("🚀 正在極速上傳中...");
+                
+                const promises = [];
+                // Pack all rooms
+                window.state.rooms.forEach(r => promises.push(db.collection('rooms').doc(String(r.id)).set(r)));
+                window.state.records.forEach(r => promises.push(db.collection('records').doc(String(r.id)).set(r)));
+                window.state.repairs.forEach(r => promises.push(db.collection('repairs').doc(String(r.id)).set(r)));
+                window.state.expenses.forEach(e => promises.push(db.collection('expenses').doc(String(e.id)).set(e)));
+                promises.push(db.collection('config').doc('rates').set(window.state.utilityRates));
+                promises.push(db.collection('config').doc('settings').set(window.state.settings));
+
+                await Promise.all(promises);
+                alert('✅ 所有資料上傳完成'); 
+            } catch(e){
+                console.error(e);
+                alert('❌ 上傳失敗: ' + e.message);
+            } 
+        }
+        
+        window.forceDownloadCloudData = async function() { 
+            if(!db) return alert("❌ 未連線"); 
+            if(!confirm("下載？")) return; 
+            try { 
+                window.showToast("🚀 正在極速下載中...");
+                const [snap1, snap2, snap3, snap4, snap5, snap6] = await Promise.all([
+                    db.collection('rooms').get(),
+                    db.collection('records').get(),
+                    db.collection('repairs').get(),
+                    db.collection('config').doc('rates').get(),
+                    db.collection('config').doc('settings').get(),
+                    db.collection('expenses').get()
+                ]);
+                
+                window.state.rooms = snap1.docs.map(d=>d.data()); 
+                window.state.records = snap2.docs.map(d=>d.data()); 
+                window.state.repairs = snap3.docs.map(d=>d.data()); 
+                if(snap4.exists) window.state.utilityRates = snap4.data(); 
+                if(snap5.exists) window.state.settings = { ...window.state.settings, ...snap5.data() }; 
+                window.state.expenses = snap6.docs.map(d=>d.data());
+
+                window.saveData(); 
+                alert('✅ 下載完成，即將重整畫面'); 
+                location.reload(); 
+            } catch(e){
+                console.error(e);
+                alert('❌ 下載失敗: ' + e.message);
+            } 
+        }
+        
         window.clearCacheAndReload = function() { if(confirm("確定清除暫存重載？(將從雲端抓取最新資料)")) { localStorage.clear(); location.reload(); } }
         window.exportData = function() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "rental_manager_backup_" + new Date().toISOString() + ".json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
         
