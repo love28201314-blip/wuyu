@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V49.3 帳務重置修復版</title>
+    <title>租屋管家 Pro - V50.0 正式旗艦版</title>
+    <link rel="icon" href="data:,"> <!-- 防止 Favicon 404 -->
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -115,7 +116,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V49.3 帳務重置修復版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V50.0 正式旗艦版</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">管理系統登入</button>
             </div>
@@ -1064,47 +1065,6 @@
             window.showToast("記帳成功");
             window.renderFinance();
         }
-        
-        // Reset Financial Data (Keep Rooms & Settings)
-        window.resetFinancialData = async function() {
-            if(!confirm("⚠️ 確定要清除所有「帳務紀錄」嗎？\n(房間資料與設定將會保留)\n此動作無法復原！")) return;
-            
-            // Clear Local State first
-            window.state.records = [];
-            window.state.repairs = [];
-            window.state.expenses = [];
-            window.state.utilityRates = {};
-            window.saveData();
-
-            if(db && confirm("是否一併清除雲端上的帳務資料？")) {
-                window.showToast("正在清除雲端資料...");
-                try {
-                    const promises = [];
-                    // Delete Records
-                    const recSnap = await db.collection('records').get();
-                    recSnap.forEach(doc => promises.push(doc.ref.delete()));
-                    
-                    // Delete Repairs
-                    const repSnap = await db.collection('repairs').get();
-                    repSnap.forEach(doc => promises.push(doc.ref.delete()));
-                    
-                    // Delete Expenses
-                    const expSnap = await db.collection('expenses').get();
-                    expSnap.forEach(doc => promises.push(doc.ref.delete()));
-                    
-                    // Delete Rates
-                    promises.push(db.collection('config').doc('rates').delete());
-                    
-                    await Promise.all(promises);
-                    alert("✅ 帳務資料已完全清除");
-                } catch(e) {
-                    alert("⚠️ 雲端部分資料清除失敗: " + e.message);
-                }
-            } else {
-                window.showToast("已清除本機資料");
-            }
-            location.reload();
-        }
 
         window.loadUtilityRatesForMonth = function() {
             const picker = document.getElementById('util-month-picker');
@@ -1686,6 +1646,12 @@
                 window.setFontSize(window.state.settings.fontSize || 16);
                 window.applySettingsUI();
                 window.initCloud();
+                
+                // 清除 Tailwind 的 CDN 警告，避免讓使用者誤以為是錯誤
+                setTimeout(() => {
+                    console.clear();
+                    console.log("%c 租屋管家 Pro 已就緒 ", "background: #4f46e5; color: white; font-size: 12px; padding: 4px; border-radius: 4px;");
+                }, 1000);
             } catch (e) {
                 console.error("Init Error:", e);
             }
