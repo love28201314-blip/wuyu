@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 - V51.1 智慧計費版</title>
+    <title>租屋管家 - V51.2 穩定修復版</title>
     <link rel="icon" href="data:,">
     
     <!-- PWA Settings -->
@@ -85,6 +85,7 @@
         .nav-btn span { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; }
         .nav-btn.active { color: #4f46e5; background: #eef2ff; }
 
+        /* Modal */
         .hidden { display: none !important; }
         .modal { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 1000; transition: opacity 0.2s; }
         
@@ -92,7 +93,6 @@
         @media (min-width: 640px) { .sheet-container { max-width: 28rem; border-radius: 24px; max-height: 85vh; animation: zoomIn 0.2s ease-out; padding-bottom: 0; } }
 
         .sheet-handle { width: 40px; height: 5px; background: #e2e8f0; border-radius: 100px; margin: 12px auto 8px auto; flex-shrink: 0; }
-
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
@@ -124,9 +124,9 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V51.1 智慧計費版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V51.2 穩定修復版</p>
             <div class="space-y-4 w-full">
-                <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">管理系統登入</button>
+                <button onclick="switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">管理系統登入</button>
             </div>
             <p class="mt-12 text-xs text-slate-300 font-mono tracking-widest uppercase">Project: <span id="landing-id">---</span></p>
         </div>
@@ -135,14 +135,14 @@
     <!-- 1. Login Page -->
     <div id="view-owner-login" class="view-section hidden min-h-screen bg-white flex flex-col items-center justify-center p-8">
         <div class="w-full max-w-sm">
-            <button onclick="window.switchView('landing')" class="mb-10 text-slate-400 font-bold"><i class="fa-solid fa-chevron-left mr-2"></i>返回</button>
+            <button onclick="switchView('landing')" class="mb-10 text-slate-400 font-bold"><i class="fa-solid fa-chevron-left mr-2"></i>返回</button>
             <h2 class="text-2xl font-black text-slate-800 mb-2">房東驗證</h2>
             <p class="text-slate-400 mb-8 text-sm font-bold">請輸入管理密碼</p>
             <input type="password" id="owner-pwd-input" class="input-field text-center text-4xl h-20 tracking-[0.5em] mb-4" placeholder="••••" maxlength="8">
             <p id="owner-login-error" class="text-red-500 text-center font-bold mb-6 text-sm hidden"></p>
-            <button onclick="window.verifyOwner()" class="btn btn-primary w-full py-4 text-lg shadow-lg mb-4">進入系統</button>
+            <button onclick="verifyOwner()" class="btn btn-primary w-full py-4 text-lg shadow-lg mb-4">進入系統</button>
             <div class="text-center">
-                <button onclick="window.resetSystemSettings()" class="text-xs text-red-400 underline hover:text-red-600">忘記密碼？重置系統設定 (0000)</button>
+                <button onclick="resetSystemSettings()" class="text-xs text-red-400 underline hover:text-red-600">忘記密碼？重置系統設定 (0000)</button>
             </div>
         </div>
     </div>
@@ -150,13 +150,13 @@
     <!-- 2. Landlord App -->
     <div id="app-landlord" class="view-section hidden min-h-screen">
         <header class="bg-white/90 backdrop-blur-md px-5 py-4 sticky top-0 z-30 flex justify-between items-center border-b border-slate-100">
-            <div class="flex items-center" onclick="window.confirmExit()">
+            <div class="flex items-center" onclick="confirmExit()">
                 <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white mr-2 shadow-md">
                     <i class="fa-solid fa-building"></i>
                 </div>
                 <h1 class="text-lg font-black text-slate-800">租屋管家</h1>
             </div>
-            <div id="status-indicator" class="text-[10px] font-bold bg-slate-100 text-slate-400 px-3 py-1.5 rounded-full cursor-pointer" onclick="window.initCloud()">連線中...</div>
+            <div id="status-indicator" class="text-[10px] font-bold bg-slate-100 text-slate-400 px-3 py-1.5 rounded-full cursor-pointer" onclick="initCloud()">連線中...</div>
         </header>
 
         <main class="container mx-auto p-4 max-w-lg pb-32">
@@ -193,11 +193,11 @@
                 <div class="flex flex-col gap-3 mb-4">
                     <div class="flex justify-between items-center">
                         <h2 class="text-2xl font-black text-slate-800">房間管理</h2>
-                        <button onclick="window.openRoomModal()" class="btn btn-primary text-sm px-4 shadow-md">+ 新增</button>
+                        <button onclick="openRoomModal()" class="btn btn-primary text-sm px-4 shadow-md">+ 新增</button>
                     </div>
                     <!-- 搜尋快篩 -->
                     <div class="relative">
-                        <input type="text" id="room-search-input" class="input-field !py-3 !pl-10 shadow-sm" placeholder="🔍 搜尋房號或房客..." oninput="window.renderRooms()">
+                        <input type="text" id="room-search-input" class="input-field !py-3 !pl-10 shadow-sm" placeholder="🔍 搜尋房號或房客..." oninput="renderRooms()">
                         <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
                     </div>
                 </div>
@@ -210,7 +210,7 @@
                 <div class="card p-6 mb-6 border-l-4 border-indigo-500 bg-white">
                     <div class="mb-4">
                          <label class="input-label">選擇月份 (記錄房東實際支出)</label>
-                         <input type="month" id="util-month-picker" class="input-field text-center font-bold text-lg bg-indigo-50 border-indigo-200" onchange="window.loadUtilityRatesForMonth()">
+                         <input type="month" id="util-month-picker" class="input-field text-center font-bold text-lg bg-indigo-50 border-indigo-200" onchange="loadUtilityRatesForMonth()">
                     </div>
 
                     <div class="space-y-4">
@@ -224,7 +224,7 @@
                         </div>
                     </div>
                     
-                    <button onclick="window.saveUtilityRates()" class="btn btn-primary w-full mt-6 shadow-lg">儲存此月成本</button>
+                    <button onclick="saveUtilityRates()" class="btn btn-primary w-full mt-6 shadow-lg">儲存此月成本</button>
                     <p class="text-center text-xs text-slate-400 mt-3">注意：此處輸入的是「房東的總支出」，系統會用來計算該月份真正的淨利。</p>
                 </div>
             </div>
@@ -242,7 +242,7 @@
 
                 <div class="flex justify-between items-end mb-3">
                     <h3 class="text-sm font-bold text-slate-500 ml-1">月度明細</h3>
-                    <button onclick="window.openAddExpenseModal()" class="btn btn-outline text-xs !py-2 !px-3 border-orange-200 text-orange-600 hover:bg-orange-50"><i class="fa-solid fa-plus mr-1"></i>記帳</button>
+                    <button onclick="openAddExpenseModal()" class="btn btn-outline text-xs !py-2 !px-3 border-orange-200 text-orange-600 hover:bg-orange-50"><i class="fa-solid fa-plus mr-1"></i>記帳</button>
                 </div>
                 <div id="finance-list" class="space-y-3 pb-24"></div>
                 <div id="empty-finance-msg" class="hidden text-center py-20 text-slate-300 font-bold">尚無數據</div>
@@ -255,34 +255,34 @@
                 <div class="card p-6 mb-6">
                     <label class="input-label mb-3">介面字體大小</label>
                     <div class="font-btn-container">
-                        <button onclick="window.setFontSize(16)" id="font-size-16" class="font-btn">小</button>
-                        <button onclick="window.setFontSize(18)" id="font-size-18" class="font-btn">中</button>
-                        <button onclick="window.setFontSize(22)" id="font-size-22" class="font-btn">大</button>
+                        <button onclick="setFontSize(16)" id="font-size-16" class="font-btn">小</button>
+                        <button onclick="setFontSize(18)" id="font-size-18" class="font-btn">中</button>
+                        <button onclick="setFontSize(22)" id="font-size-22" class="font-btn">大</button>
                     </div>
                 </div>
 
                 <!-- API Key 設定區塊 -->
                 <div class="card p-6 mb-6 border-l-4 border-purple-500 bg-white shadow-md">
                     <h3 class="font-black text-purple-800 mb-2 flex items-center"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i> AI 功能設定</h3>
-                    <p class="text-[10px] text-slate-400 mb-3">請填入您自己的 Gemini API Key。若出現 403/404 錯誤，請檢查權限或切換模型。</p>
-                    <div class="mb-3"><label class="input-label">Gemini API Key</label><input type="password" id="set-gemini-api-key" class="input-field shadow-inner border-purple-100" placeholder="AIzaSy..." onchange="window.saveSettings()"></div>
+                    <p class="text-[10px] text-slate-400 mb-3">請填入您自己的 Gemini API Key。若出現 403 錯誤，請檢查權限或切換模型。</p>
+                    <div class="mb-3"><label class="input-label">Gemini API Key</label><input type="password" id="set-gemini-api-key" class="input-field shadow-inner border-purple-100" placeholder="AIzaSy..." onchange="saveSettings()"></div>
                     
                     <div>
-                        <label class="input-label">AI 模型選擇 (推薦 1.5 Flash)</label>
-                        <select id="set-ai-model" class="input-field bg-white shadow-sm" onchange="window.saveSettings()">
-                            <option value="gemini-1.5-flash">Gemini 1.5 Flash (快速/免費)</option>
-                            <option value="gemini-pro">Gemini 1.0 Pro (穩定/舊版)</option>
+                        <label class="input-label">AI 模型選擇 (若遇錯誤請切換)</label>
+                        <select id="set-ai-model" class="input-field bg-white shadow-sm" onchange="saveSettings()">
+                            <option value="gemini-1.5-flash">Gemini 1.5 Flash (推薦)</option>
+                            <option value="gemini-pro">Gemini Pro (穩定舊版)</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="card p-6 mb-6 space-y-5">
                     <div class="border-b pb-2 mb-2"><span class="text-sm font-black text-slate-800">帳號與安全</span></div>
-                    <div><label class="input-label">房東密碼</label><input type="text" id="set-pwd" class="input-field" onchange="window.saveSettings()"></div>
+                    <div><label class="input-label">房東密碼</label><input type="text" id="set-pwd" class="input-field" onchange="saveSettings()"></div>
                     
                     <div class="pt-2">
                         <label class="input-label">收款銀行 (將顯示於催繳通知)</label>
-                        <select id="set-bank-code" class="input-field mb-3 bg-white" onchange="window.saveSettings()">
+                        <select id="set-bank-code" class="input-field mb-3 bg-white" onchange="saveSettings()">
                             <option value="">請選擇銀行...</option>
                             <option value="822 中國信託">822 中國信託</option>
                             <option value="013 國泰世華">013 國泰世華</option>
@@ -301,7 +301,7 @@
                             <option value="其他">其他</option>
                         </select>
                         <label class="input-label">匯款帳號</label>
-                        <input type="text" id="set-bank-account" class="input-field" placeholder="請輸入帳號" onchange="window.saveSettings()">
+                        <input type="text" id="set-bank-account" class="input-field" placeholder="請輸入帳號" onchange="saveSettings()">
                     </div>
                 </div>
 
@@ -315,39 +315,39 @@
                         <div id="cloud-status-text" class="text-center text-xs font-bold text-gray-400 mb-3"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> 連線狀態偵測中...</div>
                         
                         <div class="grid grid-cols-2 gap-3">
-                            <button onclick="window.forceUploadAllLocalData()" class="btn bg-white text-indigo-600 text-xs py-2 shadow-sm">強制上傳</button>
-                            <button onclick="window.forceDownloadCloudData()" class="btn bg-white text-indigo-600 text-xs py-2 shadow-sm">強制下載</button>
+                            <button onclick="forceUploadAllLocalData()" class="btn bg-white text-indigo-600 text-xs py-2 shadow-sm">強制上傳</button>
+                            <button onclick="forceDownloadCloudData()" class="btn bg-white text-indigo-600 text-xs py-2 shadow-sm">強制下載</button>
                         </div>
-                        <button onclick="window.clearCacheAndReload()" class="w-full btn bg-red-50 text-red-500 text-xs py-2 mt-3">清除暫存重載</button>
+                        <button onclick="clearCacheAndReload()" class="w-full btn bg-red-50 text-red-500 text-xs py-2 mt-3">清除暫存重載</button>
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-3 mb-6">
-                     <button onclick="window.exportData()" class="w-full btn btn-outline text-xs">匯出備份 (JSON)</button>
+                     <button onclick="exportData()" class="w-full btn btn-outline text-xs">匯出備份 (JSON)</button>
                      <button onclick="document.getElementById('import-file').click()" class="w-full btn btn-outline text-xs">匯入還原 (JSON)</button>
-                     <input type="file" id="import-file" class="hidden" accept=".json" onchange="window.importData(this)">
+                     <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(this)">
                 </div>
 
-                <button onclick="window.saveSettings()" class="w-full btn btn-primary shadow-md mb-3">儲存設定並同步至雲端</button>
-                <button onclick="window.resetFinancialData()" class="w-full btn btn-warning shadow-md mb-3 text-white">🧹 清除帳務紀錄 (保留房間)</button>
-                <button onclick="window.resetAllData()" class="w-full btn btn-danger shadow-md mb-3">⚠️ 清空所有資料 (重置系統)</button>
-                <button onclick="window.confirmExit()" class="w-full text-red-400 font-bold text-sm py-4">登出系統</button>
+                <button onclick="saveSettings()" class="w-full btn btn-primary shadow-md mb-3">儲存設定並同步至雲端</button>
+                <button onclick="resetFinancialData()" class="w-full btn btn-warning shadow-md mb-3 text-white">🧹 清除帳務紀錄 (保留房間)</button>
+                <button onclick="resetAllData()" class="w-full btn btn-danger shadow-md mb-3">⚠️ 清空所有資料 (重置系統)</button>
+                <button onclick="confirmExit()" class="w-full text-red-400 font-bold text-sm py-4">登出系統</button>
             </div>
         </main>
 
         <!-- 導航列 -->
         <nav class="floating-nav">
-            <button onclick="window.switchTab('dashboard')" class="nav-btn active" id="btn-dashboard"><i class="fa-solid fa-chart-pie text-xl"></i><span class="text-[10px] font-bold mt-1">總覽</span></button>
-            <button onclick="window.switchTab('rooms')" class="nav-btn" id="btn-rooms"><i class="fa-solid fa-door-open text-xl"></i><span class="text-[10px] font-bold mt-1">房間</span></button>
-            <button onclick="window.switchTab('utilities')" class="nav-btn" id="btn-utilities"><i class="fa-solid fa-bolt text-xl"></i><span class="text-[10px] font-bold mt-1">水電</span></button>
-            <button onclick="window.switchTab('finance')" class="nav-btn" id="btn-finance"><i class="fa-solid fa-file-invoice-dollar text-xl"></i><span class="text-[10px] font-bold mt-1">收支</span></button>
-            <button onclick="window.switchTab('settings')" class="nav-btn" id="btn-settings"><i class="fa-solid fa-gear text-xl"></i><span class="text-[10px] font-bold mt-1">設定</span></button>
+            <button onclick="switchTab('dashboard')" class="nav-btn active" id="btn-dashboard"><i class="fa-solid fa-chart-pie text-xl"></i><span class="text-[10px] font-bold mt-1">總覽</span></button>
+            <button onclick="switchTab('rooms')" class="nav-btn" id="btn-rooms"><i class="fa-solid fa-door-open text-xl"></i><span class="text-[10px] font-bold mt-1">房間</span></button>
+            <button onclick="switchTab('utilities')" class="nav-btn" id="btn-utilities"><i class="fa-solid fa-bolt text-xl"></i><span class="text-[10px] font-bold mt-1">水電</span></button>
+            <button onclick="switchTab('finance')" class="nav-btn" id="btn-finance"><i class="fa-solid fa-file-invoice-dollar text-xl"></i><span class="text-[10px] font-bold mt-1">收支</span></button>
+            <button onclick="switchTab('settings')" class="nav-btn" id="btn-settings"><i class="fa-solid fa-gear text-xl"></i><span class="text-[10px] font-bold mt-1">設定</span></button>
         </nav>
     </div>
 
     <!-- Modals -->
     <!-- 雜支記帳 -->
-    <div id="modal-add-expense" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-add-expense')">
+    <div id="modal-add-expense" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-add-expense')">
         <div class="sheet-container">
             <div class="sheet-handle"></div>
             <div class="p-6 h-full flex flex-col">
@@ -358,15 +358,15 @@
                     <div><label class="input-label">金額</label><input type="number" id="exp-amount" class="input-field font-bold text-lg" placeholder="0"></div>
                 </div>
                 <div class="flex gap-3 mt-6">
-                    <button onclick="window.closeModal('modal-add-expense')" class="btn btn-outline flex-1">取消</button>
-                    <button onclick="window.saveExpense()" class="btn btn-warning flex-1 shadow-lg text-white">儲存</button>
+                    <button onclick="closeModal('modal-add-expense')" class="btn btn-outline flex-1">取消</button>
+                    <button onclick="saveExpense()" class="btn btn-warning flex-1 shadow-lg text-white">儲存</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- 抄表計費 -->
-    <div id="modal-bill" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-bill')">
+    <div id="modal-bill" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-bill')">
         <div class="sheet-container">
             <div class="sheet-handle"></div>
             <div class="p-6 h-full flex flex-col">
@@ -379,7 +379,7 @@
                     </div>
                     <div>
                         <label class="input-label">帳單月份</label>
-                        <input id="bill-month" type="month" class="input-field" onchange="window.onBillMonthChange()">
+                        <input id="bill-month" type="month" class="input-field" onchange="onBillMonthChange()">
                         <!-- 帳單防呆警告訊息 -->
                         <div id="bill-warning" class="text-red-500 bg-red-50 p-2 rounded-lg text-xs font-bold text-center mt-2 hidden"></div>
                     </div>
@@ -408,20 +408,20 @@
                     <div><label class="input-label">管理費</label><input id="bill-mgmt" type="number" class="input-field"></div>
                 </div>
                 <div class="flex gap-3 mt-4 shrink-0">
-                    <button onclick="window.closeModal('modal-bill')" class="btn btn-outline flex-1">取消</button>
-                    <button onclick="window.createBill()" class="btn btn-primary flex-1 shadow-lg">生成帳單</button>
+                    <button onclick="closeModal('modal-bill')" class="btn btn-outline flex-1">取消</button>
+                    <button onclick="createBill()" class="btn btn-primary flex-1 shadow-lg">生成帳單</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- 財務詳情 -->
-    <div id="modal-finance-detail" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-finance-detail')">
+    <div id="modal-finance-detail" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-finance-detail')">
         <div class="sheet-container">
             <div class="sheet-handle"></div>
             <div class="bg-slate-800 p-5 text-white flex justify-between items-center rounded-t-[32px] sm:rounded-t-[24px]">
                 <h3 class="text-xl font-bold" id="fin-detail-month">---</h3>
-                <button onclick="window.closeModal('modal-finance-detail')" class="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="closeModal('modal-finance-detail')" class="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-6 overflow-y-auto space-y-6 flex-1">
                 <div class="flex flex-col items-center">
@@ -443,12 +443,12 @@
     </div>
     
     <!-- 房間詳情 -->
-    <div id="modal-room-detail" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-room-detail')">
+    <div id="modal-room-detail" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-room-detail')">
         <div class="sheet-container">
             <div class="h-48 bg-slate-200 relative shrink-0">
                 <img id="detail-photo" class="w-full h-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                <button onclick="window.closeModal('modal-room-detail')" class="absolute top-4 right-4 w-8 h-8 bg-white/30 backdrop-blur-sm rounded-full text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="closeModal('modal-room-detail')" class="absolute top-4 right-4 w-8 h-8 bg-white/30 backdrop-blur-sm rounded-full text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
                 <div class="absolute bottom-4 left-6 text-white">
                     <h3 id="detail-room-title" class="text-3xl font-black mb-1">--</h3>
                     <p id="detail-tenant" class="text-sm font-bold opacity-90">--</p>
@@ -470,38 +470,38 @@
                 </div>
             </div>
             <div class="p-4 border-t flex gap-3 shrink-0">
-                <button onclick="window.openEditRoom()" class="flex-1 btn btn-outline font-black">編輯</button>
-                <button onclick="window.openBillFromDetail()" class="flex-1 btn btn-primary font-black shadow-lg">抄表計費</button>
+                <button onclick="openEditRoom()" class="flex-1 btn btn-outline font-black">編輯</button>
+                <button onclick="openBillFromDetail()" class="flex-1 btn btn-primary font-black shadow-lg">抄表計費</button>
             </div>
         </div>
     </div>
     
     <!-- 編輯房間 -->
-    <div id="modal-room-edit" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-room-edit')">
+    <div id="modal-room-edit" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-room-edit')">
         <div class="sheet-container">
             <div class="sheet-handle"></div>
             <div class="p-5 border-b flex justify-between items-center bg-slate-50">
                 <h3 class="text-xl font-bold text-slate-800">編輯房間</h3>
-                <button onclick="window.closeModal('modal-room-edit')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <button onclick="closeModal('modal-room-edit')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <div class="p-6 overflow-y-auto space-y-5 flex-1">
                 <input type="hidden" id="edit-room-id">
                 <div>
                     <label class="input-label">封面照片</label>
-                    <div onclick="window.triggerFile('input-p-main')" class="aspect-video bg-slate-100 rounded-2xl flex flex-col items-center justify-center text-slate-400 font-bold border-2 border-dashed border-slate-200 overflow-hidden relative shadow-inner cursor-pointer">
-                        <input type="file" id="input-p-main" class="hidden" onchange="window.handlePhoto(this, 'edit-preview-main')">
+                    <div onclick="triggerFile('input-p-main')" class="aspect-video bg-slate-100 rounded-2xl flex flex-col items-center justify-center text-slate-400 font-bold border-2 border-dashed border-slate-200 overflow-hidden relative shadow-inner cursor-pointer">
+                        <input type="file" id="input-p-main" class="hidden" onchange="handlePhoto(this, 'edit-preview-main')">
                         <img id="edit-preview-main" class="absolute inset-0 w-full h-full object-cover hidden">
                         <i class="fa-solid fa-camera text-3xl mb-1"></i>
                     </div>
                 </div>
                 <div>
-                    <div class="flex justify-between items-center mb-2"><label class="input-label">家具照片</label><button onclick="window.triggerFile('input-p-furn')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg font-bold">+ 新增</button></div>
-                    <input type="file" id="input-p-furn" class="hidden" multiple onchange="window.handleAddPhoto(this, 'furn')">
+                    <div class="flex justify-between items-center mb-2"><label class="input-label">家具照片</label><button onclick="triggerFile('input-p-furn')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg font-bold">+ 新增</button></div>
+                    <input type="file" id="input-p-furn" class="hidden" multiple onchange="handleAddPhoto(this, 'furn')">
                     <div id="edit-list-furn" class="photo-scroller"></div>
                 </div>
                 <div>
-                    <div class="flex justify-between items-center mb-2"><label class="input-label">合約照片</label><button onclick="window.triggerFile('input-p-cont')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg font-bold">+ 新增</button></div>
-                    <input type="file" id="input-p-cont" class="hidden" multiple onchange="window.handleAddPhoto(this, 'cont')">
+                    <div class="flex justify-between items-center mb-2"><label class="input-label">合約照片</label><button onclick="triggerFile('input-p-cont')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg font-bold">+ 新增</button></div>
+                    <input type="file" id="input-p-cont" class="hidden" multiple onchange="handleAddPhoto(this, 'cont')">
                     <div id="edit-list-cont" class="photo-scroller"></div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -527,12 +527,12 @@
                 </div>
             </div>
             <div class="p-6 border-t bg-slate-50 flex gap-3 shrink-0 rounded-b-[24px]">
-                <button id="edit-btn-del" onclick="window.deleteRoom()" class="w-1/4 btn btn-danger shadow-sm"><i class="fa-solid fa-trash"></i></button><button id="edit-btn-moveout" onclick="window.moveOutTenant()" class="w-1/4 btn btn-warning font-black text-xs shadow-sm">退租</button><button onclick="window.saveRoom()" id="btn-save-room" class="flex-1 btn btn-primary font-black shadow-lg">儲存房訊</button>
+                <button id="edit-btn-del" onclick="deleteRoom()" class="w-1/4 btn btn-danger shadow-sm"><i class="fa-solid fa-trash"></i></button><button id="edit-btn-moveout" onclick="moveOutTenant()" class="w-1/4 btn btn-warning font-black text-xs shadow-sm">退租</button><button onclick="saveRoom()" id="btn-save-room" class="flex-1 btn btn-primary font-black shadow-lg">儲存房訊</button>
             </div>
         </div>
     </div>
     
-    <div id="modal-pay-confirm" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-pay-confirm')">
+    <div id="modal-pay-confirm" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-pay-confirm')">
         <div class="sheet-container">
             <div class="sheet-handle"></div>
             <div class="p-6 text-center">
@@ -541,44 +541,44 @@
                 <div class="text-center text-3xl font-black mb-4" id="pay-amount">$0</div>
                 <div class="mb-6"><label class="input-label text-left">收款日期</label><input type="date" id="pay-date" class="input-field text-center font-bold"></div>
                 <div class="flex gap-3">
-                    <button onclick="window.closeModal('modal-pay-confirm')" class="btn btn-outline flex-1">取消</button>
-                    <button onclick="window.confirmPay()" class="btn btn-success flex-1 shadow-lg">確認收款</button>
+                    <button onclick="closeModal('modal-pay-confirm')" class="btn btn-outline flex-1">取消</button>
+                    <button onclick="confirmPay()" class="btn btn-success flex-1 shadow-lg">確認收款</button>
                 </div>
             </div>
         </div>
     </div>
     
     <!-- 催繳通知 -->
-    <div id="modal-notify" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-notify')">
+    <div id="modal-notify" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-notify')">
         <div class="sheet-container">
             <div class="bg-blue-600 p-6 text-white text-center shrink-0 relative rounded-t-[32px] sm:rounded-t-[24px]">
                 <i class="fa-solid fa-paper-plane text-5xl mb-3"></i>
                 <h3 class="text-2xl font-black tracking-tighter">發送通知</h3>
-                <button onclick="window.closeModal('modal-notify')" class="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center transition hover:bg-white/30"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="closeModal('modal-notify')" class="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center transition hover:bg-white/30"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-6 space-y-4 bg-slate-50 flex-1">
                 <div>
                     <label class="text-xs font-bold text-slate-500 mb-2 flex justify-between items-center ml-1">
                         <span>通知內容預覽 (可手動修改)</span>
                         <div class="flex gap-2">
-                            <button onclick="window.aiRewrite('warm')" class="px-2 py-1 bg-white border border-blue-200 text-blue-600 rounded-lg text-[10px] hover:bg-blue-50 shadow-sm transition">✨ AI 溫馨改寫</button>
-                            <button onclick="window.aiRewrite('formal')" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 rounded-lg text-[10px] hover:bg-slate-100 shadow-sm transition">👔 AI 正式改寫</button>
-                            <button onclick="window.aiRewrite('ultimatum')" class="px-2 py-1 bg-white border border-red-300 text-red-600 rounded-lg text-[10px] hover:bg-red-50 shadow-sm transition">🚨 最後通牒</button>
+                            <button onclick="aiRewrite('warm')" class="px-2 py-1 bg-white border border-blue-200 text-blue-600 rounded-lg text-[10px] hover:bg-blue-50 shadow-sm transition">✨ AI 溫馨改寫</button>
+                            <button onclick="aiRewrite('formal')" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 rounded-lg text-[10px] hover:bg-slate-100 shadow-sm transition">👔 AI 正式改寫</button>
+                            <button onclick="aiRewrite('ultimatum')" class="px-2 py-1 bg-white border border-red-300 text-red-600 rounded-lg text-[10px] hover:bg-red-50 shadow-sm transition">🚨 最後通牒</button>
                         </div>
                     </label>
                     <textarea id="notify-text" class="input-field !py-3 h-48 text-sm shadow-inner resize-none font-mono text-slate-700"></textarea>
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button onclick="window.copyNotify()" class="btn btn-outline flex-1 font-black shadow-sm text-sm"><i class="fa-regular fa-copy mr-1"></i> 複製訊息</button>
-                    <button onclick="window.markNotified()" class="btn flex-1 font-black shadow-md text-white bg-orange-500 border-orange-500 hover:bg-orange-600 text-sm"><i class="fa-solid fa-bell mr-1"></i> 標記為已催繳</button>
+                    <button onclick="copyNotify()" class="btn btn-outline flex-1 font-black shadow-sm text-sm"><i class="fa-regular fa-copy mr-1"></i> 複製訊息</button>
+                    <button onclick="markNotified()" class="btn flex-1 font-black shadow-md text-white bg-orange-500 border-orange-500 hover:bg-orange-600 text-sm"><i class="fa-solid fa-bell mr-1"></i> 標記為已催繳</button>
                 </div>
             </div>
         </div>
     </div>
     
-    <div id="modal-repair-process" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-repair-process')"><div class="bg-white w-full max-w-sm rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"><div class="bg-orange-500 p-6 text-white text-center shrink-0"><i class="fa-solid fa-screwdriver-wrench text-5xl mb-2"></i><h3 class="text-2xl font-bold">報修處理</h3></div><div class="p-6 overflow-y-auto space-y-4 flex-1"><input type="hidden" id="repair-process-id"><div><label class="text-xs font-bold text-slate-400 mb-2 block ml-2">問題描述 <button onclick="window.analyzeRepair()" class="ml-2 px-2 py-1 bg-orange-100 text-orange-700 rounded text-[10px]">✨ AI 建議</button></label><div id="repair-desc-display" class="bg-slate-100 p-4 rounded-2xl text-slate-700 font-bold text-sm shadow-inner">載入中...</div></div><div><label class="text-xs font-bold text-slate-400 mb-2 block ml-2">處理記錄 / 備註</label><textarea id="repair-reply-input" class="input-field !py-3 h-24 text-sm shadow-inner" placeholder="輸入回覆訊息..."></textarea></div><div><label class="text-xs font-bold text-slate-400 mb-2 block ml-2">實際修繕花費 (元)</label><input type="number" id="repair-cost-input" class="input-field !py-3 shadow-inner" placeholder="0"></div><div class="flex items-center gap-3 ml-2"><input type="checkbox" id="repair-done-check" class="w-6 h-6 rounded-lg accent-green-600"><label for="repair-done-check" class="font-black text-slate-700">標記為已完工</label></div></div><div class="p-4 bg-slate-50 border-t flex gap-3 shrink-0"><button onclick="window.closeModal('modal-repair-process')" class="btn btn-outline flex-1 font-black">取消</button><button onclick="window.saveRepairProcess()" class="btn btn-primary flex-1 font-black">儲存</button></div></div></div>
+    <div id="modal-repair-process" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-repair-process')"><div class="bg-white w-full max-w-sm rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"><div class="bg-orange-500 p-6 text-white text-center shrink-0"><i class="fa-solid fa-screwdriver-wrench text-5xl mb-2"></i><h3 class="text-2xl font-bold">報修處理</h3></div><div class="p-6 overflow-y-auto space-y-4 flex-1"><input type="hidden" id="repair-process-id"><div><label class="text-xs font-bold text-slate-400 mb-2 block ml-2">問題描述 <button onclick="analyzeRepair()" class="ml-2 px-2 py-1 bg-orange-100 text-orange-700 rounded text-[10px]">✨ AI 建議</button></label><div id="repair-desc-display" class="bg-slate-100 p-4 rounded-2xl text-slate-700 font-bold text-sm shadow-inner">載入中...</div></div><div><label class="text-xs font-bold text-slate-400 mb-2 block ml-2">處理記錄 / 備註</label><textarea id="repair-reply-input" class="input-field !py-3 h-24 text-sm shadow-inner" placeholder="輸入回覆訊息..."></textarea></div><div><label class="text-xs font-bold text-slate-400 mb-2 block ml-2">實際修繕花費 (元)</label><input type="number" id="repair-cost-input" class="input-field !py-3 shadow-inner" placeholder="0"></div><div class="flex items-center gap-3 ml-2"><input type="checkbox" id="repair-done-check" class="w-6 h-6 rounded-lg accent-green-600"><label for="repair-done-check" class="font-black text-slate-700">標記為已完工</label></div></div><div class="p-4 bg-slate-50 border-t flex gap-3 shrink-0"><button onclick="closeModal('modal-repair-process')" class="btn btn-outline flex-1 font-black">取消</button><button onclick="saveRepairProcess()" class="btn btn-primary flex-1 font-black">儲存</button></div></div></div>
     
-    <div id="modal-lightbox" class="modal fixed inset-0 hidden flex items-center justify-center p-0 bg-black/95 z-[1100]" onclick="if(event.target === this) window.closeModal('modal-lightbox')"><button onclick="window.closeModal('modal-lightbox')" class="absolute top-5 right-5 text-white text-3xl z-50"><i class="fa-solid fa-xmark"></i></button><img id="lightbox-img" class="max-w-full max-h-[90vh] object-contain"></div>
+    <div id="modal-lightbox" class="modal fixed inset-0 hidden flex items-center justify-center p-0 bg-black/95 z-[1100]" onclick="if(event.target === this) closeModal('modal-lightbox')"><button onclick="closeModal('modal-lightbox')" class="absolute top-5 right-5 text-white text-3xl z-50"><i class="fa-solid fa-xmark"></i></button><img id="lightbox-img" class="max-w-full max-h-[90vh] object-contain"></div>
 
     <div id="toast" class="fixed top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-2xl z-[1200] hidden font-black flex items-center text-lg"><i class="fa-solid fa-check-circle mr-3 text-green-400 text-2xl"></i> <span id="toast-msg">成功</span></div>
 
@@ -599,12 +599,12 @@
         const USER_PROJECT_ID = userFirebaseConfig.projectId;
 
         // 防損毀 JSON 讀取機制
-        const safeJSONParse = (key, defaultVal) => {
+        function safeJSONParse(key, defaultVal) {
             try { 
                 const data = JSON.parse(localStorage.getItem(key)); 
                 return data !== null ? data : defaultVal;
             } catch(e) { return defaultVal; }
-        };
+        }
 
         // --- 初始化 State ---
         window.state = {
@@ -638,7 +638,7 @@
         // ==========================================
         // 1. 核心儲存與輔助工具
         // ==========================================
-        window.saveData = function() { 
+        function saveData() { 
             try {
                 localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms)); 
                 localStorage.setItem('rental_records', JSON.stringify(window.state.records)); 
@@ -649,21 +649,21 @@
             } catch (e) {
                 console.warn('LocalStorage full');
             }
-            if(typeof window.renderDashboard === 'function') window.renderDashboard(); 
-            if(typeof window.renderRooms === 'function') window.renderRooms(); 
+            if(typeof renderDashboard === 'function') renderDashboard(); 
+            if(typeof renderRooms === 'function') renderRooms(); 
         }
 
-        window.saveLoginState = function() { 
+        function saveLoginState() { 
             localStorage.setItem('rental_login_attempts', JSON.stringify(window.state.loginAttempts)); 
             localStorage.setItem('rental_lockout_until', JSON.stringify(window.state.lockoutUntil)); 
         }
 
-        window.closeModal = function(id) { 
+        function closeModal(id) { 
             const el = document.getElementById(id);
             if(el) el.classList.add('hidden'); 
         }
         
-        window.showToast = function(m) { 
+        function showToast(m) { 
             const t=document.getElementById('toast'); 
             if(!t) return;
             document.getElementById('toast-msg').innerText=m; 
@@ -671,7 +671,7 @@
             setTimeout(()=>{t.classList.add('opacity-0','hidden')},2000); 
         }
 
-        window.checkLockout = function(type) { 
+        function checkLockout(type) { 
             const now = Date.now(); 
             if (window.state.lockoutUntil[type] > now) { 
                 const wait = Math.ceil((window.state.lockoutUntil[type] - now) / 1000); 
@@ -681,7 +681,7 @@
             return false; 
         }
 
-        window.compressImage = function(file, callback) { 
+        function compressImage(file, callback) { 
             const reader = new FileReader(); 
             reader.readAsDataURL(file); 
             reader.onload = event => { 
@@ -705,7 +705,7 @@
             } 
         }
         
-        window.importData = function(input) {
+        function importData(input) {
             const file = input.files[0];
             if(!file) return;
             const reader = new FileReader();
@@ -714,7 +714,7 @@
                     const data = JSON.parse(e.target.result);
                     if(confirm("確定要匯入此備份檔案嗎？這將覆蓋目前的資料。")) {
                         window.state = data;
-                        window.saveData();
+                        saveData();
                         alert("資料匯入成功！系統將重新整理。");
                         location.reload();
                     }
@@ -728,14 +728,14 @@
         // ==========================================
         // 2. 視窗、Tab 與 UI 設定
         // ==========================================
-        window.switchView = function(viewName) { 
+        function switchView(viewName) { 
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             let targetId = viewName.startsWith('view-') ? viewName : (viewName === 'landlord' ? 'app-' + viewName : 'view-' + viewName);
             const target = document.getElementById(targetId);
             if(target) { target.classList.remove('hidden'); window.scrollTo(0, 0); }
         }
 
-        window.switchTab = function(tab) { 
+        function switchTab(tab) { 
             document.querySelectorAll('.landlord-tab').forEach(el => el.classList.add('hidden')); 
             const target = document.getElementById(`tab-${tab}`);
             if(target) target.classList.remove('hidden');
@@ -744,20 +744,20 @@
             const btn = document.getElementById(`btn-${tab}`);
             if(btn) btn.classList.add('active');
             
-            if(tab==='finance') window.renderFinance(); 
-            if(tab==='utilities') window.loadUtilityRatesForMonth();
+            if(tab==='finance') renderFinance(); 
+            if(tab==='utilities') loadUtilityRatesForMonth();
         }
 
-        window.setFontSize = function(size) {
+        function setFontSize(size) {
             window.state.settings.fontSize = size;
             document.documentElement.style.setProperty('--base-font-size', size + 'px');
             document.querySelectorAll('.font-size-btn').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById('font-size-' + size);
             if(activeBtn) activeBtn.classList.add('active');
-            window.saveData();
+            saveData();
         }
 
-        window.applySettingsUI = function() { 
+        function applySettingsUI() { 
             const s = window.state.settings;
             if(document.getElementById('set-project-id')) document.getElementById('set-project-id').innerText = s.projectId;
             
@@ -776,17 +776,17 @@
             const aiModelEl = document.getElementById('set-ai-model');
             if(aiModelEl && s.aiModel) aiModelEl.value = s.aiModel;
 
-            window.setFontSize(s.fontSize || 16);
+            setFontSize(s.fontSize || 16);
             
             const now = new Date();
             const monthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
             if(document.getElementById('util-month-picker')) {
                 document.getElementById('util-month-picker').value = monthStr;
-                window.loadUtilityRatesForMonth(); 
+                loadUtilityRatesForMonth(); 
             }
         }
 
-        window.saveSettings = function() { 
+        function saveSettings() { 
             const pwd = document.getElementById('set-pwd');
             if (pwd) window.state.settings.password = pwd.value;
             
@@ -802,25 +802,25 @@
             const aiModelEl = document.getElementById('set-ai-model');
             if (aiModelEl) window.state.settings.aiModel = aiModelEl.value;
 
-            window.saveData(); 
+            saveData(); 
             
             // Sync Settings to Cloud immediately
             if(db) {
                  db.collection('config').doc('settings').set(window.state.settings).then(() => {
-                     window.showToast('設定已儲存並同步至雲端');
+                     showToast('設定已儲存並同步至雲端');
                  }).catch(e => {
-                     window.showToast('設定已儲存 (僅本機)');
+                     showToast('設定已儲存 (僅本機)');
                  });
             } else {
-                 window.showToast('設定已儲存 (僅本機)');
+                 showToast('設定已儲存 (僅本機)');
             }
         }
 
         // ==========================================
         // 3. 登入與權限
         // ==========================================
-        window.verifyOwner = function() { 
-            if(window.checkLockout('owner')) return;
+        function verifyOwner() { 
+            if(checkLockout('owner')) return;
             const input = document.getElementById('owner-pwd-input');
             const pwd = input ? input.value.trim() : ''; 
             
@@ -828,12 +828,12 @@
                 const err = document.getElementById('owner-login-error');
                 if(err) err.classList.add('hidden');
                 
-                window.state.loginAttempts.owner = 0; window.saveLoginState();
-                window.switchView('landlord'); window.switchTab('dashboard'); 
+                window.state.loginAttempts.owner = 0; saveLoginState();
+                switchView('landlord'); switchTab('dashboard'); 
                 if(input) input.value = '';
                 
                 // Check meter reading reminder on login
-                window.checkMeterReadingReminder();
+                checkMeterReadingReminder();
             } else { 
                 window.state.loginAttempts.owner++;
                 if(window.state.loginAttempts.owner >= 5) { window.state.lockoutUntil.owner = Date.now() + 300000; }
@@ -843,25 +843,25 @@
                     err.innerText = `密碼錯誤，剩餘 ${5 - window.state.loginAttempts.owner} 次`;
                     err.classList.remove('hidden');
                 }
-                window.saveLoginState();
+                saveLoginState();
             } 
         }
         
-        window.resetSystemSettings = function() {
+        function resetSystemSettings() {
              if(confirm("確定重置系統設定與密碼？(資料保留)")) {
                  window.state.settings = {"elecRate": 3.5, "elecCostRate": 2.1, "waterRate": 0, "waterCostRate": 50, "mgmtFee": 500, "bankCode": "", "bankAccount": "", "projectId": USER_PROJECT_ID, "password": "0000", "fontSize": 16, "geminiApiKey": "", "aiModel": "gemini-1.5-flash"};
-                 window.saveData(); 
+                 saveData(); 
                  alert("重置完成，密碼: 0000"); 
                  location.reload();
              }
         }
 
-        window.confirmExit = function() { 
-            if (confirm('確定要登出並返回首頁嗎？')) window.switchView('landing'); 
+        function confirmExit() { 
+            if (confirm('確定要登出並返回首頁嗎？')) switchView('landing'); 
         }
         
         // Reminder Logic
-        window.checkMeterReadingReminder = function() {
+        function checkMeterReadingReminder() {
             const today = new Date();
             const currentMonth = today.getMonth() + 1; // 1-12
             const currentDate = today.getDate();
@@ -910,7 +910,7 @@
         // ==========================================
         // 4. 房東功能 (渲染與邏輯)
         // ==========================================
-        window.renderRooms = function() { 
+        function renderRooms() { 
             const c=document.getElementById('rooms-list'); if(!c)return; 
             
             // 搜尋過濾
@@ -951,7 +951,7 @@
                 const ph=r.photo?`<img src="${r.photo}" class="w-14 h-14 rounded-2xl object-cover mr-4">`:`<div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-300 mr-4 text-xs">${r.name}</div>`; 
                 const safeId = String(r.id).replace(/'/g, "\\'");
                 
-                return `<div class="card p-5 flex justify-between items-center cursor-pointer mb-3" onclick="window.showRoomDetail('${safeId}')">
+                return `<div class="card p-5 flex justify-between items-center cursor-pointer mb-3" onclick="showRoomDetail('${safeId}')">
                     <div class="flex items-center min-w-0">
                         ${ph}
                         <div class="truncate">
@@ -968,7 +968,7 @@
             }).join(''); 
         }
 
-        window.renderDashboard = function() {
+        function renderDashboard() {
             const income = window.state.records.filter(r => r.paid).reduce((s, r) => s + (Number(r.total) || 0), 0);
             const pending = window.state.records.filter(r => !r.paid).reduce((s, r) => s + (Number(r.total) || 0), 0);
             const repairCost = window.state.repairs.reduce((s, r) => s + (Number(r.cost) || 0), 0);
@@ -1015,8 +1015,8 @@
                             </div>
                         </div>
                         <div class="flex gap-2 pt-2 border-t border-slate-50">
-                            <button onclick='window.openNotifyModal("${r.id}")' class="flex-1 py-2 rounded-xl border border-blue-200 text-blue-600 font-bold text-sm bg-blue-50 active:scale-95 transition">通知</button>
-                            <button onclick='window.openPayModal("${r.id}")' class="flex-1 py-2 rounded-xl bg-green-500 text-white font-bold text-sm shadow-md shadow-green-200 active:scale-95 transition">收款</button>
+                            <button onclick='openNotifyModal("${r.id}")' class="flex-1 py-2 rounded-xl border border-blue-200 text-blue-600 font-bold text-sm bg-blue-50 active:scale-95 transition">通知</button>
+                            <button onclick='openPayModal("${r.id}")' class="flex-1 py-2 rounded-xl bg-green-500 text-white font-bold text-sm shadow-md shadow-green-200 active:scale-95 transition">收款</button>
                         </div>
                     </div>`).join(''); 
                 }
@@ -1026,14 +1026,14 @@
             if(repList) {
                 if(pendingReps.length > 0) {
                     document.getElementById('dashboard-repairs-container').classList.remove('hidden');
-                    repList.innerHTML = pendingReps.map(r => `<div class="card p-4 border-l-8 border-orange-400 mb-2 flex justify-between items-center"><div><div class="font-bold">${window.state.rooms.find(rm=>rm.id==r.roomId)?.name || '未知'}房</div><div class="text-xs text-slate-500">${r.desc}</div></div><button onclick='window.openRepairProcess("${r.id}")' class="btn bg-orange-500 text-white !py-1 !px-3 !text-xs font-black shadow-sm">處理</button></div>`).join('');
+                    repList.innerHTML = pendingReps.map(r => `<div class="card p-4 border-l-8 border-orange-400 mb-2 flex justify-between items-center"><div><div class="font-bold">${window.state.rooms.find(rm=>rm.id==r.roomId)?.name || '未知'}房</div><div class="text-xs text-slate-500">${r.desc}</div></div><button onclick='openRepairProcess("${r.id}")' class="btn bg-orange-500 text-white !py-1 !px-3 !text-xs font-black shadow-sm">處理</button></div>`).join('');
                 } else {
                     document.getElementById('dashboard-repairs-container').classList.add('hidden');
                 }
             }
         }
 
-        window.renderFinance = function() {
+        function renderFinance() {
             const container = document.getElementById('finance-list');
             const emptyMsg = document.getElementById('empty-finance-msg');
             const paidRecs = window.state.records.filter(r => r.paid);
@@ -1182,13 +1182,13 @@
             window.tempMonthlyData = grouped;
             container.innerHTML = Object.keys(grouped).sort((a,b)=>b.localeCompare(a)).map(month => {
                 const d = grouped[month]; const net = d.income - d.cost;
-                return `<div class="card p-6 border-l-8 border-indigo-500 shadow-md cursor-pointer active:scale-95 transition" onclick='window.openMonthDetail("${month}")'>
+                return `<div class="card p-6 border-l-8 border-indigo-500 shadow-md cursor-pointer active:scale-95 transition" onclick='openMonthDetail("${month}")'>
                     <div class="flex justify-between items-start mb-4"><div><h4 class="text-2xl font-black text-slate-800">${month} 帳單</h4><p class="text-[10px] text-slate-400 font-bold">收支結算</p></div><div class="text-right"><div class="text-[10px] text-slate-400 font-bold">本月淨利</div><div class="text-2xl font-black ${net >= 0 ? 'text-indigo-600' : 'text-red-500'}">$${Math.round(net).toLocaleString()}</div></div></div>
                     <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 font-black text-xs"><div class="text-slate-500">總收: $${Math.round(d.income).toLocaleString()}</div><div class="text-red-400 text-right">成本: -$${Math.round(d.cost).toLocaleString()}</div></div></div>`;
             }).join('');
         }
         
-        window.openMonthDetail = function(month) {
+        function openMonthDetail(month) {
             const d = window.tempMonthlyData[month]; if(!d) return;
             document.getElementById('fin-detail-month').innerText = month;
             document.getElementById('fin-detail-income').innerText = `$${Math.round(d.income).toLocaleString()}`;
@@ -1230,14 +1230,14 @@
         }
 
         // New Expense Functions
-        window.openAddExpenseModal = function() {
+        function openAddExpenseModal() {
             document.getElementById('exp-date').valueAsDate = new Date();
             document.getElementById('exp-title').value = '';
             document.getElementById('exp-amount').value = '';
             document.getElementById('modal-add-expense').classList.remove('hidden');
         }
         
-        window.saveExpense = function() {
+        function saveExpense() {
             const date = document.getElementById('exp-date').value;
             const title = document.getElementById('exp-title').value;
             const amount = Number(document.getElementById('exp-amount').value);
@@ -1246,18 +1246,18 @@
             
             const expense = { id: Date.now().toString(), date, title, amount };
             window.state.expenses.push(expense);
-            window.saveData();
+            saveData();
             
             // Sync specific collection if connected
             if(db) db.collection('expenses').doc(expense.id).set(expense);
             
-            window.closeModal('modal-add-expense');
-            window.showToast("記帳成功");
-            window.renderFinance();
+            closeModal('modal-add-expense');
+            showToast("記帳成功");
+            renderFinance();
         }
         
         // Reset Financial Data Only (New Function)
-        window.resetFinancialData = async function() {
+        async function resetFinancialData() {
             if(!confirm("⚠️ 確定要清除所有「帳務紀錄」嗎？\n(房間資料與設定將會保留)\n此動作無法復原！")) return;
             
             // Clear Local State first
@@ -1265,10 +1265,10 @@
             window.state.repairs = [];
             window.state.expenses = [];
             window.state.utilityRates = {};
-            window.saveData();
+            saveData();
 
             if(db && confirm("是否一併清除雲端上的帳務資料？")) {
-                window.showToast("正在清除雲端資料...");
+                showToast("正在清除雲端資料...");
                 try {
                     const promises = [];
                     // Delete Records
@@ -1292,13 +1292,642 @@
                     alert("⚠️ 雲端部分資料清除失敗: " + e.message);
                 }
             } else {
-                window.showToast("已清除本機資料");
+                showToast("已清除本機資料");
             }
             location.reload();
         }
+
+        function loadUtilityRatesForMonth() {
+            const picker = document.getElementById('util-month-picker');
+            if(!picker) return;
+            const month = picker.value; 
+            const saved = window.state.utilityRates[month];
+            
+            if (saved) {
+                document.getElementById('util-elec-total-cost').value = saved.elecTotal || '';
+                document.getElementById('util-water-total-cost').value = saved.waterTotal || '';
+            } else {
+                document.getElementById('util-elec-total-cost').value = '';
+                document.getElementById('util-water-total-cost').value = '';
+            }
+        }
+
+        function saveUtilityRates() {
+            const month = document.getElementById('util-month-picker').value;
+            if(!month) return alert("請選擇月份");
+            const elec = Number(document.getElementById('util-elec-total-cost').value);
+            const water = Number(document.getElementById('util-water-total-cost').value);
+            
+            window.state.utilityRates[month] = { elecTotal: elec, waterTotal: water };
+            saveData(); 
+            
+            if(db) {
+                 db.collection('config').doc('rates').set(window.state.utilityRates).then(() => {
+                     showToast("月度成本已儲存至雲端");
+                 }).catch(e => {
+                     showToast("已儲存 (僅本機)");
+                 });
+            } else {
+                 showToast("已儲存 (僅本機)");
+            }
+        }
+
+        function showRoomDetail(id) { 
+            currentRoomId=id; 
+            const r=window.state.rooms.find(x=>x.id==id); 
+            if(!r) return;
+            document.getElementById('detail-room-title').innerText=r.name; 
+            document.getElementById('detail-photo').src=r.photo||''; 
+            
+            // Fill details
+            document.getElementById('detail-rent').innerText = r.rent ? `$${r.rent}` : '--';
+            document.getElementById('detail-water').innerText = r.waterFee ? `$${r.waterFee}` : '--';
+            document.getElementById('detail-mgmt').innerText = r.mgmtFee ? `$${r.mgmtFee}` : '--';
+            document.getElementById('detail-start').innerText = r.start || '--';
+            document.getElementById('detail-end').innerText = r.end || '--';
+
+            const renderList = (elId, list) => {
+                const el = document.getElementById(elId);
+                if(list && list.length > 0) {
+                     el.innerHTML = list.map(src => `<div class="photo-item" onclick="viewBigImage('${src}')"><img src="${src}"></div>`).join('');
+                } else { 
+                     el.innerHTML = '<span class="text-xs text-slate-400 p-2">無照片</span>'; 
+                }
+            };
+            const furn = r.furnPhotos || (r.photoFurn ? [r.photoFurn] : []);
+            const cont = r.contPhotos || (r.photoCont ? [r.photoCont] : []);
+            renderList('detail-furn-list', furn);
+            renderList('detail-cont-list', cont);
+
+            document.getElementById('modal-room-detail').classList.remove('hidden'); 
+        }
+
+        function openEditRoom() { 
+            const r=window.state.rooms.find(x=>x.id==currentRoomId); 
+            if(!r) return;
+            document.getElementById('edit-room-id').value=r.id; 
+            document.getElementById('edit-name').value=r.name||''; 
+            document.getElementById('edit-rent').value=r.rent||''; 
+            document.getElementById('edit-tenant').value=r.tenant||""; 
+            document.getElementById('edit-phone').value=r.phone||""; 
+            document.getElementById('edit-payday').value=r.paymentDay||""; 
+            document.getElementById('edit-start').value=r.start||""; 
+            document.getElementById('edit-end').value=r.end||""; 
+            document.getElementById('edit-meter').value=r.meter||0; 
+            document.getElementById('edit-water-fee').value=r.waterFee||0; 
+            document.getElementById('edit-mgmt').value=r.mgmtFee||0; 
+            
+            const mainPrev = document.getElementById('edit-preview-main');
+            if(r.photo){ mainPrev.src=r.photo; mainPrev.classList.remove('hidden'); }
+            else { mainPrev.src=''; mainPrev.classList.add('hidden'); }
+            
+            tempEditPhotos.furn = r.furnPhotos ? [...r.furnPhotos] : (r.photoFurn ? [r.photoFurn] : []);
+            tempEditPhotos.cont = r.contPhotos ? [...r.contPhotos] : (r.photoCont ? [r.photoCont] : []);
+            renderEditPhotoList('furn'); 
+            renderEditPhotoList('cont');
+            
+            const btnDel = document.getElementById('edit-btn-del');
+            if (btnDel) btnDel.classList.remove('hidden'); 
+            const btnMoveout = document.getElementById('edit-btn-moveout');
+            if (btnMoveout) btnMoveout.classList.toggle('hidden',!r.tenant); 
+            
+            document.getElementById('modal-room-detail').classList.add('hidden'); 
+            document.getElementById('modal-room-edit').classList.remove('hidden'); 
+        }
+
+        function openRoomModal() { 
+            currentRoomId=null; 
+            document.getElementById('edit-room-id').value=""; 
+            document.getElementById('edit-name').value=""; 
+            document.getElementById('edit-rent').value="6000"; 
+            document.getElementById('edit-tenant').value=""; 
+            document.getElementById('edit-phone').value=""; 
+            document.getElementById('edit-payday').value="5"; 
+            document.getElementById('edit-start').value=""; 
+            document.getElementById('edit-end').value=""; 
+            document.getElementById('edit-meter').value="0"; 
+            document.getElementById('edit-water-fee').value="0"; 
+            document.getElementById('edit-mgmt').value="0"; 
+            
+            const mainPrev = document.getElementById('edit-preview-main');
+            if(mainPrev) { mainPrev.src=""; mainPrev.classList.add('hidden'); }
+            
+            tempEditPhotos = {furn:[], cont:[]}; 
+            renderEditPhotoList('furn'); 
+            renderEditPhotoList('cont'); 
+            
+            const btnDel = document.getElementById('edit-btn-del');
+            if (btnDel) btnDel.classList.add('hidden'); 
+            const btnMoveout = document.getElementById('edit-btn-moveout');
+            if (btnMoveout) btnMoveout.classList.add('hidden'); 
+            
+            document.getElementById('modal-room-edit').classList.remove('hidden'); 
+        }
+        
+        async function saveRoom() { 
+            const btn = document.getElementById('btn-save-room');
+            if(btn) { btn.disabled=true; btn.innerText="處理中..."; }
+            try {
+                const idVal=document.getElementById('edit-room-id').value; 
+                const id=idVal?idVal:Date.now().toString(); 
+                const rd={
+                    id, 
+                    name:document.getElementById('edit-name').value, 
+                    rent:Number(document.getElementById('edit-rent').value), 
+                    tenant:document.getElementById('edit-tenant').value, 
+                    phone:document.getElementById('edit-phone').value, 
+                    paymentDay:document.getElementById('edit-payday').value, 
+                    start:document.getElementById('edit-start').value, 
+                    end:document.getElementById('edit-end').value, 
+                    meter:Number(document.getElementById('edit-meter').value), 
+                    waterFee:Number(document.getElementById('edit-water-fee').value), 
+                    mgmtFee:Number(document.getElementById('edit-mgmt').value), 
+                    photo:document.getElementById('edit-preview-main').src, 
+                    furnPhotos: tempEditPhotos.furn, 
+                    contPhotos: tempEditPhotos.cont, 
+                    photoFurn: null, 
+                    photoCont: null
+                }; 
+                if(!rd.name) { alert('房號必填'); return; }
+                const idx=window.state.rooms.findIndex(x=>x.id==id); 
+                if(idx>-1) window.state.rooms[idx]=rd; else window.state.rooms.push(rd); 
+                saveData(); 
+                if(db) await db.collection('rooms').doc(String(id)).set(rd); 
+                closeModal('modal-room-edit'); 
+                showToast('房訊儲存成功'); 
+            } catch(e) { console.error(e); alert("儲存錯誤"); } finally { if(btn) { btn.disabled=false; btn.innerText="儲存"; } }
+        }
+        
+        async function deleteRoom() { 
+            if(!confirm('確定要刪除此房間嗎？\n注意：這將一併刪除該房間的所有「帳單」與「報修紀錄」！')) return;
+            
+            const btn = document.getElementById('edit-btn-del');
+            if(btn) { btn.disabled = true; btn.innerText = "刪除中..."; }
+            
+            try {
+                const id = document.getElementById('edit-room-id').value; 
+                
+                // 1. Identify items to delete
+                const recordsToDelete = window.state.records.filter(r => r.roomId == id);
+                const repairsToDelete = window.state.repairs.filter(r => r.roomId == id);
+                
+                // 2. Update Local State
+                window.state.rooms = window.state.rooms.filter(x => x.id != id); 
+                window.state.records = window.state.records.filter(x => x.roomId != id);
+                window.state.repairs = window.state.repairs.filter(x => x.roomId != id);
+                
+                saveData(); 
+                
+                // 3. Delete from Cloud
+                if(db) {
+                    const batch = db.batch();
+                    const roomRef = db.collection('rooms').doc(String(id));
+                    batch.delete(roomRef);
+                    
+                    recordsToDelete.forEach(r => {
+                        const ref = db.collection('records').doc(String(r.id));
+                        batch.delete(ref);
+                    });
+                    
+                    repairsToDelete.forEach(r => {
+                        const ref = db.collection('repairs').doc(String(r.id));
+                        batch.delete(ref);
+                    });
+                    
+                    await batch.commit();
+                }
+                
+                closeModal('modal-room-edit'); 
+                showToast('房間及相關資料已清除');
+            } catch(e) {
+                console.error(e);
+                alert("刪除失敗: " + e.message);
+            } finally {
+                 if(btn) { btn.disabled = false; btn.innerText = '<i class="fa-solid fa-trash"></i>'; }
+            }
+        }
+        
+        function moveOutTenant() { if(confirm('退租？')){ const id=document.getElementById('edit-room-id').value; const r=window.state.rooms.find(x=>x.id==id); r.tenant=""; r.phone=""; r.start=""; r.end=""; r.contPhotos=[]; saveData(); if(db) db.collection('rooms').doc(String(id)).set(r); closeModal('modal-room-edit'); showToast('退租成功'); } }
+        function handleAddPhoto(input, type) { if(input.files[0]) { compressImage(input.files[0], (base64) => { tempEditPhotos[type].push(base64); renderEditPhotoList(type); input.value = ''; }); } }
+        function renderEditPhotoList(type) { const container = document.getElementById(`edit-list-${type}`); const list = tempEditPhotos[type]; container.innerHTML = list.map((src, index) => `<div class="photo-item"><img src="${src}"><div class="photo-del" onclick="removeEditPhoto('${type}', ${index})"><i class="fa-solid fa-xmark"></i></div></div>`).join(''); }
+        function removeEditPhoto(type, index) { tempEditPhotos[type].splice(index, 1); renderEditPhotoList(type); }
+        function viewBigImage(src) { document.getElementById('lightbox-img').src = src; document.getElementById('modal-lightbox').classList.remove('hidden'); }
+        function triggerFile(id) { document.getElementById(id).click(); }
+        function handlePhoto(input, id) { if(input.files[0]) { compressImage(input.files[0], (base64) => { const img=document.getElementById(id); img.src=base64; img.classList.remove('hidden'); }); } }
+        
+        function onBillMonthChange() {
+             const m = document.getElementById('bill-month').value;
+             const rId = currentBillRoomId;
+             if(!m || !rId) return;
+
+             const existing = window.state.records.find(x => x.roomId == rId && x.billingMonth == m);
+             const warnEl = document.getElementById('bill-warning');
+             if(warnEl) {
+                 if(existing) {
+                     warnEl.innerText = existing.paid ? '⚠️ 提示：此房間本月份帳單「已生成且已收款過」！' : '⚠️ 提示：此房間本月份帳單「已生成 (尚未收款)」！';
+                     warnEl.classList.remove('hidden');
+                 } else {
+                     warnEl.classList.add('hidden');
+                 }
+             }
+
+             // Check Double Month Logic
+             const monthInt = parseInt(m.split('-')[1]);
+             const r = window.state.rooms.find(x => x.id == rId);
+             
+             // Check if "New Tenant" (First Month)
+             let isFirstMonth = false;
+             if(r && r.start) {
+                 const startMonth = r.start.substring(0, 7); // YYYY-MM
+                 if(startMonth === m) isFirstMonth = true;
+             }
+
+             const elecSection = document.getElementById('bill-elec-section');
+             const oddMsg = document.getElementById('bill-odd-month-msg');
+             const msgTitle = document.getElementById('bill-msg-title');
+             const msgDesc = document.getElementById('bill-msg-desc');
+
+             if (isFirstMonth) {
+                 elecSection.classList.add('hidden');
+                 oddMsg.classList.remove('hidden');
+                 msgTitle.innerText = "新入住首月";
+                 msgDesc.innerText = "免抄表，電費直接為 0。";
+                 // Set hidden inputs to 0
+                 document.getElementById('bill-curr').value = 0; 
+             } else if (monthInt % 2 !== 0) {
+                 // Odd Month
+                 elecSection.classList.add('hidden');
+                 oddMsg.classList.remove('hidden');
+                 msgTitle.innerText = "本月免抄表 (奇數月)";
+                 msgDesc.innerText = "雙月抄表制，本月僅收固定費用。";
+                 document.getElementById('bill-curr').value = 0;
+             } else {
+                 // Even Month
+                 elecSection.classList.remove('hidden');
+                 oddMsg.classList.add('hidden');
+                 document.getElementById('bill-curr').value = '';
+             }
+        }
+
+        function openBillFromDetail() { closeModal('modal-room-detail'); openBillModal(currentRoomId); }
+        function openBillModal(id) { 
+            const r=window.state.rooms.find(x=>x.id==id); 
+            if(!r) return;
+            currentBillRoomId=id; 
+            document.getElementById('bill-last').innerText=r.meter; 
+            document.getElementById('bill-curr').value=""; 
+            document.getElementById('bill-mgmt').value=r.mgmtFee||0; 
+            
+            const now=new Date(); 
+            const monthStr = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,'0');
+            document.getElementById('bill-month').value = monthStr; 
+            
+            onBillMonthChange();
+            document.getElementById('modal-bill').classList.remove('hidden'); 
+        }
+
+        function createBill() { 
+            const r=window.state.rooms.find(x=>x.id==currentBillRoomId); 
+            if(!r) return;
+            let c=Number(document.getElementById('bill-curr').value); 
+            const m=document.getElementById('bill-month').value; 
+            const er=3.5; 
+            const wf=0; 
+            const mf=Number(document.getElementById('bill-mgmt').value); 
+            
+            // Logic for Odd/First Month (c is hidden and set to 0)
+            // But if user manually entered 0 in even month, we accept it.
+            // onBillMonthChange logic handles the UI hiding.
+            
+            if(!m) return alert('請選擇月份'); 
+
+            const existing = window.state.records.find(x => x.roomId == r.id && x.billingMonth == m);
+            if(existing) {
+                const statusText = existing.paid ? "「已收款」" : "「尚未收款」";
+                if(!confirm(`⚠️ 警告：此房間在 ${m} 月份的帳單已經存在，且狀態為${statusText}！\n\n您確定要重複生成一張新的帳單嗎？這可能會導致帳目混亂。`)) return;
+            }
+            
+            // Elec Calculation
+            let e = 0;
+            let u = 0;
+            
+            // Check logic again to determine if bill calculation is needed
+            const monthInt = parseInt(m.split('-')[1]);
+            let isFirstMonth = false;
+            if(r.start) {
+                 const startMonth = r.start.substring(0, 7);
+                 if(startMonth === m) isFirstMonth = true;
+            }
+
+            if (isFirstMonth || monthInt % 2 !== 0) {
+                // No Elec
+                e = 0;
+                u = 0;
+                // If it's even month but we forced it? No, stick to logic.
+            } else {
+                // Even Month
+                if(!c && c !== 0) return alert('請輸入本期度數');
+                if (c < r.meter) return alert(`本期度數 (${c}) 不能小於上期度數 (${r.meter})`);
+                u = c - (r.meter||0);
+                e = u * er;
+                // Update room meter only if read
+                r.meter = c;
+            }
+            
+            const t = Math.round(Number(r.rent) + e + wf + mf); 
+            
+            const rec={
+                id:Date.now().toString(), 
+                roomId:r.id, 
+                roomName:r.name, 
+                tenant:r.tenant, 
+                total:t, 
+                paid:false, 
+                date:new Date().toLocaleDateString('zh-TW'), 
+                billingMonth:m, 
+                elecCost:e, 
+                waterFee:wf, 
+                rent:r.rent, 
+                usage:u, 
+                notified: false
+            }; 
+            
+            window.state.records.unshift(rec); 
+            saveData(); 
+            if(db){ db.collection('rooms').doc(String(r.id)).set(r); db.collection('records').doc(String(rec.id)).set(rec); } 
+            closeModal('modal-bill'); 
+            showToast('帳單已生成'); 
+        }
+        
+        function openPayModal(id) { 
+            const r=window.state.records.find(x=>x.id==id); 
+            if(r){ 
+                const prId = document.getElementById('pay-record-id');
+                if(prId) prId.value=id; 
+                document.getElementById('pay-amount').innerText=`$${Math.round(r.total)}`; 
+                document.getElementById('pay-date').valueAsDate=new Date(); 
+                document.getElementById('modal-pay-confirm').classList.remove('hidden'); 
+            } 
+        }
+        
+        function confirmPay() { 
+            const id=document.getElementById('pay-record-id').value; 
+            const r=window.state.records.find(x=>x.id==id); 
+            if(r){ 
+                r.paid=true; 
+                saveData(); 
+                if(db) db.collection('records').doc(String(id)).set(r); 
+                closeModal('modal-pay-confirm'); 
+                showToast('收款成功'); 
+            } 
+        }
+        
+        function openNotifyModal(id) { 
+            currentNotifyRecordId = id; 
+            const r = window.state.records.find(x => x.id == id); 
+            
+            let bankInfoText = "";
+            if (window.state.settings.bankCode || window.state.settings.bankAccount) {
+                bankInfoText = `\n\n【匯款資訊】\n銀行：${window.state.settings.bankCode || '未設定'}\n帳號：${window.state.settings.bankAccount || '未設定'}`;
+            }
+            
+            let elecText = "";
+            if (r.usage > 0) {
+                elecText = `\n本期電度：${r.usage} 度`;
+            } else {
+                elecText = `\n(本期免抄表)`;
+            }
+
+            const text = `Hi ${r.tenant || '房客'}，${r.billingMonth} 的租金帳單已出爐。\n\n房號：${r.roomName}${elecText}\n\n總金額：$${Math.round(r.total)}${bankInfoText}\n\n請盡速完成繳款，謝謝！`; 
+            document.getElementById('notify-text').value = text; 
+            document.getElementById('modal-notify').classList.remove('hidden'); 
+        }
+        
+        function copyNotify() { 
+            const text = document.getElementById('notify-text'); 
+            text.select(); 
+            document.execCommand('copy'); 
+            showToast('已複製'); 
+        }
+        
+        function markNotified() { 
+            const r = window.state.records.find(x => x.id == currentNotifyRecordId);
+            if(r) {
+                r.notified = true;
+                saveData();
+                if(db) db.collection('records').doc(String(r.id)).set(r);
+            }
+            closeModal('modal-notify'); 
+            showToast('已標記為催繳'); 
+        }
+        
+        function openRepairProcess(id) { const r = window.state.repairs.find(x => x.id == id); if (!r) return; document.getElementById('repair-process-id').value = id; document.getElementById('repair-desc-display').innerText = r.desc; document.getElementById('repair-reply-input').value = r.reply || ""; document.getElementById('repair-cost-input').value = r.cost || 0; document.getElementById('repair-done-check').checked = (r.status === 'done'); const photoContainer = document.getElementById('repair-photos-container'); const photoDisplay = document.getElementById('repair-photos-display'); if (r.photos && r.photos.length > 0) { photoContainer.classList.remove('hidden'); photoDisplay.innerHTML = r.photos.map(src => `<div class="photo-item" onclick="viewBigImage('${src}')"><img src="${src}"></div>`).join(''); } else { photoContainer.classList.add('hidden'); } document.getElementById('modal-repair-process').classList.remove('hidden'); }
+        
+        function saveRepairProcess() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if (r) { r.reply = document.getElementById('repair-reply-input').value; r.cost = Number(document.getElementById('repair-cost-input').value); r.status = document.getElementById('repair-done-check').checked ? 'done' : 'pending'; saveData(); if(db) db.collection('repairs').doc(String(id)).set(r); closeModal('modal-repair-process'); showToast('更新成功'); } }
+
+        // --- AI API ---
+        async function callGemini(prompt) {
+            // Priority: User's saved key > Default Hardcoded Key
+            const apiKey = window.state.settings.geminiApiKey || GEMINI_API_KEY; 
+            
+            // Allow user to select model version in settings if they have access issues
+            const modelName = window.state.settings.aiModel || "gemini-1.5-flash"; 
+            
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+            try {
+                const response = await fetch(url, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const errorCode = errorData.error?.status || response.status;
+                    const errorMsg = errorData.error?.message || "未知錯誤";
+                    
+                    // Specific Error Handling
+                    if (errorCode === 'PERMISSION_DENIED' || response.status === 403) {
+                        alert(`❌ AI 權限錯誤 (403)\n原因：API Key 無效或未啟用 Generative Language API。\n請至「系統設定」檢查 Key 或更換模型。`);
+                    } else if (response.status === 404) {
+                         alert(`❌ 模型錯誤 (404)\n原因：找不到模型 ${modelName}。\n請至「系統設定」切換其他 AI 模型試試。`);
+                    } else {
+                        alert(`❌ AI 連線失敗 (${response.status})\n原因：${errorMsg}`);
+                    }
+                    return `[系統] AI 暫時無法回應 (錯誤代碼: ${response.status})`;
+                }
+                
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "AI 沒有回應";
+            } catch (e) { 
+                console.error(e);
+                return "連線錯誤，請檢查網路狀態"; 
+            }
+        }
+
+        async function aiRewrite(tone) {
+            const textarea = document.getElementById('notify-text');
+            const originalText = textarea.value;
+            if(!originalText) return alert("請先產生一筆帳單的內容");
+            const btn = event.target; const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 處理中...'; btn.disabled = true;
+            
+            const toneMap = { 
+                'warm': '溫馨親切、不要給人壓力', 
+                'formal': '正式、專業、有禮貌',
+                'ultimatum': '嚴厲警告、帶有法律後果提示（如存證信函或終止合約準備）的最後通牒'
+            };
+            
+            const prompt = `請將以下租屋通知訊息改寫為「${toneMap[tone]}」的語氣。請務必保留所有的金額、帳單月份、房號與匯款銀行帳號等重要資訊，使用繁體中文。請直接輸出改寫後的內容，不要加上「好的」、「這是一則...」等開場白，也不要加上任何結尾預留欄位，讓我能直接複製貼上：\n\n${originalText}`;
+            textarea.value = await callGemini(prompt);
+            btn.innerHTML = originalContent; btn.disabled = false;
+        }
+
+        async function analyzeRepair() { 
+            const id = document.getElementById('repair-process-id').value; 
+            const r = window.state.repairs.find(x => x.id == id); 
+            if(!r) return; 
+            const replyBox = document.getElementById('repair-reply-input'); 
+            const originalVal = replyBox.value; 
+            replyBox.value = "🤖 診斷中..."; 
+            const prompt = `房客報修：「${r.desc}」。請以專業房東的角度，簡短列出：1. 可能的原因 2. 建議房客先做的緊急處理 3. 預估請師傅維修的費用(台幣)。`; 
+            const result = await callGemini(prompt); 
+            replyBox.value = (originalVal ? originalVal + "\n\n" : "") + result; 
+        }
+
+        // ==========================================
+        // 6. 雲端同步
+        // ==========================================
+        async function initCloud() {
+            const statusEl = document.getElementById('status-indicator');
+            if(typeof firebase === 'undefined') return;
+            try {
+                if(!firebase.apps.length) firebase.initializeApp(userFirebaseConfig); // 無需 window.
+                await firebase.auth().signInAnonymously();
+                db = firebase.firestore();
+                
+                // Fetch settings once upon cloud connection
+                const settingsSnap = await db.collection('config').doc('settings').get();
+                if(settingsSnap.exists) {
+                    window.state.settings = { ...window.state.settings, ...settingsSnap.data() };
+                    localStorage.setItem('rental_settings', JSON.stringify(window.state.settings));
+                    applySettingsUI();
+                }
+                
+                // Fetch Expenses
+                db.collection('expenses').onSnapshot(snap => {
+                    const cloudExpenses = snap.empty ? [] : snap.docs.map(d => d.data());
+                    window.state.expenses = cloudExpenses;
+                    localStorage.setItem('rental_expenses', JSON.stringify(window.state.expenses));
+                    if(document.getElementById('tab-finance') && !document.getElementById('tab-finance').classList.contains('hidden')) {
+                        renderFinance();
+                    }
+                    renderDashboard();
+                });
+
+                db.collection('rooms').onSnapshot(snap => {
+                    const cloudRooms = snap.empty ? [] : snap.docs.map(d => d.data());
+                    if (JSON.stringify(window.state.rooms) !== JSON.stringify(cloudRooms)) {
+                        window.state.rooms = cloudRooms;
+                        localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
+                        renderRooms(); 
+                        renderDashboard();
+                    }
+                    if(statusEl) { statusEl.innerHTML = '<i class="fa-solid fa-cloud mr-1"></i>已連線'; statusEl.className = "text-[10px] font-bold bg-green-100 text-green-600 px-3 py-1 rounded-full cursor-pointer"; }
+                    if(document.getElementById('cloud-status-text')) document.getElementById('cloud-status-text').innerText = "✅ 雲端連線正常";
+                    if(document.getElementById('auth-status')) document.getElementById('auth-status').innerText = "已驗證";
+                });
+                
+                db.collection('records').onSnapshot(snap => { 
+                    const cloudRecords = snap.empty ? [] : snap.docs.map(d => d.data());
+                    window.state.records = cloudRecords;
+                    localStorage.setItem('rental_records', JSON.stringify(window.state.records));
+                    renderDashboard(); 
+                    renderRooms();
+                    if(document.getElementById('tab-finance') && !document.getElementById('tab-finance').classList.contains('hidden')) {
+                        renderFinance();
+                    }
+                });
+                
+                db.collection('repairs').onSnapshot(snap => { 
+                    const cloudRepairs = snap.empty ? [] : snap.docs.map(d => d.data());
+                    window.state.repairs = cloudRepairs;
+                    localStorage.setItem('rental_repairs', JSON.stringify(window.state.repairs));
+                    renderDashboard(); 
+                });
+                
+                db.collection('config').doc('rates').onSnapshot(snap => { 
+                    window.state.utilityRates = snap.exists ? snap.data() : {}; 
+                    localStorage.setItem('rental_utility_rates', JSON.stringify(window.state.utilityRates));
+                    if(document.getElementById('tab-finance') && !document.getElementById('tab-finance').classList.contains('hidden')) {
+                        renderFinance();
+                    }
+                });
+
+            } catch(e) { console.error(e); if(statusEl) statusEl.innerText = '連線失敗'; }
+        }
+        
+        async function syncToCloud(coll, id, data) { if(db) { try { await db.collection(coll).doc(String(id)).set(data); } catch (e) { console.error(e); } } }
+        async function deleteFromCloud(coll, id) { if(db) try { await db.collection(coll).doc(String(id)).delete(); } catch(e) {} }
+        
+        async function forceUploadAllLocalData() { 
+            if(!db) return alert("❌ 未連線"); 
+            if(!confirm("上傳？")) return; 
+            try { 
+                showToast("🚀 正在極速上傳中...");
+                
+                const promises = [];
+                // Pack all rooms
+                window.state.rooms.forEach(r => promises.push(db.collection('rooms').doc(String(r.id)).set(r)));
+                window.state.records.forEach(r => promises.push(db.collection('records').doc(String(r.id)).set(r)));
+                window.state.repairs.forEach(r => promises.push(db.collection('repairs').doc(String(r.id)).set(r)));
+                window.state.expenses.forEach(e => promises.push(db.collection('expenses').doc(String(e.id)).set(e)));
+                promises.push(db.collection('config').doc('rates').set(window.state.utilityRates));
+                promises.push(db.collection('config').doc('settings').set(window.state.settings));
+
+                await Promise.all(promises);
+                alert('✅ 所有資料上傳完成'); 
+            } catch(e){
+                console.error(e);
+                alert('❌ 上傳失敗: ' + e.message);
+            } 
+        }
+        
+        async function forceDownloadCloudData() { 
+            if(!db) return alert("❌ 未連線"); 
+            if(!confirm("下載？")) return; 
+            try { 
+                showToast("🚀 正在極速下載中...");
+                const [snap1, snap2, snap3, snap4, snap5, snap6] = await Promise.all([
+                    db.collection('rooms').get(),
+                    db.collection('records').get(),
+                    db.collection('repairs').get(),
+                    db.collection('config').doc('rates').get(),
+                    db.collection('config').doc('settings').get(),
+                    db.collection('expenses').get()
+                ]);
+                
+                window.state.rooms = snap1.docs.map(d=>d.data()); 
+                window.state.records = snap2.docs.map(d=>d.data()); 
+                window.state.repairs = snap3.docs.map(d=>d.data()); 
+                if(snap4.exists) window.state.utilityRates = snap4.data(); 
+                if(snap5.exists) window.state.settings = { ...window.state.settings, ...snap5.data() }; 
+                window.state.expenses = snap6.docs.map(d=>d.data());
+
+                saveData(); 
+                alert('✅ 下載完成，即將重整畫面'); 
+                location.reload(); 
+            } catch(e){
+                console.error(e);
+                alert('❌ 下載失敗: ' + e.message);
+            } 
+        }
+        
+        function clearCacheAndReload() { if(confirm("確定清除暫存重載？(將從雲端抓取最新資料)")) { localStorage.clear(); location.reload(); } }
+        function exportData() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "rental_manager_backup_" + new Date().toISOString() + ".json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
         
         // Reset All Data (New Function)
-        window.resetAllData = function() {
+        function resetAllData() {
             if(!confirm("⚠️ 警告：您確定要清空所有資料嗎？\n這將會刪除所有房間、帳單、報修紀錄與設定。\n此動作無法復原！")) return;
             
             // Clear Cloud if connected
@@ -1317,7 +1946,7 @@
                 // Reset settings to default
                 window.state.settings = {"elecRate": 3.5, "elecCostRate": 2.1, "waterRate": 0, "waterCostRate": 50, "mgmtFee": 500, "bankCode": "", "bankAccount": "", "projectId": USER_PROJECT_ID, "password": "0000", "fontSize": 16, "geminiApiKey": "", "aiModel": "gemini-1.5-flash"};
                 
-                window.forceUploadAllLocalData().then(() => {
+                forceUploadAllLocalData().then(() => {
                     localStorage.clear();
                     location.reload();
                 });
@@ -1325,6 +1954,47 @@
                 localStorage.clear();
                 location.reload();
             }
+        }
+        
+        // Reset Financial Data Only (New Function)
+        async function resetFinancialData() {
+            if(!confirm("⚠️ 確定要清除所有「帳務紀錄」嗎？\n(房間資料與設定將會保留)\n此動作無法復原！")) return;
+            
+            // Clear Local State first
+            window.state.records = [];
+            window.state.repairs = [];
+            window.state.expenses = [];
+            window.state.utilityRates = {};
+            saveData();
+
+            if(db && confirm("是否一併清除雲端上的帳務資料？")) {
+                showToast("正在清除雲端資料...");
+                try {
+                    const promises = [];
+                    // Delete Records
+                    const recSnap = await db.collection('records').get();
+                    recSnap.forEach(doc => promises.push(doc.ref.delete()));
+                    
+                    // Delete Repairs
+                    const repSnap = await db.collection('repairs').get();
+                    repSnap.forEach(doc => promises.push(doc.ref.delete()));
+                    
+                    // Delete Expenses
+                    const expSnap = await db.collection('expenses').get();
+                    expSnap.forEach(doc => promises.push(doc.ref.delete()));
+                    
+                    // Delete Rates
+                    promises.push(db.collection('config').doc('rates').delete());
+                    
+                    await Promise.all(promises);
+                    alert("✅ 帳務資料已完全清除");
+                } catch(e) {
+                    alert("⚠️ 雲端部分資料清除失敗: " + e.message);
+                }
+            } else {
+                showToast("已清除本機資料");
+            }
+            location.reload();
         }
 
         // ==========================================
