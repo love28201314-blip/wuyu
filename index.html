@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V49.1 正式上崗版</title>
+    <title>租屋管家 Pro - V49.2 帳務重置版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -115,7 +115,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V49.1 正式上崗版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V49.2 帳務重置版</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">管理系統登入</button>
             </div>
@@ -310,6 +310,7 @@
                 </div>
 
                 <button onclick="window.saveSettings()" class="w-full btn btn-primary shadow-md mb-3">儲存設定並同步至雲端</button>
+                <button onclick="window.resetFinancialData()" class="w-full btn btn-warning shadow-md mb-3 text-white">🧹 清除帳務紀錄 (保留房間)</button>
                 <button onclick="window.resetAllData()" class="w-full btn btn-danger shadow-md mb-3">⚠️ 清空所有資料 (重置系統)</button>
                 <button onclick="window.confirmExit()" class="w-full text-red-400 font-bold text-sm py-4">登出系統</button>
             </div>
@@ -669,17 +670,7 @@
             if (apiKeyEl) window.state.settings.geminiApiKey = apiKeyEl.value;
             
             window.saveData(); 
-
-            // 同步至雲端設定
-            if(db) {
-                 db.collection('config').doc('settings').set(window.state.settings).then(() => {
-                     window.showToast('設定已儲存並同步至雲端');
-                 }).catch(e => {
-                     window.showToast('設定已儲存 (僅本機)');
-                 });
-            } else {
-                 window.showToast('設定已儲存 (僅本機)');
-            }
+            window.showToast('設定已儲存');
         }
 
         // ==========================================
