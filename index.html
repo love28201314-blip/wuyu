@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V49.4 雲端同步修復版</title>
+    <title>租屋管家 Pro - V49.5 雲端同步修正版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -115,7 +115,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V49.4 雲端同步修復版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V49.5 雲端同步修正版</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">管理系統登入</button>
             </div>
@@ -123,7 +123,7 @@
         </div>
     </div>
 
-    <!-- 1. Login Pages -->
+    <!-- 1. Login Page -->
     <div id="view-owner-login" class="view-section hidden min-h-screen bg-white flex flex-col items-center justify-center p-8">
         <div class="w-full max-w-sm">
             <button onclick="window.switchView('landing')" class="mb-10 text-slate-400 font-bold"><i class="fa-solid fa-chevron-left mr-2"></i>返回</button>
@@ -1116,12 +1116,8 @@
             if(!r) return;
             document.getElementById('detail-room-title').innerText=r.name; 
             document.getElementById('detail-photo').src=r.photo||''; 
-            document.getElementById('detail-tenant').innerText=r.tenant||'未租出';
-            document.getElementById('detail-rent').innerText=`$${r.rent||0}`;
-            document.getElementById('detail-water').innerText=`$${r.waterFee||0}`;
-            document.getElementById('detail-mgmt').innerText=`$${r.mgmtFee||0}`;
-            document.getElementById('detail-start').innerText=r.start||'--';
-            document.getElementById('detail-end').innerText=r.end||'--';
+            
+            // Tenant View Removed, but keeping logic for edit/bill
             
             const renderList = (elId, list) => {
                 const el = document.getElementById(elId);
@@ -1135,6 +1131,13 @@
             const cont = r.contPhotos || (r.photoCont ? [r.photoCont] : []);
             renderList('detail-furn-list', furn);
             renderList('detail-cont-list', cont);
+            
+            // Dynamic Details population
+            document.getElementById('detail-rent').innerText = r.rent || '--';
+            document.getElementById('detail-water').innerText = r.waterFee || '--';
+            document.getElementById('detail-mgmt').innerText = r.mgmtFee || '--';
+            document.getElementById('detail-start').innerText = r.start || '--';
+            document.getElementById('detail-end').innerText = r.end || '--';
 
             document.getElementById('modal-room-detail').classList.remove('hidden'); 
         }
@@ -1484,37 +1487,114 @@
                 
                 // Fetch Expenses
                 db.collection('expenses').onSnapshot(snap => {
-                    if(!snap.empty) {
-                        const cloudExpenses = snap.docs.map(d => d.data());
-                        window.state.expenses = cloudExpenses;
-                        localStorage.setItem('rental_expenses', JSON.stringify(window.state.expenses));
-                        // Update UI if needed
+                    // Update regardless if empty or not to handle clears
+                    const cloudExpenses = snap.empty ? [] : snap.docs.map(d => d.data());
+                    window.state.expenses = cloudExpenses;
+                    localStorage.setItem('rental_expenses', JSON.stringify(window.state.expenses));
+                    if(document.getElementById('tab-finance') && !document.getElementById('tab-finance').classList.contains('hidden')) {
+                        window.renderFinance();
                     }
+                    window.renderDashboard();
                 });
 
                 db.collection('rooms').onSnapshot(snap => {
-                    if(!snap.empty) {
-                        const cloudRooms = snap.docs.map(d => d.data());
-                        if (JSON.stringify(window.state.rooms) !== JSON.stringify(cloudRooms)) {
-                            window.state.rooms = cloudRooms;
-                            localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
-                            window.renderRooms(); window.renderDashboard();
-                        }
+                    const cloudRooms = snap.empty ? [] : snap.docs.map(d => d.data());
+                    // Simple check to avoid redraw loops if data is identical
+                    if (JSON.stringify(window.state.rooms) !== JSON.stringify(cloudRooms)) {
+                        window.state.rooms = cloudRooms;
+                        localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
+                        window.renderRooms(); 
+                        window.renderDashboard();
                     }
                     if(statusEl) { statusEl.innerHTML = '<i class="fa-solid fa-cloud mr-1"></i>已連線'; statusEl.className = "text-[10px] font-bold bg-green-100 text-green-600 px-3 py-1 rounded-full cursor-pointer"; }
                     if(document.getElementById('cloud-status-text')) document.getElementById('cloud-status-text').innerText = "✅ 雲端連線正常";
-                    if(document.getElementById('auth-status')) document.getElementById('auth-status').innerText = "已驗證";
                 });
-                db.collection('records').onSnapshot(snap => { if(!snap.empty) { window.state.records = snap.docs.map(d => d.data()); window.renderDashboard(); window.renderRooms(); } });
-                db.collection('repairs').onSnapshot(snap => { if(!snap.empty) { window.state.repairs = snap.docs.map(d => d.data()); window.renderDashboard(); } });
-                db.collection('config').doc('rates').onSnapshot(snap => { if(snap.exists) { window.state.utilityRates = snap.data(); localStorage.setItem('rental_utility_rates', JSON.stringify(window.state.utilityRates)); }});
+                
+                db.collection('records').onSnapshot(snap => { 
+                    const cloudRecords = snap.empty ? [] : snap.docs.map(d => d.data());
+                    window.state.records = cloudRecords;
+                    localStorage.setItem('rental_records', JSON.stringify(window.state.records));
+                    window.renderDashboard(); 
+                    window.renderRooms(); // Update unpaid badge
+                    if(document.getElementById('tab-finance') && !document.getElementById('tab-finance').classList.contains('hidden')) {
+                        window.renderFinance();
+                    }
+                });
+                
+                db.collection('repairs').onSnapshot(snap => { 
+                    const cloudRepairs = snap.empty ? [] : snap.docs.map(d => d.data());
+                    window.state.repairs = cloudRepairs;
+                    localStorage.setItem('rental_repairs', JSON.stringify(window.state.repairs));
+                    window.renderDashboard(); 
+                });
+                
+                db.collection('config').doc('rates').onSnapshot(snap => { 
+                    window.state.utilityRates = snap.exists ? snap.data() : {}; 
+                    localStorage.setItem('rental_utility_rates', JSON.stringify(window.state.utilityRates));
+                    if(document.getElementById('tab-finance') && !document.getElementById('tab-finance').classList.contains('hidden')) {
+                        window.renderFinance();
+                    }
+                });
+
             } catch(e) { console.error(e); if(statusEl) statusEl.innerText = '連線失敗'; }
         }
         
         window.syncToCloud = async function(coll, id, data) { if(db) { try { await db.collection(coll).doc(String(id)).set(data); } catch (e) { console.error(e); } } }
         window.deleteFromCloud = async function(coll, id) { if(db) try { await db.collection(coll).doc(String(id)).delete(); } catch(e) {} }
-        window.forceUploadAllLocalData = async function() { if(!db) return alert("❌ 未連線"); if(!confirm("上傳？")) return; try { for(const r of window.state.rooms) await window.syncToCloud('rooms', r.id, r); for(const r of window.state.records) await window.syncToCloud('records', r.id, r); for(const r of window.state.repairs) await window.syncToCloud('repairs', r.id, r); await window.syncToCloud('config', 'rates', window.state.utilityRates); alert('完成'); } catch(e){alert('失敗');} }
-        window.forceDownloadCloudData = async function() { if(!db) return alert("❌ 未連線"); if(!confirm("下載？")) return; try { const snap = await db.collection('rooms').get(); window.state.rooms = snap.docs.map(d=>d.data()); localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms)); alert('完成'); location.reload(); } catch(e){alert('失敗');} }
+        
+        window.forceUploadAllLocalData = async function() { 
+            if(!db) return alert("❌ 未連線"); 
+            if(!confirm("上傳？")) return; 
+            try { 
+                window.showToast("🚀 正在極速上傳中...");
+                
+                const promises = [];
+                // Pack all rooms
+                window.state.rooms.forEach(r => promises.push(db.collection('rooms').doc(String(r.id)).set(r)));
+                window.state.records.forEach(r => promises.push(db.collection('records').doc(String(r.id)).set(r)));
+                window.state.repairs.forEach(r => promises.push(db.collection('repairs').doc(String(r.id)).set(r)));
+                window.state.expenses.forEach(e => promises.push(db.collection('expenses').doc(String(e.id)).set(e)));
+                promises.push(db.collection('config').doc('rates').set(window.state.utilityRates));
+                promises.push(db.collection('config').doc('settings').set(window.state.settings));
+
+                await Promise.all(promises);
+                alert('✅ 所有資料上傳完成'); 
+            } catch(e){
+                console.error(e);
+                alert('❌ 上傳失敗: ' + e.message);
+            } 
+        }
+        
+        window.forceDownloadCloudData = async function() { 
+            if(!db) return alert("❌ 未連線"); 
+            if(!confirm("下載？")) return; 
+            try { 
+                window.showToast("🚀 正在極速下載中...");
+                const [snap1, snap2, snap3, snap4, snap5, snap6] = await Promise.all([
+                    db.collection('rooms').get(),
+                    db.collection('records').get(),
+                    db.collection('repairs').get(),
+                    db.collection('config').doc('rates').get(),
+                    db.collection('config').doc('settings').get(),
+                    db.collection('expenses').get()
+                ]);
+                
+                window.state.rooms = snap1.docs.map(d=>d.data()); 
+                window.state.records = snap2.docs.map(d=>d.data()); 
+                window.state.repairs = snap3.docs.map(d=>d.data()); 
+                if(snap4.exists) window.state.utilityRates = snap4.data(); 
+                if(snap5.exists) window.state.settings = { ...window.state.settings, ...snap5.data() }; 
+                window.state.expenses = snap6.docs.map(d=>d.data());
+
+                window.saveData(); 
+                alert('✅ 下載完成，即將重整畫面'); 
+                location.reload(); 
+            } catch(e){
+                console.error(e);
+                alert('❌ 下載失敗: ' + e.message);
+            } 
+        }
+        
         window.clearCacheAndReload = function() { if(confirm("確定清除暫存重載？(將從雲端抓取最新資料)")) { localStorage.clear(); location.reload(); } }
         window.exportData = function() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "rental_manager_backup_" + new Date().toISOString() + ".json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
         
