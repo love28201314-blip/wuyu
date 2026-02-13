@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 Pro - V48.0 全面進化版</title>
+    <title>租屋管家 Pro - V49.0 全能管家版</title>
     
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -71,6 +71,7 @@
         .badge-red { background: #fef2f2; color: #ef4444; border-color: #fca5a5; }
         .badge-green { background: #ecfdf5; color: #10b981; border-color: #6ee7b7; }
         .badge-orange { background: #fff7ed; color: #ea580c; border-color: #fdba74; }
+        .badge-yellow { background: #fef9c3; color: #ca8a04; border-color: #fde047; }
 
         /* 字體按鈕 */
         .font-btn-container { display: flex; gap: 10px; margin-top: 5px; }
@@ -114,7 +115,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家 Pro</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V48.0 全面進化版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V49.0 全能管家版</p>
             <div class="space-y-4 w-full">
                 <button onclick="window.switchView('owner-login')" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">管理系統登入</button>
             </div>
@@ -159,7 +160,7 @@
                         <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-blue-200 text-[10px] mb-1">已收總額</div><div class="text-lg font-bold" id="dash-income">$0</div></div>
                         <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-red-300 text-[10px] mb-1">待收總額</div><div class="text-lg font-bold text-red-100" id="dash-pending">$0</div></div>
                         <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-yellow-300 text-[10px] mb-1">⚡ 電費營收</div><div class="text-lg font-bold" id="dash-elec-rev">$0</div></div>
-                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-orange-300 text-[10px] mb-1">🔧 修繕支出</div><div class="text-lg font-bold" id="dash-repair-cost">$0</div></div>
+                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-orange-300 text-[10px] mb-1">🔧 雜支/修繕</div><div class="text-lg font-bold" id="dash-repair-cost">$0</div></div>
                     </div>
                 </div>
                 
@@ -228,7 +229,10 @@
                     <div id="finance-trend-chart" class="bar-chart-container"></div>
                 </div>
 
-                <h3 class="text-sm font-bold text-slate-500 mb-3 ml-1">月度明細</h3>
+                <div class="flex justify-between items-end mb-3">
+                    <h3 class="text-sm font-bold text-slate-500 ml-1">月度明細</h3>
+                    <button onclick="window.openAddExpenseModal()" class="btn btn-outline text-xs !py-2 !px-3 border-orange-200 text-orange-600 hover:bg-orange-50"><i class="fa-solid fa-plus mr-1"></i>記帳</button>
+                </div>
                 <div id="finance-list" class="space-y-3 pb-24"></div>
                 <div id="empty-finance-msg" class="hidden text-center py-20 text-slate-300 font-bold">尚無數據</div>
             </div>
@@ -320,6 +324,22 @@
     </div>
 
     <!-- Modals -->
+    <!-- 雜支記帳 -->
+    <div id="modal-add-expense" class="modal fixed inset-0 hidden flex items-center justify-center p-6 z-50" onclick="if(event.target === this) window.closeModal('modal-add-expense')">
+        <div class="bg-white w-full max-w-sm rounded-[24px] p-6 animate-slide-up shadow-2xl">
+            <h3 class="text-xl font-black mb-4 text-center text-orange-600">新增雜支</h3>
+            <div class="space-y-4">
+                <div><label class="input-label">日期</label><input type="date" id="exp-date" class="input-field"></div>
+                <div><label class="input-label">項目名稱</label><input type="text" id="exp-title" class="input-field" placeholder="例如: 網路費、稅金"></div>
+                <div><label class="input-label">金額</label><input type="number" id="exp-amount" class="input-field font-bold text-lg" placeholder="0"></div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="window.closeModal('modal-add-expense')" class="btn btn-outline flex-1">取消</button>
+                <button onclick="window.saveExpense()" class="btn btn-warning flex-1 shadow-lg text-white">儲存</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 抄表計費 -->
     <div id="modal-bill" class="modal fixed inset-0 hidden flex items-center justify-center p-6 z-50" onclick="if(event.target === this) window.closeModal('modal-bill')">
         <div class="bg-white w-full max-w-sm rounded-[24px] p-6 animate-slide-up shadow-2xl flex flex-col max-h-[90vh]">
@@ -356,7 +376,7 @@
     </div>
 
     <!-- 財務詳情 -->
-    <div id="modal-finance-detail" class="modal fixed inset-0 hidden flex items-center justify-center p-4 z-50" onclick="if(event.target === this) window.closeModal('modal-finance-detail')"><div class="bg-white w-full max-w-md rounded-[24px] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]"><div class="bg-slate-800 p-5 text-white flex justify-between items-center"><h3 class="text-xl font-bold" id="fin-detail-month">---</h3><button onclick="window.closeModal('modal-finance-detail')" class="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full"><i class="fa-solid fa-xmark"></i></button></div><div class="p-6 overflow-y-auto space-y-6 flex-1"><div class="flex flex-col items-center"><div class="pie-chart-wrapper mb-4"><div id="pie-chart" class="pie-chart"></div></div><div class="flex gap-3 text-xs font-bold text-slate-500"><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-green-500 mr-1"></div>淨利</div><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>成本</div><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-orange-500 mr-1"></div>修繕</div></div></div><div class="grid grid-cols-3 gap-2 text-center bg-slate-50 p-4 rounded-xl"><div><div class="text-[10px] text-slate-400 mb-1">總收(含電)</div><div id="fin-detail-income" class="font-bold">$0</div></div><div><div class="text-[10px] text-red-400 mb-1">總支(水電修)</div><div id="fin-detail-cost" class="font-bold text-red-500">$0</div></div><div><div class="text-[10px] text-green-500 mb-1">淨賺</div><div id="fin-detail-net" class="font-bold text-green-600">$0</div></div></div><div id="fin-detail-list" class="space-y-2"></div></div></div></div>
+    <div id="modal-finance-detail" class="modal fixed inset-0 hidden flex items-center justify-center p-4 z-50" onclick="if(event.target === this) window.closeModal('modal-finance-detail')"><div class="bg-white w-full max-w-md rounded-[24px] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]"><div class="bg-slate-800 p-5 text-white flex justify-between items-center"><h3 class="text-xl font-bold" id="fin-detail-month">---</h3><button onclick="window.closeModal('modal-finance-detail')" class="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full"><i class="fa-solid fa-xmark"></i></button></div><div class="p-6 overflow-y-auto space-y-6 flex-1"><div class="flex flex-col items-center"><div class="pie-chart-wrapper mb-4"><div id="pie-chart" class="pie-chart"></div></div><div class="flex gap-3 text-xs font-bold text-slate-500"><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-green-500 mr-1"></div>淨利</div><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>成本</div><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-orange-500 mr-1"></div>修繕/雜支</div></div></div><div class="grid grid-cols-3 gap-2 text-center bg-slate-50 p-4 rounded-xl"><div><div class="text-[10px] text-slate-400 mb-1">總收(含電)</div><div id="fin-detail-income" class="font-bold">$0</div></div><div><div class="text-[10px] text-red-400 mb-1">總支(含雜)</div><div id="fin-detail-cost" class="font-bold text-red-500">$0</div></div><div><div class="text-[10px] text-green-500 mb-1">淨賺</div><div id="fin-detail-net" class="font-bold text-green-600">$0</div></div></div><div id="fin-detail-list" class="space-y-2"></div></div></div></div>
     
     <!-- 房間詳情 -->
     <div id="modal-room-detail" class="modal fixed inset-0 hidden flex items-center justify-center p-4 z-50" onclick="if(event.target === this) window.closeModal('modal-room-detail')">
@@ -447,16 +467,36 @@
         };
         const USER_PROJECT_ID = userFirebaseConfig.projectId;
 
+        // 防損毀 JSON 讀取機制
+        const safeJSONParse = (key, defaultVal) => {
+            try { 
+                const data = JSON.parse(localStorage.getItem(key)); 
+                return data !== null ? data : defaultVal;
+            } catch(e) { return defaultVal; }
+        };
+
         // --- 初始化 State ---
         window.state = {
-            rooms: JSON.parse(localStorage.getItem('rental_rooms') || '[]'),
-            records: JSON.parse(localStorage.getItem('rental_records') || '[]'),
-            repairs: JSON.parse(localStorage.getItem('rental_repairs') || '[]'),
-            utilityRates: JSON.parse(localStorage.getItem('rental_utility_rates') || '{}'),
-            settings: JSON.parse(localStorage.getItem('rental_settings') || `{"elecRate": 3.5, "elecCostRate": 2.1, "waterRate": 0, "waterCostRate": 50, "mgmtFee": 500, "bankCode": "", "bankAccount": "", "projectId": "${USER_PROJECT_ID}", "password": "0000", "fontSize": 16, "geminiApiKey": ""}`),
-            loginAttempts: JSON.parse(localStorage.getItem('rental_login_attempts') || '{"owner":0,"tenant":0}'),
-            lockoutUntil: JSON.parse(localStorage.getItem('rental_lockout_until') || '{"owner":0,"tenant":0}')
+            rooms: safeJSONParse('rental_rooms', []),
+            records: safeJSONParse('rental_records', []),
+            repairs: safeJSONParse('rental_repairs', []),
+            utilityRates: safeJSONParse('rental_utility_rates', {}),
+            expenses: safeJSONParse('rental_expenses', []), // New: General Expenses
+            settings: safeJSONParse('rental_settings', {
+                elecRate: 3.5, elecCostRate: 2.1, waterRate: 0, waterCostRate: 50, 
+                mgmtFee: 500, bankCode: "", bankAccount: "", projectId: USER_PROJECT_ID, 
+                password: "0000", fontSize: 16, geminiApiKey: ""
+            }),
+            loginAttempts: safeJSONParse('rental_login_attempts', {"owner":0}),
+            lockoutUntil: safeJSONParse('rental_lockout_until', {"owner":0})
         };
+        
+        // 確保陣列型態（防禦型賦值）
+        if (!Array.isArray(window.state.rooms)) window.state.rooms = [];
+        if (!Array.isArray(window.state.records)) window.state.records = [];
+        if (!Array.isArray(window.state.repairs)) window.state.repairs = [];
+        if (!Array.isArray(window.state.expenses)) window.state.expenses = [];
+        
         window.state.settings.projectId = USER_PROJECT_ID;
 
         // --- 全域變數 ---
@@ -474,6 +514,7 @@
                 localStorage.setItem('rental_repairs', JSON.stringify(window.state.repairs)); 
                 localStorage.setItem('rental_settings', JSON.stringify(window.state.settings));
                 localStorage.setItem('rental_utility_rates', JSON.stringify(window.state.utilityRates));
+                localStorage.setItem('rental_expenses', JSON.stringify(window.state.expenses));
             } catch (e) {
                 console.warn('LocalStorage full');
             }
@@ -531,6 +572,27 @@
                     callback(canvas.toDataURL('image/jpeg', 0.5)); 
                 } 
             } 
+        }
+        
+        window.importData = function(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    // Merge or replace logic (Replace is safer for restore)
+                    if(confirm("確定要匯入此備份檔案嗎？這將覆蓋目前的資料。")) {
+                        window.state = data;
+                        window.saveData();
+                        alert("資料匯入成功！系統將重新整理。");
+                        location.reload();
+                    }
+                } catch(err) {
+                    alert("檔案格式錯誤");
+                }
+            };
+            reader.readAsText(file);
         }
 
         // ==========================================
@@ -688,6 +750,18 @@
                 const unpaid=unpaidRecs.reduce((a,b)=>a+b.total,0); 
                 const hasNotified = unpaidRecs.some(x => x.notified); 
                 
+                // Expiry Check
+                let expiryBadge = '';
+                if(r.tenant && r.end) {
+                    const today = new Date();
+                    const endDate = new Date(r.end);
+                    const diffTime = endDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays > 0 && diffDays <= 30) {
+                        expiryBadge = `<span class="badge badge-yellow text-[9px] px-2 py-0.5 mt-1 font-bold border-yellow-400">⚠️ 合約即將到期</span>`;
+                    }
+                }
+
                 const ph=r.photo?`<img src="${r.photo}" class="w-14 h-14 rounded-2xl object-cover mr-4">`:`<div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-300 mr-4 text-xs">${r.name}</div>`; 
                 const safeId = String(r.id).replace(/'/g, "\\'");
                 
@@ -701,7 +775,8 @@
                     </div>
                     <div class="flex flex-col items-end gap-1 shrink-0">
                         ${unpaid>0?`<span class="badge badge-red shadow-sm px-3 py-1 text-[11px] font-black border-red-300">欠 $${Math.round(unpaid)}</span>`:'<span class="badge badge-green shadow-sm px-3 py-1 text-[11px] font-black border-green-300">正常</span>'}
-                        ${hasNotified ? `<span class="badge badge-orange shadow-sm px-2 py-1 mt-1 text-[10px] font-black border-orange-300"><i class="fa-solid fa-bell mr-1"></i>已催繳</span>` : ''}
+                        ${hasNotified ? `<span class="badge badge-orange shadow-sm px-2 py-0.5 mt-1 text-[10px] font-black border-orange-300"><i class="fa-solid fa-bell mr-1"></i>已催繳</span>` : ''}
+                        ${expiryBadge}
                     </div>
                 </div>`; 
             }).join(''); 
@@ -713,15 +788,30 @@
             const repairCost = window.state.repairs.reduce((s, r) => s + (Number(r.cost) || 0), 0);
             const elecRev = window.state.records.reduce((s, r) => s + (Number(r.elecCost) || 0), 0);
             
+            // Total Expenses (Sum of all utility costs recorded)
+            // Note: This is an all-time sum for dashboard overview
+            let totalUtilityCost = 0;
+            Object.values(window.state.utilityRates).forEach(u => {
+                totalUtilityCost += (u.elecTotal || 0) + (u.waterTotal || 0);
+            });
+            
+            // Calculate General Expenses
+            const generalExpense = window.state.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+
             if(document.getElementById('dash-income')) document.getElementById('dash-income').innerText = `$${Math.round(income).toLocaleString()}`;
             if(document.getElementById('dash-pending')) document.getElementById('dash-pending').innerText = `$${Math.round(pending).toLocaleString()}`;
-            if(document.getElementById('dash-repair-cost')) document.getElementById('dash-repair-cost').innerText = `$${Math.round(repairCost).toLocaleString()}`;
+            
+            // Dashboard "Repair Cost" block now represents "Total Costs" (Repair + Utility + General) for better overview
+            const totalCosts = repairCost + totalUtilityCost + generalExpense;
+            
+            if(document.getElementById('dash-repair-cost')) document.getElementById('dash-repair-cost').innerText = `$${Math.round(totalCosts).toLocaleString()}`;
             if(document.getElementById('dash-elec-rev')) document.getElementById('dash-elec-rev').innerText = `$${Math.round(elecRev).toLocaleString()}`; 
             
             const pendingReps = window.state.repairs.filter(r => r.status === 'pending');
             if(document.getElementById('dash-repair-notify')) document.getElementById('dash-repair-notify').innerText = `${pendingReps.length} 件`;
             
-            if(document.getElementById('dash-net')) document.getElementById('dash-net').innerText = `$${Math.round(income - repairCost).toLocaleString()}`;
+            // Net Profit = Income - Total Costs
+            if(document.getElementById('dash-net')) document.getElementById('dash-net').innerText = `$${Math.round(income - totalCosts).toLocaleString()}`;
 
             const list = document.getElementById('dashboard-bills-list');
             const unpaidRecs = window.state.records.filter(r => !r.paid);
@@ -768,24 +858,26 @@
             const currentYear = new Date().getFullYear();
             const grouped = {}; 
             
+            // 1. Revenue
             paidRecs.forEach(r => {
                 const y = (r.billingMonth || r.date).split('-')[0].split('/')[0];
                 const monthKey = r.billingMonth; 
                 
                 if(!yearlyData[y]) yearlyData[y] = { income: 0, cost: 0 };
-                if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, items: [], repairCost: 0, utilityCost: 0 };
+                if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, items: [], repairCost: 0, utilityCost: 0, generalCost: 0 };
 
                 yearlyData[y].income += Number(r.total);
                 grouped[monthKey].income += Number(r.total);
                 grouped[monthKey].items.push(r);
             });
             
+            // 2. Utility Costs
             Object.keys(window.state.utilityRates).forEach(monthKey => {
                 const costs = window.state.utilityRates[monthKey];
                 const totalUtilCost = (costs.elecTotal || 0) + (costs.waterTotal || 0);
                 const y = monthKey.split('-')[0];
                 
-                if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, items: [], repairCost: 0, utilityCost: 0 };
+                if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, items: [], repairCost: 0, utilityCost: 0, generalCost: 0 };
                 grouped[monthKey].cost += totalUtilCost;
                 grouped[monthKey].utilityCost += totalUtilCost;
                 
@@ -793,6 +885,7 @@
                 else yearlyData[y] = { income: 0, cost: totalUtilCost };
             });
             
+            // 3. Repair Costs
             window.state.repairs.forEach(r => {
                 if(r.cost && r.date) {
                     const parts = r.date.split('/'); 
@@ -802,19 +895,32 @@
                     
                     if(yearlyData[y]) yearlyData[y].cost += Number(r.cost);
                     
-                    if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, items: [], repairCost: 0, utilityCost: 0 };
+                    if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, items: [], repairCost: 0, utilityCost: 0, generalCost: 0 };
                     grouped[monthKey].cost += Number(r.cost);
                     grouped[monthKey].repairCost += Number(r.cost);
                 }
             });
 
+            // 4. General Expenses (New!)
+            window.state.expenses.forEach(e => {
+                const parts = e.date.split('-'); // YYYY-MM-DD
+                const y = parts[0];
+                const monthKey = parts[0] + '-' + parts[1];
+                
+                if(yearlyData[y]) yearlyData[y].cost += Number(e.amount);
+                else yearlyData[y] = { income: 0, cost: Number(e.amount) };
+                
+                if(!grouped[monthKey]) grouped[monthKey] = { income: 0, cost: 0, items: [], repairCost: 0, utilityCost: 0, generalCost: 0 };
+                grouped[monthKey].cost += Number(e.amount);
+                grouped[monthKey].generalCost += Number(e.amount);
+            });
+
             const yStat = yearlyData[currentYear] || { income: 0, cost: 0 };
             const yNet = yStat.income - yStat.cost;
             
-            // 趨勢圖 (Bar Chart) 繪製
+            // Trend Chart
             const trendContainer = document.getElementById('finance-trend-chart');
             if(trendContainer) {
-                // 取最近6個月
                 let months = [];
                 for(let i=5; i>=0; i--) {
                     const d = new Date();
@@ -848,7 +954,7 @@
                 trendContainer.innerHTML = barsHTML;
             }
 
-            // 更新年度總結
+            // Update Yearly Summary
             const totalYearly = yStat.income || 1;
             const costPct = Math.min(100, (yStat.cost / totalYearly) * 100);
             const netPct = Math.max(0, 100 - costPct);
@@ -893,7 +999,7 @@
             container.innerHTML = Object.keys(grouped).sort((a,b)=>b.localeCompare(a)).map(month => {
                 const d = grouped[month]; const net = d.income - d.cost;
                 return `<div class="card p-6 border-l-8 border-indigo-500 shadow-md cursor-pointer active:scale-95 transition" onclick='window.openMonthDetail("${month}")'>
-                    <div class="flex justify-between items-start mb-4"><div><h4 class="text-2xl font-black text-slate-800">${month} 帳單</h4><p class="text-[10px] text-slate-400 font-bold">${d.items.length} 筆入帳</p></div><div class="text-right"><div class="text-[10px] text-slate-400 font-bold">本月淨利</div><div class="text-2xl font-black text-indigo-600">$${Math.round(net).toLocaleString()}</div></div></div>
+                    <div class="flex justify-between items-start mb-4"><div><h4 class="text-2xl font-black text-slate-800">${month} 帳單</h4><p class="text-[10px] text-slate-400 font-bold">收支結算</p></div><div class="text-right"><div class="text-[10px] text-slate-400 font-bold">本月淨利</div><div class="text-2xl font-black ${net >= 0 ? 'text-indigo-600' : 'text-red-500'}">$${Math.round(net).toLocaleString()}</div></div></div>
                     <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 font-black text-xs"><div class="text-slate-500">總收: $${Math.round(d.income).toLocaleString()}</div><div class="text-red-400 text-right">成本: -$${Math.round(d.cost).toLocaleString()}</div></div></div>`;
             }).join('');
         }
@@ -908,20 +1014,62 @@
             const total = d.income || 1; 
             const uPct = ((d.utilityCost||0) / total) * 100;
             const rPct = ((d.repairCost||0) / total) * 100;
-            const pPct = 100 - uPct - rPct; 
+            const gPct = ((d.generalCost||0) / total) * 100; // General Expense Pct
+            const pPct = 100 - uPct - rPct - gPct; 
             
-            const stop1 = Math.max(0, pPct);
-            const stop2 = Math.min(100, stop1 + uPct);
+            // Simplified stops for 3 colors + profit
+            // Profit (Green), Utility (Blue), Repair (Orange), General (Gray/Red) -> Let's group costs
             
             const chart = document.getElementById('pie-chart');
             if(d.income === 0 && d.cost === 0) {
                  chart.style.background = '#e5e7eb';
             } else {
-                 chart.style.background = `conic-gradient(#10b981 0% ${stop1}%, #3b82f6 ${stop1}% ${stop2}%, #f97316 ${stop2}% 100%)`;
+                 const costRatio = Math.min(100, (d.cost / total) * 100);
+                 const profitRatio = Math.max(0, 100 - costRatio);
+                 chart.style.background = `conic-gradient(#10b981 0% ${profitRatio}%, #3b82f6 ${profitRatio}% 100%)`;
             }
             
-            document.getElementById('fin-detail-list').innerHTML = d.items.map(r => `<div class="flex justify-between py-2 border-b border-slate-100 last:border-0"><span class="font-bold text-slate-700">${r.roomName}</span><span>$${Math.round(r.total)}</span></div>`).join('');
+            // List Items + Expenses
+            let html = "";
+            d.items.forEach(r => {
+                html += `<div class="flex justify-between py-2 border-b border-slate-100 last:border-0"><span class="font-bold text-slate-700">${r.roomName}</span><span class="text-green-600">+$${Math.round(r.total)}</span></div>`;
+            });
+            // Append General Expenses to the list if any for this month
+            window.state.expenses.forEach(e => {
+                if(e.date.startsWith(month)) {
+                    html += `<div class="flex justify-between py-2 border-b border-slate-100 last:border-0"><span class="font-bold text-slate-500">${e.title}</span><span class="text-red-500">-$${e.amount}</span></div>`;
+                }
+            });
+            
+            document.getElementById('fin-detail-list').innerHTML = html;
             document.getElementById('modal-finance-detail').classList.remove('hidden');
+        }
+
+        // New Expense Functions
+        window.openAddExpenseModal = function() {
+            document.getElementById('exp-date').valueAsDate = new Date();
+            document.getElementById('exp-title').value = '';
+            document.getElementById('exp-amount').value = '';
+            document.getElementById('modal-add-expense').classList.remove('hidden');
+        }
+        
+        window.saveExpense = function() {
+            const date = document.getElementById('exp-date').value;
+            const title = document.getElementById('exp-title').value;
+            const amount = Number(document.getElementById('exp-amount').value);
+            
+            if(!date || !title || !amount) return alert("請填寫完整資訊");
+            
+            const expense = { id: Date.now().toString(), date, title, amount };
+            window.state.expenses.push(expense);
+            window.saveData();
+            
+            // Sync specific collection if connected
+            if(db) db.collection('expenses').doc(expense.id).set(expense);
+            
+            window.closeModal('modal-add-expense');
+            window.showToast("記帳成功");
+            window.renderFinance();
         }
 
         window.loadUtilityRatesForMonth = function() {
@@ -1282,6 +1430,16 @@
                     localStorage.setItem('rental_settings', JSON.stringify(window.state.settings));
                     window.applySettingsUI();
                 }
+                
+                // Fetch Expenses
+                db.collection('expenses').onSnapshot(snap => {
+                    if(!snap.empty) {
+                        const cloudExpenses = snap.docs.map(d => d.data());
+                        window.state.expenses = cloudExpenses;
+                        localStorage.setItem('rental_expenses', JSON.stringify(window.state.expenses));
+                        // Update UI if needed
+                    }
+                });
 
                 db.collection('rooms').onSnapshot(snap => {
                     if(!snap.empty) {
@@ -1304,11 +1462,70 @@
         
         window.syncToCloud = async function(coll, id, data) { if(db) { try { await db.collection(coll).doc(String(id)).set(data); } catch (e) { console.error(e); } } }
         window.deleteFromCloud = async function(coll, id) { if(db) try { await db.collection(coll).doc(String(id)).delete(); } catch(e) {} }
-        window.forceUploadAllLocalData = async function() { if(!db) return alert("❌ 未連線"); if(!confirm("上傳？")) return; try { for(const r of window.state.rooms) await window.syncToCloud('rooms', r.id, r); for(const r of window.state.records) await window.syncToCloud('records', r.id, r); for(const r of window.state.repairs) await window.syncToCloud('repairs', r.id, r); await window.syncToCloud('config', 'rates', window.state.utilityRates); alert('完成'); } catch(e){alert('失敗');} }
-        window.forceDownloadCloudData = async function() { if(!db) return alert("❌ 未連線"); if(!confirm("下載？")) return; try { const snap = await db.collection('rooms').get(); window.state.rooms = snap.docs.map(d=>d.data()); localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms)); alert('完成'); location.reload(); } catch(e){alert('失敗');} }
+        
+        window.forceUploadAllLocalData = async function() { 
+            if(!db) return alert("❌ 未連線"); 
+            if(!confirm("上傳？")) return; 
+            try { 
+                const promises = [];
+                window.state.rooms.forEach(r => promises.push(db.collection('rooms').doc(String(r.id)).set(r)));
+                window.state.records.forEach(r => promises.push(db.collection('records').doc(String(r.id)).set(r)));
+                window.state.repairs.forEach(r => promises.push(db.collection('repairs').doc(String(r.id)).set(r)));
+                window.state.expenses.forEach(e => promises.push(db.collection('expenses').doc(String(e.id)).set(e)));
+                promises.push(db.collection('config').doc('rates').set(window.state.utilityRates));
+                promises.push(db.collection('config').doc('settings').set(window.state.settings));
+
+                await Promise.all(promises);
+                alert('完成'); 
+            } catch(e){alert('失敗');} 
+        }
+        
+        window.forceDownloadCloudData = async function() { 
+            if(!db) return alert("❌ 未連線"); 
+            if(!confirm("下載？")) return; 
+            try { 
+                const snap1 = await db.collection('rooms').get(); 
+                window.state.rooms = snap1.docs.map(d=>d.data()); 
+                
+                const snap2 = await db.collection('records').get(); 
+                window.state.records = snap2.docs.map(d=>d.data()); 
+                
+                const snap3 = await db.collection('repairs').get(); 
+                window.state.repairs = snap3.docs.map(d=>d.data()); 
+                
+                const snap4 = await db.collection('config').doc('rates').get(); 
+                if(snap4.exists) window.state.utilityRates = snap4.data(); 
+                
+                const snap5 = await db.collection('config').doc('settings').get();
+                if(snap5.exists) window.state.settings = { ...window.state.settings, ...snap5.data() };
+                
+                const snap6 = await db.collection('expenses').get();
+                window.state.expenses = snap6.docs.map(d=>d.data());
+
+                window.saveData(); 
+                alert('完成'); 
+                location.reload(); 
+            } catch(e){alert('失敗');} 
+        }
+        
         window.clearCacheAndReload = function() { if(confirm("確定清除暫存重載？(將從雲端抓取最新資料)")) { localStorage.clear(); location.reload(); } }
         window.exportData = function() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "rental_manager_backup_" + new Date().toISOString() + ".json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
 
+        // ==========================================
+        // 7. 將所有函式強制掛載到 Window 以供 HTML 呼叫
+        // ==========================================
+        Object.assign(window, {
+            saveData, saveLoginState, closeModal, showToast, checkLockout,
+            applySettingsUI, setFontSize, switchView, switchTab, verifyOwner, resetSystemSettings,
+            loadUtilityRatesForMonth, saveUtilityRates, renderRooms, renderDashboard, renderFinance, openMonthDetail,
+            showRoomDetail, openEditRoom, openRoomModal, saveRoom, deleteRoom, moveOutTenant, handleAddPhoto, renderEditPhotoList,
+            removeEditPhoto, viewBigImage, triggerFile, handlePhoto, compressImage,
+            onBillMonthChange, openBillFromDetail, openBillModal, createBill, openPayModal, confirmPay, openNotifyModal, copyNotify, markNotified,
+            openRepairProcess, saveRepairProcess, analyzeRepair, saveSettings,
+            initCloud, syncToCloud, deleteFromCloud, forceUploadAllLocalData, forceDownloadCloudData, clearCacheAndReload, exportData, aiRewrite,
+            openAddExpenseModal, saveExpense, importData
+        });
+        
         // Final Init
         window.onload = function() {
             try {
