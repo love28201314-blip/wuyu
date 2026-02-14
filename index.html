@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 - V55.3 排序與顯示優化版</title>
+    <title>租屋管家 - V55.4 繳款日與字體修復版</title>
     <link rel="icon" href="data:,">
     
     <!-- PWA Settings -->
@@ -124,7 +124,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V55.3 排序與顯示優化版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V55.4 繳款日與字體修復版</p>
             <div class="space-y-4 w-full">
                 <!-- 直接進入系統，免密碼 -->
                 <button onclick="loginAsLandlord()" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">進入系統</button>
@@ -412,7 +412,7 @@
         </div>
     </div>
     
-    <!-- 房間詳情 -->
+    <!-- 房間詳情 (已簡化：移除照片區塊) -->
     <div id="modal-room-detail" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-room-detail')">
         <div class="sheet-container">
             <div class="h-48 bg-slate-200 relative shrink-0">
@@ -433,10 +433,6 @@
                 <div class="grid grid-cols-2 gap-3 text-center">
                     <div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs text-slate-400 mb-1 font-bold">起租日</div><div id="detail-start" class="font-bold text-slate-700">--</div></div>
                     <div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs text-slate-400 mb-1 font-bold">到期日</div><div id="detail-end" class="font-bold text-slate-700">--</div></div>
-                </div>
-                <div class="space-y-3">
-                    <div><div class="text-xs font-bold text-slate-400 mb-2">家具照片</div><div id="detail-furn-list" class="photo-scroller"></div></div>
-                    <div><div class="text-xs font-bold text-slate-400 mb-2">合約照片</div><div id="detail-cont-list" class="photo-scroller"></div></div>
                 </div>
             </div>
             <div class="p-4 border-t flex gap-3 shrink-0">
@@ -718,7 +714,7 @@
         function setFontSize(size) {
             window.state.settings.fontSize = size;
             document.documentElement.style.setProperty('--base-font-size', size + 'px');
-            document.querySelectorAll('.font-size-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.font-btn').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById('font-size-' + size);
             if(activeBtn) activeBtn.classList.add('active');
             saveData();
@@ -727,9 +723,6 @@
         function applySettingsUI() { 
             const s = window.state.settings;
             if(document.getElementById('set-project-id')) document.getElementById('set-project-id').innerText = s.projectId;
-            
-            const pwd = document.getElementById('set-pwd');
-            if(pwd) pwd.value = s.password || '0000';
             
             const bankCodeEl = document.getElementById('set-bank-code');
             if(bankCodeEl) bankCodeEl.value = s.bankCode || '';
@@ -867,21 +860,47 @@
                 c.innerHTML = '<div class="text-center py-10 text-slate-300">查無房間</div>';
                 return;
             }
+            
+            const now = new Date();
+            const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
             c.innerHTML=filteredRooms.map(r=>{ 
-                const unpaidRecs = window.state.records.filter(x=>x.roomId==r.id&&!x.paid);
-                const unpaid=unpaidRecs.reduce((a,b)=>a+b.total,0); 
-                const hasNotified = unpaidRecs.some(x => x.notified); 
+                // Check if paid for current month
+                const currentMonthBill = window.state.records.find(rec => rec.roomId == r.id && rec.billingMonth == currentMonthStr);
+                let statusBadge = '';
+                if (currentMonthBill) {
+                    if (currentMonthBill.paid) {
+                        statusBadge = `<span class="badge badge-green shadow-sm px-2 py-0.5 mt-1 text-[10px] font-black border-green-300">✅ 本月已繳</span>`;
+                    } else {
+                        statusBadge = `<span class="badge badge-red shadow-sm px-2 py-0.5 mt-1 text-[10px] font-black border-red-300">❌ 本月未繳</span>`;
+                    }
+                } else {
+                     statusBadge = `<span class="badge badge-orange shadow-sm px-2 py-0.5 mt-1 text-[10px] font-black border-orange-300">⏳ 未出帳</span>`;
+                }
                 
                 // Expiry Check
                 let expiryBadge = '';
                 if(r.tenant && r.end) {
-                    const today = new Date();
                     const endDate = new Date(r.end);
-                    const diffTime = endDate - today;
+                    const diffTime = endDate - now;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     if (diffDays > 0 && diffDays <= 30) {
                         expiryBadge = `<span class="badge badge-yellow text-[9px] px-2 py-0.5 mt-1 font-bold border-yellow-400">⚠️ 合約即將到期</span>`;
+                    }
+                }
+                
+                // Payment Day Countdown
+                let paymentInfo = '';
+                if (r.tenant && r.paymentDay) {
+                    const payDay = parseInt(r.paymentDay);
+                    const currentDay = now.getDate();
+                    let daysLeft = payDay - currentDay;
+                    if (daysLeft < 0) {
+                        // Means pay day passed for this month, or next month
+                        // Usually just show "Pay day: 5th" is enough context
+                         paymentInfo = `<div class="text-[10px] text-slate-400 font-bold mt-1">每月 ${payDay} 號繳費 (已過 ${Math.abs(daysLeft)} 天)</div>`;
+                    } else {
+                         paymentInfo = `<div class="text-[10px] text-indigo-500 font-bold mt-1">每月 ${payDay} 號繳費 (剩 ${daysLeft} 天)</div>`;
                     }
                 }
 
@@ -894,11 +913,11 @@
                         <div class="truncate">
                             <div class="text-xl font-black text-slate-800">${r.name} 房</div>
                             <div class="text-slate-400 font-bold text-xs truncate">${r.tenant||'空房'}</div>
+                            ${paymentInfo}
                         </div>
                     </div>
                     <div class="flex flex-col items-end gap-1 shrink-0">
-                        ${unpaid>0?`<span class="badge badge-red shadow-sm px-3 py-1 text-[11px] font-black border-red-300">欠 $${Math.round(unpaid)}</span>`:'<span class="badge badge-green shadow-sm px-3 py-1 text-[11px] font-black border-green-300">正常</span>'}
-                        ${hasNotified ? `<span class="badge badge-orange shadow-sm px-2 py-0.5 mt-1 text-[10px] font-black border-orange-300"><i class="fa-solid fa-bell mr-1"></i>已催繳</span>` : ''}
+                        ${statusBadge}
                         ${expiryBadge}
                     </div>
                 </div>`; 
@@ -1277,18 +1296,8 @@
             document.getElementById('detail-start').innerText = r.start || '--';
             document.getElementById('detail-end').innerText = r.end || '--';
 
-            const renderList = (elId, list) => {
-                const el = document.getElementById(elId);
-                if(list && list.length > 0) {
-                     el.innerHTML = list.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join('');
-                } else { 
-                     el.innerHTML = '<span class="text-xs text-slate-400 p-2">無照片</span>'; 
-                }
-            };
-            const furn = r.furnPhotos || (r.photoFurn ? [r.photoFurn] : []);
-            const cont = r.contPhotos || (r.photoCont ? [r.photoCont] : []);
-            renderList('detail-furn-list', furn);
-            renderList('detail-cont-list', cont);
+            // Remove furniture/contract photos logic in Detail View as requested
+            // const renderList... removed from here
 
             document.getElementById('modal-room-detail').classList.remove('hidden'); 
         }
@@ -1798,7 +1807,7 @@
             saveData();
 
             if(db && confirm("是否一併清除雲端上的帳務資料？")) {
-                showToast("正在清除雲端資料...");
+                window.showToast("正在清除雲端資料...");
                 try {
                     const promises = [];
                     // Delete Records
@@ -1822,7 +1831,7 @@
                     alert("⚠️ 雲端部分資料清除失敗: " + e.message);
                 }
             } else {
-                showToast("已清除本機資料");
+                window.showToast("已清除本機資料");
             }
             location.reload();
         }
@@ -1838,12 +1847,12 @@
             if(db) {
                 try {
                     await db.collection('records').doc(String(id)).delete();
-                    showToast('帳單已刪除');
+                    window.showToast('帳單已刪除');
                 } catch(e) {
                     console.error(e);
                 }
             } else {
-                showToast('已刪除 (僅本機)');
+                window.showToast('已刪除 (僅本機)');
             }
             
             renderDashboard();
