@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 - V55.5 手機原生體驗增強版</title>
+    <title>租屋管家 - V55.6 體驗優化與連動更新版</title>
     <link rel="icon" href="data:,">
     
     <!-- PWA Settings -->
@@ -91,7 +91,7 @@
         /* 手機版：底部抽屜 */
         .sheet-container { 
             width: 100%; 
-            max-height: 90vh; 
+            max-height: 85vh; /* 稍微降低高度，避免太滿 */
             background: white; 
             border-radius: 32px 32px 0 0; 
             overflow: hidden; 
@@ -99,7 +99,7 @@
             flex-direction: column; 
             animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); 
             padding-bottom: env(safe-area-inset-bottom); 
-            transition: transform 0.2s ease-out; /* Add transition for drag effect */
+            transition: transform 0.2s ease-out; 
         }
         
         /* 桌面版：置中視窗 */
@@ -114,7 +114,7 @@
             } 
         }
 
-        /* 拖曳把手：增加觸控區域 */
+        /* 拖曳把手 */
         .sheet-handle-area {
             width: 100%;
             padding-top: 12px;
@@ -122,7 +122,7 @@
             display: flex;
             justify-content: center;
             cursor: grab;
-            touch-action: none; /* 重要：防止瀏覽器預設捲動 */
+            touch-action: none;
         }
         .sheet-handle { width: 40px; height: 5px; background: #e2e8f0; border-radius: 100px; }
 
@@ -157,7 +157,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V55.5 手機原生體驗增強版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V55.6 體驗優化與連動更新版</p>
             <div class="space-y-4 w-full">
                 <!-- 直接進入系統，免密碼 -->
                 <button onclick="loginAsLandlord()" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">進入系統</button>
@@ -379,7 +379,8 @@
             </div>
             
             <div class="p-6 h-full flex flex-col pt-2">
-                <div class="space-y-4 overflow-y-auto flex-1">
+                <!-- 增加 min-h-0 以允許 flex 子元素滾動 -->
+                <div class="space-y-4 overflow-y-auto flex-1 min-h-0 pb-20">
                     <input type="hidden" id="bill-room-id">
                     <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl">
                         <span class="text-xs text-slate-400 font-bold">上期度數</span>
@@ -415,7 +416,7 @@
                     
                     <div><label class="input-label">管理費</label><input id="bill-mgmt" type="number" inputmode="decimal" class="input-field"></div>
                 </div>
-                <div class="flex gap-3 mt-4 shrink-0">
+                <div class="flex gap-3 mt-4 shrink-0 bg-white pt-2 border-t">
                     <button onclick="closeModal('modal-bill')" class="btn btn-outline flex-1">取消</button>
                     <button onclick="createBill()" class="btn btn-primary flex-1 shadow-lg">生成帳單</button>
                 </div>
@@ -489,7 +490,7 @@
                 <h3 class="text-xl font-bold text-slate-800">編輯房間</h3>
                 <button onclick="closeModal('modal-room-edit')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
-            <div class="p-6 overflow-y-auto space-y-5 flex-1">
+            <div class="p-6 overflow-y-auto space-y-5 flex-1 min-h-0 pb-20">
                 <input type="hidden" id="edit-room-id">
                 <div>
                     <label class="input-label">封面照片</label>
@@ -556,7 +557,6 @@
     <!-- 催繳通知 -->
     <div id="modal-notify" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-notify')">
         <div class="sheet-container">
-            <div class="sheet-handle-area"><div class="sheet-handle"></div></div>
             <div class="bg-blue-600 p-6 text-white text-center shrink-0 relative rounded-t-[32px] sm:rounded-t-[24px]">
                 <i class="fa-solid fa-paper-plane text-5xl mb-3"></i>
                 <h3 class="text-2xl font-black tracking-tighter">發送通知</h3>
@@ -1313,6 +1313,9 @@
             document.getElementById('detail-start').innerText = r.start || '--';
             document.getElementById('detail-end').innerText = r.end || '--';
 
+            // Remove furniture/contract photos logic in Detail View as requested
+            // const renderList... removed from here
+
             document.getElementById('modal-room-detail').classList.remove('hidden'); 
         }
 
@@ -1384,32 +1387,60 @@
             try {
                 const idVal=document.getElementById('edit-room-id').value; 
                 const id=idVal?idVal:Date.now().toString(); 
+                
+                // Get values
+                const name = document.getElementById('edit-name').value;
+                const rent = Number(document.getElementById('edit-rent').value);
+                const tenant = document.getElementById('edit-tenant').value;
+                const phone = document.getElementById('edit-phone').value;
+                const paymentDay = document.getElementById('edit-payday').value;
+                const start = document.getElementById('edit-start').value;
+                const end = document.getElementById('edit-end').value;
+                const meter = Number(document.getElementById('edit-meter').value);
+                const waterFee = Number(document.getElementById('edit-water-fee').value);
+                const mgmtFee = Number(document.getElementById('edit-mgmt').value);
+                const photo = document.getElementById('edit-preview-main').src;
+
                 const rd={
-                    id, 
-                    name:document.getElementById('edit-name').value, 
-                    rent:Number(document.getElementById('edit-rent').value), 
-                    tenant:document.getElementById('edit-tenant').value, 
-                    phone:document.getElementById('edit-phone').value, 
-                    paymentDay:document.getElementById('edit-payday').value, 
-                    start:document.getElementById('edit-start').value, 
-                    end:document.getElementById('edit-end').value, 
-                    meter:Number(document.getElementById('edit-meter').value), 
-                    waterFee:Number(document.getElementById('edit-water-fee').value), 
-                    mgmtFee:Number(document.getElementById('edit-mgmt').value), 
-                    photo:document.getElementById('edit-preview-main').src, 
+                    id, name, rent, tenant, phone, paymentDay, start, end, meter, waterFee, mgmtFee, photo,
                     furnPhotos: tempEditPhotos.furn, 
                     contPhotos: tempEditPhotos.cont, 
                     photoFurn: null, 
                     photoCont: null
                 }; 
+                
                 if(!rd.name) { alert('房號必填'); return; }
+                
+                // Update Local State
                 const idx=window.state.rooms.findIndex(x=>x.id==id); 
                 if(idx>-1) window.state.rooms[idx]=rd; else window.state.rooms.push(rd); 
+                
+                // *** Auto-update Pending Bills Logic ***
+                const unpaidRecords = window.state.records.filter(r => r.roomId === id && !r.paid);
+                unpaidRecords.forEach(rec => {
+                    rec.roomName = name; // Update name in case changed
+                    rec.tenant = tenant; // Update tenant name
+                    rec.rent = rent;
+                    rec.waterFee = waterFee;
+                    rec.mgmtFee = mgmtFee;
+                    
+                    // Recalculate total: Rent + Elec + Water + Mgmt
+                    // Elec cost remains based on recorded usage * recorded rate (or current rate?)
+                    // Usually rates don't change often, let's keep elecCost as is, just update fixed costs.
+                    rec.total = Math.round(Number(rent) + Number(rec.elecCost) + Number(waterFee) + Number(mgmtFee));
+                    
+                    // Sync record change to Firestore immediately
+                    if(db) db.collection('records').doc(String(rec.id)).set(rec);
+                });
+                
+                // Save Everything
                 saveData(); 
+                
                 if(db) await db.collection('rooms').doc(String(id)).set(rd); 
+                
                 closeModal('modal-room-edit'); 
-                showToast('房訊儲存成功'); 
-            } catch(e) { console.error(e); alert("儲存錯誤"); } finally { if(btn) { btn.disabled=false; btn.innerText="儲存"; } }
+                showToast('房訊已儲存 (相關帳單已更新)'); 
+            } catch(e) { console.error(e); alert("儲存錯誤"); } finally { if(btn) { btn.disabled=false; btn.innerText="儲存房訊"; } }
         }
         
         async function deleteRoom() { 
