@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 - V55.6 體驗優化與連動更新版</title>
+    <title>租屋管家 - V55.7 狀態顯示與連動修正版</title>
     <link rel="icon" href="data:,">
     
     <!-- PWA Settings -->
@@ -157,7 +157,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V55.6 體驗優化與連動更新版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V55.7 狀態顯示與連動修正版</p>
             <div class="space-y-4 w-full">
                 <!-- 直接進入系統，免密碼 -->
                 <button onclick="loginAsLandlord()" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">進入系統</button>
@@ -904,20 +904,47 @@
                 return;
             }
 
+            const now = new Date();
+            const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
             c.innerHTML=filteredRooms.map(r=>{ 
-                const unpaidRecs = window.state.records.filter(x=>x.roomId==r.id&&!x.paid);
-                const unpaid=unpaidRecs.reduce((a,b)=>a+b.total,0); 
-                const hasNotified = unpaidRecs.some(x => x.notified); 
+                // Check if paid for current month
+                const currentMonthBill = window.state.records.find(rec => rec.roomId == r.id && rec.billingMonth == currentMonthStr);
+                let statusBadge = '';
+                if (currentMonthBill) {
+                    if (currentMonthBill.paid) {
+                        statusBadge = `<span class="badge badge-green shadow-sm px-2 py-0.5 mt-1 text-[10px] font-black border-green-300">✅ 本月已繳</span>`;
+                    } else {
+                        statusBadge = `<span class="badge badge-red shadow-sm px-2 py-0.5 mt-1 text-[10px] font-black border-red-300">❌ 本月未繳</span>`;
+                    }
+                } else {
+                     statusBadge = `<span class="badge badge-orange shadow-sm px-2 py-0.5 mt-1 text-[10px] font-black border-orange-300">⏳ 未出帳</span>`;
+                }
                 
                 // Expiry Check
                 let expiryBadge = '';
                 if(r.tenant && r.end) {
-                    const today = new Date();
                     const endDate = new Date(r.end);
-                    const diffTime = endDate - today;
+                    const diffTime = endDate - now;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     if (diffDays > 0 && diffDays <= 30) {
                         expiryBadge = `<span class="badge badge-yellow text-[9px] px-2 py-0.5 mt-1 font-bold border-yellow-400">⚠️ 合約即將到期</span>`;
+                    }
+                }
+                
+                // Payment Day Countdown
+                let paymentInfo = '';
+                if (r.tenant && r.paymentDay) {
+                    const payDay = parseInt(r.paymentDay);
+                    const currentDay = now.getDate();
+                    let diff = payDay - currentDay;
+                    
+                    if (diff < 0) {
+                         paymentInfo = `<div class="text-[10px] text-slate-400 font-bold mt-1">每月 ${payDay} 號繳費 (已過 ${Math.abs(diff)} 天)</div>`;
+                    } else if (diff === 0) {
+                         paymentInfo = `<div class="text-[10px] text-red-500 font-bold mt-1">今天繳費！</div>`;
+                    } else {
+                         paymentInfo = `<div class="text-[10px] text-indigo-500 font-bold mt-1">每月 ${payDay} 號繳費 (剩 ${diff} 天)</div>`;
                     }
                 }
 
@@ -930,11 +957,11 @@
                         <div class="truncate">
                             <div class="text-xl font-black text-slate-800">${r.name} 房</div>
                             <div class="text-slate-400 font-bold text-xs truncate">${r.tenant||'空房'}</div>
+                            ${paymentInfo}
                         </div>
                     </div>
                     <div class="flex flex-col items-end gap-1 shrink-0">
-                        ${unpaid>0?`<span class="badge badge-red shadow-sm px-3 py-1 text-[11px] font-black border-red-300">欠 $${Math.round(unpaid)}</span>`:'<span class="badge badge-green shadow-sm px-3 py-1 text-[11px] font-black border-green-300">正常</span>'}
-                        ${hasNotified ? `<span class="badge badge-orange shadow-sm px-2 py-0.5 mt-1 text-[10px] font-black border-orange-300"><i class="fa-solid fa-bell mr-1"></i>已催繳</span>` : ''}
+                        ${statusBadge}
                         ${expiryBadge}
                     </div>
                 </div>`; 
@@ -1416,23 +1443,23 @@
                 if(idx>-1) window.state.rooms[idx]=rd; else window.state.rooms.push(rd); 
                 
                 // *** Auto-update Pending Bills Logic ***
-                const unpaidRecords = window.state.records.filter(r => r.roomId === id && !r.paid);
+                const unpaidRecords = window.state.records.filter(r => r.roomId == id && !r.paid); // Relaxed equality for ID
+                
                 unpaidRecords.forEach(rec => {
-                    rec.roomName = name; // Update name in case changed
-                    rec.tenant = tenant; // Update tenant name
-                    rec.rent = rent;
+                    rec.roomName = name;
+                    rec.tenant = tenant;
+                    rec.rent = rent; // make sure rent is number
                     rec.waterFee = waterFee;
                     rec.mgmtFee = mgmtFee;
                     
-                    // Recalculate total: Rent + Elec + Water + Mgmt
-                    // Elec cost remains based on recorded usage * recorded rate (or current rate?)
-                    // Usually rates don't change often, let's keep elecCost as is, just update fixed costs.
-                    rec.total = Math.round(Number(rent) + Number(rec.elecCost) + Number(waterFee) + Number(mgmtFee));
+                    // Keep existing elecCost
+                    const eCost = Number(rec.elecCost) || 0;
                     
-                    // Sync record change to Firestore immediately
+                    rec.total = Math.round(rent + eCost + waterFee + mgmtFee);
+                    
                     if(db) db.collection('records').doc(String(rec.id)).set(rec);
                 });
-                
+
                 // Save Everything
                 saveData(); 
                 
