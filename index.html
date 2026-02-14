@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 - V55.0 最終完美修正版</title>
+    <title>租屋管家 - V55.1 詳情顯示修正版</title>
     <link rel="icon" href="data:,">
     
     <!-- PWA Settings -->
@@ -124,7 +124,7 @@
                 <i class="fa-solid fa-house-chimney text-6xl"></i>
             </div>
             <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V55.0 最終完美修正版</p>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V55.1 詳情顯示修正版</p>
             <div class="space-y-4 w-full">
                 <!-- 直接進入系統，免密碼 -->
                 <button onclick="loginAsLandlord()" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">進入系統</button>
@@ -773,7 +773,6 @@
         }
         
         function verifyOwner() { 
-            // 兼容性保留，轉向直接登入
             loginAsLandlord();
         }
         
@@ -1144,7 +1143,7 @@
             }).join('');
         }
         
-        function openMonthDetail(month) {
+        window.openMonthDetail = function(month) {
             const d = window.tempMonthlyData[month]; if(!d) return;
             document.getElementById('fin-detail-month').innerText = month;
             document.getElementById('fin-detail-income').innerText = `$${Math.round(d.income).toLocaleString()}`;
@@ -1186,14 +1185,14 @@
         }
 
         // New Expense Functions
-        function openAddExpenseModal() {
+        window.openAddExpenseModal = function() {
             document.getElementById('exp-date').valueAsDate = new Date();
             document.getElementById('exp-title').value = '';
             document.getElementById('exp-amount').value = '';
             document.getElementById('modal-add-expense').classList.remove('hidden');
         }
         
-        function saveExpense() {
+        window.saveExpense = function() {
             const date = document.getElementById('exp-date').value;
             const title = document.getElementById('exp-title').value;
             const amount = Number(document.getElementById('exp-amount').value);
@@ -1202,17 +1201,17 @@
             
             const expense = { id: Date.now().toString(), date, title, amount };
             window.state.expenses.push(expense);
-            saveData();
+            window.saveData();
             
             // Sync specific collection if connected
             if(db) db.collection('expenses').doc(expense.id).set(expense);
             
-            closeModal('modal-add-expense');
-            showToast("記帳成功");
-            renderFinance();
+            window.closeModal('modal-add-expense');
+            window.showToast("記帳成功");
+            window.renderFinance();
         }
 
-        function loadUtilityRatesForMonth() {
+        window.loadUtilityRatesForMonth = function() {
             const picker = document.getElementById('util-month-picker');
             if(!picker) return;
             const month = picker.value; 
@@ -1227,32 +1226,35 @@
             }
         }
 
-        function saveUtilityRates() {
+        window.saveUtilityRates = function() {
             const month = document.getElementById('util-month-picker').value;
             if(!month) return alert("請選擇月份");
             const elec = Number(document.getElementById('util-elec-total-cost').value);
             const water = Number(document.getElementById('util-water-total-cost').value);
             
             window.state.utilityRates[month] = { elecTotal: elec, waterTotal: water };
-            saveData(); 
+            window.saveData(); 
             
             if(db) {
                  db.collection('config').doc('rates').set(window.state.utilityRates).then(() => {
-                     showToast("月度成本已儲存至雲端");
+                     window.showToast("月度成本已儲存至雲端");
                  }).catch(e => {
-                     showToast("已儲存 (僅本機)");
+                     window.showToast("已儲存 (僅本機)");
                  });
             } else {
-                 showToast("已儲存 (僅本機)");
+                 window.showToast("已儲存 (僅本機)");
             }
         }
 
-        function showRoomDetail(id) { 
+        window.showRoomDetail = function(id) { 
             currentRoomId=id; 
             const r=window.state.rooms.find(x=>x.id==id); 
             if(!r) return;
             document.getElementById('detail-room-title').innerText=r.name; 
             document.getElementById('detail-photo').src=r.photo||''; 
+            
+            // 關鍵修正：確保房客姓名正確顯示
+            document.getElementById('detail-tenant').innerText = r.tenant || '未租出';
             
             // Fill details
             document.getElementById('detail-rent').innerText = r.rent ? `$${r.rent}` : '--';
@@ -1264,7 +1266,7 @@
             const renderList = (elId, list) => {
                 const el = document.getElementById(elId);
                 if(list && list.length > 0) {
-                     el.innerHTML = list.map(src => `<div class="photo-item" onclick="viewBigImage('${src}')"><img src="${src}"></div>`).join('');
+                     el.innerHTML = list.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join('');
                 } else { 
                      el.innerHTML = '<span class="text-xs text-slate-400 p-2">無照片</span>'; 
                 }
@@ -1277,7 +1279,7 @@
             document.getElementById('modal-room-detail').classList.remove('hidden'); 
         }
 
-        function openEditRoom() { 
+        window.openEditRoom = function() { 
             const r=window.state.rooms.find(x=>x.id==currentRoomId); 
             if(!r) return;
             document.getElementById('edit-room-id').value=r.id; 
@@ -1298,8 +1300,8 @@
             
             tempEditPhotos.furn = r.furnPhotos ? [...r.furnPhotos] : (r.photoFurn ? [r.photoFurn] : []);
             tempEditPhotos.cont = r.contPhotos ? [...r.contPhotos] : (r.photoCont ? [r.photoCont] : []);
-            renderEditPhotoList('furn'); 
-            renderEditPhotoList('cont');
+            window.renderEditPhotoList('furn'); 
+            window.renderEditPhotoList('cont');
             
             const btnDel = document.getElementById('edit-btn-del');
             if (btnDel) btnDel.classList.remove('hidden'); 
@@ -1310,7 +1312,7 @@
             document.getElementById('modal-room-edit').classList.remove('hidden'); 
         }
 
-        function openRoomModal() { 
+        window.openRoomModal = function() { 
             currentRoomId=null; 
             document.getElementById('edit-room-id').value=""; 
             document.getElementById('edit-name').value=""; 
@@ -1328,8 +1330,8 @@
             if(mainPrev) { mainPrev.src=""; mainPrev.classList.add('hidden'); }
             
             tempEditPhotos = {furn:[], cont:[]}; 
-            renderEditPhotoList('furn'); 
-            renderEditPhotoList('cont'); 
+            window.renderEditPhotoList('furn'); 
+            window.renderEditPhotoList('cont'); 
             
             const btnDel = document.getElementById('edit-btn-del');
             if (btnDel) btnDel.classList.add('hidden'); 
@@ -1339,7 +1341,7 @@
             document.getElementById('modal-room-edit').classList.remove('hidden'); 
         }
         
-        async function saveRoom() { 
+        window.saveRoom = async function() { 
             const btn = document.getElementById('btn-save-room');
             if(btn) { btn.disabled=true; btn.innerText="處理中..."; }
             try {
@@ -1366,14 +1368,14 @@
                 if(!rd.name) { alert('房號必填'); return; }
                 const idx=window.state.rooms.findIndex(x=>x.id==id); 
                 if(idx>-1) window.state.rooms[idx]=rd; else window.state.rooms.push(rd); 
-                saveData(); 
+                window.saveData(); 
                 if(db) await db.collection('rooms').doc(String(id)).set(rd); 
-                closeModal('modal-room-edit'); 
-                showToast('房訊儲存成功'); 
+                window.closeModal('modal-room-edit'); 
+                window.showToast('房訊儲存成功'); 
             } catch(e) { console.error(e); alert("儲存錯誤"); } finally { if(btn) { btn.disabled=false; btn.innerText="儲存"; } }
         }
         
-        async function deleteRoom() { 
+        window.deleteRoom = async function() { 
             if(!confirm('確定要刪除此房間嗎？\n注意：這將一併刪除該房間的所有「帳單」與「報修紀錄」！')) return;
             
             const btn = document.getElementById('edit-btn-del');
@@ -1391,7 +1393,7 @@
                 window.state.records = window.state.records.filter(x => x.roomId != id);
                 window.state.repairs = window.state.repairs.filter(x => x.roomId != id);
                 
-                saveData(); 
+                window.saveData(); 
                 
                 // 3. Delete from Cloud
                 if(db) {
@@ -1412,8 +1414,8 @@
                     await batch.commit();
                 }
                 
-                closeModal('modal-room-edit'); 
-                showToast('房間及相關資料已清除');
+                window.closeModal('modal-room-edit'); 
+                window.showToast('房間及相關資料已清除');
             } catch(e) {
                 console.error(e);
                 alert("刪除失敗: " + e.message);
@@ -1422,15 +1424,15 @@
             }
         }
         
-        function moveOutTenant() { if(confirm('退租？')){ const id=document.getElementById('edit-room-id').value; const r=window.state.rooms.find(x=>x.id==id); r.tenant=""; r.phone=""; r.start=""; r.end=""; r.contPhotos=[]; saveData(); if(db) db.collection('rooms').doc(String(id)).set(r); closeModal('modal-room-edit'); showToast('退租成功'); } }
-        function handleAddPhoto(input, type) { if(input.files[0]) { compressImage(input.files[0], (base64) => { tempEditPhotos[type].push(base64); renderEditPhotoList(type); input.value = ''; }); } }
-        function renderEditPhotoList(type) { const container = document.getElementById(`edit-list-${type}`); const list = tempEditPhotos[type]; container.innerHTML = list.map((src, index) => `<div class="photo-item"><img src="${src}"><div class="photo-del" onclick="removeEditPhoto('${type}', ${index})"><i class="fa-solid fa-xmark"></i></div></div>`).join(''); }
-        function removeEditPhoto(type, index) { tempEditPhotos[type].splice(index, 1); renderEditPhotoList(type); }
-        function viewBigImage(src) { document.getElementById('lightbox-img').src = src; document.getElementById('modal-lightbox').classList.remove('hidden'); }
-        function triggerFile(id) { document.getElementById(id).click(); }
-        function handlePhoto(input, id) { if(input.files[0]) { compressImage(input.files[0], (base64) => { const img=document.getElementById(id); img.src=base64; img.classList.remove('hidden'); }); } }
+        window.moveOutTenant = function() { if(confirm('退租？')){ const id=document.getElementById('edit-room-id').value; const r=window.state.rooms.find(x=>x.id==id); r.tenant=""; r.phone=""; r.start=""; r.end=""; r.contPhotos=[]; window.saveData(); if(db) db.collection('rooms').doc(String(id)).set(r); window.closeModal('modal-room-edit'); window.showToast('退租成功'); } }
+        window.handleAddPhoto = function(input, type) { if(input.files[0]) { window.compressImage(input.files[0], (base64) => { tempEditPhotos[type].push(base64); window.renderEditPhotoList(type); input.value = ''; }); } }
+        window.renderEditPhotoList = function(type) { const container = document.getElementById(`edit-list-${type}`); const list = tempEditPhotos[type]; container.innerHTML = list.map((src, index) => `<div class="photo-item"><img src="${src}"><div class="photo-del" onclick="window.removeEditPhoto('${type}', ${index})"><i class="fa-solid fa-xmark"></i></div></div>`).join(''); }
+        window.removeEditPhoto = function(type, index) { tempEditPhotos[type].splice(index, 1); window.renderEditPhotoList(type); }
+        window.viewBigImage = function(src) { document.getElementById('lightbox-img').src = src; document.getElementById('modal-lightbox').classList.remove('hidden'); }
+        window.triggerFile = function(id) { document.getElementById(id).click(); }
+        window.handlePhoto = function(input, id) { if(input.files[0]) { window.compressImage(input.files[0], (base64) => { const img=document.getElementById(id); img.src=base64; img.classList.remove('hidden'); }); } }
         
-        function onBillMonthChange() {
+        window.onBillMonthChange = function() {
              const m = document.getElementById('bill-month').value;
              const rId = currentBillRoomId;
              if(!m || !rId) return;
@@ -1484,8 +1486,8 @@
              }
         }
 
-        function openBillFromDetail() { closeModal('modal-room-detail'); openBillModal(currentRoomId); }
-        function openBillModal(id) { 
+        window.openBillFromDetail = function() { window.closeModal('modal-room-detail'); window.openBillModal(currentRoomId); }
+        window.openBillModal = function(id) { 
             const r=window.state.rooms.find(x=>x.id==id); 
             if(!r) return;
             currentBillRoomId=id; 
@@ -1497,11 +1499,11 @@
             const monthStr = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,'0');
             document.getElementById('bill-month').value = monthStr; 
             
-            onBillMonthChange();
+            window.onBillMonthChange();
             document.getElementById('modal-bill').classList.remove('hidden'); 
         }
 
-        function createBill() { 
+        window.createBill = function() { 
             const r=window.state.rooms.find(x=>x.id==currentBillRoomId); 
             if(!r) return;
             let c=Number(document.getElementById('bill-curr').value); 
@@ -1568,13 +1570,13 @@
             }; 
             
             window.state.records.unshift(rec); 
-            saveData(); 
+            window.saveData(); 
             if(db){ db.collection('rooms').doc(String(r.id)).set(r); db.collection('records').doc(String(rec.id)).set(rec); } 
-            closeModal('modal-bill'); 
-            showToast('帳單已生成'); 
+            window.closeModal('modal-bill'); 
+            window.showToast('帳單已生成'); 
         }
         
-        function openPayModal(id) { 
+        window.openPayModal = function(id) { 
             const r=window.state.records.find(x=>x.id==id); 
             if(r){ 
                 const prId = document.getElementById('pay-record-id');
@@ -1585,19 +1587,19 @@
             } 
         }
         
-        function confirmPay() { 
+        window.confirmPay = function() { 
             const id=document.getElementById('pay-record-id').value; 
             const r=window.state.records.find(x=>x.id==id); 
             if(r){ 
                 r.paid=true; 
-                saveData(); 
+                window.saveData(); 
                 if(db) db.collection('records').doc(String(id)).set(r); 
-                closeModal('modal-pay-confirm'); 
-                showToast('收款成功'); 
+                window.closeModal('modal-pay-confirm'); 
+                window.showToast('收款成功'); 
             } 
         }
         
-        function openNotifyModal(id) { 
+        window.openNotifyModal = function(id) { 
             currentNotifyRecordId = id; 
             const r = window.state.records.find(x => x.id == id); 
             
@@ -1618,27 +1620,27 @@
             document.getElementById('modal-notify').classList.remove('hidden'); 
         }
         
-        function copyNotify() { 
+        window.copyNotify = function() { 
             const text = document.getElementById('notify-text'); 
             text.select(); 
             document.execCommand('copy'); 
-            showToast('已複製'); 
+            window.showToast('已複製'); 
         }
         
-        function markNotified() { 
+        window.markNotified = function() { 
             const r = window.state.records.find(x => x.id == currentNotifyRecordId);
             if(r) {
                 r.notified = true;
-                saveData();
+                window.saveData();
                 if(db) db.collection('records').doc(String(r.id)).set(r);
             }
-            closeModal('modal-notify'); 
-            showToast('已標記為催繳'); 
+            window.closeModal('modal-notify'); 
+            window.showToast('已標記為催繳'); 
         }
         
-        function openRepairProcess(id) { const r = window.state.repairs.find(x => x.id == id); if (!r) return; document.getElementById('repair-process-id').value = id; document.getElementById('repair-desc-display').innerText = r.desc; document.getElementById('repair-reply-input').value = r.reply || ""; document.getElementById('repair-cost-input').value = r.cost || 0; document.getElementById('repair-done-check').checked = (r.status === 'done'); const photoContainer = document.getElementById('repair-photos-container'); const photoDisplay = document.getElementById('repair-photos-display'); if (r.photos && r.photos.length > 0) { photoContainer.classList.remove('hidden'); photoDisplay.innerHTML = r.photos.map(src => `<div class="photo-item" onclick="viewBigImage('${src}')"><img src="${src}"></div>`).join(''); } else { photoContainer.classList.add('hidden'); } document.getElementById('modal-repair-process').classList.remove('hidden'); }
+        window.openRepairProcess = function(id) { const r = window.state.repairs.find(x => x.id == id); if (!r) return; document.getElementById('repair-process-id').value = id; document.getElementById('repair-desc-display').innerText = r.desc; document.getElementById('repair-reply-input').value = r.reply || ""; document.getElementById('repair-cost-input').value = r.cost || 0; document.getElementById('repair-done-check').checked = (r.status === 'done'); const photoContainer = document.getElementById('repair-photos-container'); const photoDisplay = document.getElementById('repair-photos-display'); if (r.photos && r.photos.length > 0) { photoContainer.classList.remove('hidden'); photoDisplay.innerHTML = r.photos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join(''); } else { photoContainer.classList.add('hidden'); } document.getElementById('modal-repair-process').classList.remove('hidden'); }
         
-        function saveRepairProcess() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if (r) { r.reply = document.getElementById('repair-reply-input').value; r.cost = Number(document.getElementById('repair-cost-input').value); r.status = document.getElementById('repair-done-check').checked ? 'done' : 'pending'; saveData(); if(db) db.collection('repairs').doc(String(id)).set(r); closeModal('modal-repair-process'); showToast('更新成功'); } }
+        window.saveRepairProcess = function() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if (r) { r.reply = document.getElementById('repair-reply-input').value; r.cost = Number(document.getElementById('repair-cost-input').value); r.status = document.getElementById('repair-done-check').checked ? 'done' : 'pending'; window.saveData(); if(db) db.collection('repairs').doc(String(id)).set(r); window.closeModal('modal-repair-process'); window.showToast('更新成功'); } }
 
         // ==========================================
         // 6. 雲端同步
@@ -1656,7 +1658,7 @@
                 if(settingsSnap.exists) {
                     window.state.settings = { ...window.state.settings, ...settingsSnap.data() };
                     localStorage.setItem('rental_settings', JSON.stringify(window.state.settings));
-                    applySettingsUI();
+                    window.applySettingsUI();
                 }
                 
                 // Fetch Expenses
@@ -1665,9 +1667,9 @@
                     window.state.expenses = cloudExpenses;
                     localStorage.setItem('rental_expenses', JSON.stringify(window.state.expenses));
                     if(document.getElementById('tab-finance') && !document.getElementById('tab-finance').classList.contains('hidden')) {
-                        renderFinance();
+                        window.renderFinance();
                     }
-                    renderDashboard();
+                    window.renderDashboard();
                 });
 
                 db.collection('rooms').onSnapshot(snap => {
@@ -1675,8 +1677,8 @@
                     if (JSON.stringify(window.state.rooms) !== JSON.stringify(cloudRooms)) {
                         window.state.rooms = cloudRooms;
                         localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
-                        renderRooms(); 
-                        renderDashboard();
+                        window.renderRooms(); 
+                        window.renderDashboard();
                     }
                     if(statusEl) { statusEl.innerHTML = '<i class="fa-solid fa-cloud mr-1"></i>已連線'; statusEl.className = "text-[10px] font-bold bg-green-100 text-green-600 px-3 py-1 rounded-full cursor-pointer"; }
                     if(document.getElementById('cloud-status-text')) document.getElementById('cloud-status-text').innerText = "✅ 雲端連線正常";
@@ -1687,10 +1689,10 @@
                     const cloudRecords = snap.empty ? [] : snap.docs.map(d => d.data());
                     window.state.records = cloudRecords;
                     localStorage.setItem('rental_records', JSON.stringify(window.state.records));
-                    renderDashboard(); 
-                    renderRooms();
+                    window.renderDashboard(); 
+                    window.renderRooms();
                     if(document.getElementById('tab-finance') && !document.getElementById('tab-finance').classList.contains('hidden')) {
-                        renderFinance();
+                        window.renderFinance();
                     }
                 });
                 
@@ -1698,14 +1700,14 @@
                     const cloudRepairs = snap.empty ? [] : snap.docs.map(d => d.data());
                     window.state.repairs = cloudRepairs;
                     localStorage.setItem('rental_repairs', JSON.stringify(window.state.repairs));
-                    renderDashboard(); 
+                    window.renderDashboard(); 
                 });
                 
                 db.collection('config').doc('rates').onSnapshot(snap => { 
                     window.state.utilityRates = snap.exists ? snap.data() : {}; 
                     localStorage.setItem('rental_utility_rates', JSON.stringify(window.state.utilityRates));
                     if(document.getElementById('tab-finance') && !document.getElementById('tab-finance').classList.contains('hidden')) {
-                        renderFinance();
+                        window.renderFinance();
                     }
                 });
 
@@ -1758,10 +1760,10 @@
             window.state.repairs = [];
             window.state.expenses = [];
             window.state.utilityRates = {};
-            saveData();
+            window.saveData();
 
             if(db && confirm("是否一併清除雲端上的帳務資料？")) {
-                showToast("正在清除雲端資料...");
+                window.showToast("正在清除雲端資料...");
                 try {
                     const promises = [];
                     // Delete Records
@@ -1785,7 +1787,7 @@
                     alert("⚠️ 雲端部分資料清除失敗: " + e.message);
                 }
             } else {
-                showToast("已清除本機資料");
+                window.showToast("已清除本機資料");
             }
             location.reload();
         }
@@ -1795,22 +1797,22 @@
             
             // Remove from local state
             window.state.records = window.state.records.filter(r => r.id != id);
-            saveData();
+            window.saveData();
             
             // Remove from Cloud
             if(db) {
                 try {
                     await db.collection('records').doc(String(id)).delete();
-                    showToast('帳單已刪除');
+                    window.showToast('帳單已刪除');
                 } catch(e) {
                     console.error(e);
                 }
             } else {
-                showToast('已刪除 (僅本機)');
+                window.showToast('已刪除 (僅本機)');
             }
             
-            renderDashboard();
-            renderRooms(); 
+            window.renderDashboard();
+            window.renderRooms(); 
         }
 
         // ==========================================
