@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 - V57.0 直接啟動版</title>
+    <title>租屋管家 - V58.0 極致效能版</title>
     <link rel="icon" href="data:,">
     
     <!-- PWA Settings -->
@@ -35,6 +35,7 @@
             -webkit-tap-highlight-color: transparent; 
             padding-top: env(safe-area-inset-top);
             overscroll-behavior-y: none;
+            user-select: none; /* 防止長按選取文字影響操作體驗 */
         }
 
         .card { 
@@ -53,6 +54,7 @@
             width: 100%; padding: 14px 16px; font-size: 1em; font-weight: 600; color: #0f172a; 
             background-color: #f1f5f9; border: 2px solid transparent; border-radius: 16px; 
             outline: none; transition: all 0.2s ease; -webkit-appearance: none;
+            user-select: text; /* 輸入框允許選取 */
         }
         .input-field:focus { background-color: #ffffff; border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
         select.input-field { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-position: right 1rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem; }
@@ -91,7 +93,7 @@
         /* 手機版：底部抽屜 */
         .sheet-container { 
             width: 100%; 
-            max-height: 85vh; /* 稍微降低高度，避免太滿 */
+            max-height: 85vh; 
             background: white; 
             border-radius: 32px 32px 0 0; 
             overflow: hidden; 
@@ -146,14 +148,27 @@
         .bar.negative { background: #ef4444; }
         .bar-label { font-size: 0.6rem; color: #94a3b8; font-weight: 700; }
         .bar-val { font-size: 0.6rem; color: #64748b; font-weight: 700; margin-bottom: 2px; }
+
+        /* Loading Overlay */
+        #loading-screen {
+            position: fixed; inset: 0; background: #f8fafc; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.5s;
+        }
     </style>
 </head>
 <body>
 
-    <!-- 2. Landlord App (移除 hidden class，預設顯示) -->
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+        <div class="text-indigo-600 font-bold text-sm tracking-widest animate-pulse">SYSTEM LOADING</div>
+    </div>
+
+    <!-- 2. Landlord App -->
     <div id="app-landlord" class="view-section min-h-screen">
         <header class="bg-white/90 backdrop-blur-md px-5 py-4 sticky top-0 z-30 flex justify-between items-center border-b border-slate-100">
-            <div class="flex items-center">
+            <div class="flex items-center" onclick="location.reload()">
                 <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white mr-2 shadow-md">
                     <i class="fa-solid fa-building"></i>
                 </div>
@@ -565,6 +580,7 @@
     <!-- 催繳通知 -->
     <div id="modal-notify" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-notify')">
         <div class="sheet-container">
+            <div class="sheet-handle-area"><div class="sheet-handle"></div></div>
             <div class="bg-blue-600 p-6 text-white text-center shrink-0 relative rounded-t-[32px] sm:rounded-t-[24px]">
                 <i class="fa-solid fa-paper-plane text-5xl mb-3"></i>
                 <h3 class="text-2xl font-black tracking-tighter">發送通知</h3>
@@ -780,6 +796,9 @@
             
             const bankAccEl = document.getElementById('set-bank-account');
             if(bankAccEl) bankAccEl.value = s.bankAccount || '';
+            
+            const commissionEl = document.getElementById('set-commission');
+            if(commissionEl) commissionEl.value = s.commission || 0;
 
             setFontSize(s.fontSize || 16);
             
@@ -841,7 +860,9 @@
         }
 
         function confirmExit() { 
-            if (confirm('確定要登出並返回首頁嗎？')) switchView('landing'); 
+            // Since there is no login page, maybe reload to simulate refresh/logout or keep as is.
+            // For direct access, exit is just reloading.
+             if (confirm('確定要重新整理頁面嗎？')) location.reload();
         }
         
         // Reminder Logic
@@ -1247,10 +1268,10 @@
             }
             emptyMsg.classList.add('hidden');
             
-            window.tempMonthlyData = grouped;
+            tempMonthlyData = grouped;
             container.innerHTML = Object.keys(grouped).sort((a,b)=>b.localeCompare(a)).map(month => {
                 const d = grouped[month]; const net = d.income - d.cost;
-                return `<div class="card p-6 border-l-8 border-indigo-500 shadow-md cursor-pointer active:scale-95 transition" onclick='window.openMonthDetail("${month}")'>
+                return `<div class="card p-6 border-l-8 border-indigo-500 shadow-md cursor-pointer active:scale-95 transition" onclick='openMonthDetail("${month}")'>
                     <div class="flex justify-between items-start mb-4"><div><h4 class="text-2xl font-black text-slate-800">${month} 帳單</h4><p class="text-[10px] text-slate-400 font-bold">收支結算</p></div><div class="text-right"><div class="text-[10px] text-slate-400 font-bold">本月淨利</div><div class="text-2xl font-black ${net >= 0 ? 'text-indigo-600' : 'text-red-500'}">$${Math.round(net).toLocaleString()}</div></div></div>
                     <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 font-black text-xs"><div class="text-slate-500">總收: $${Math.round(d.income).toLocaleString()}</div><div class="text-red-400 text-right">成本: -$${Math.round(d.cost).toLocaleString()}</div></div></div>`;
             }).join('');
@@ -1804,10 +1825,9 @@
             showToast('已標記為催繳'); 
         }
         
-        // Remove AI functions references
-        // window.openRepairProcess = ... (removed)
-        // window.saveRepairProcess = ... (removed)
-        // window.analyzeRepair = ... (removed)
+        function openRepairProcess(id) { const r = window.state.repairs.find(x => x.id == id); if (!r) return; document.getElementById('repair-process-id').value = id; document.getElementById('repair-desc-display').innerText = r.desc; document.getElementById('repair-reply-input').value = r.reply || ""; document.getElementById('repair-cost-input').value = r.cost || 0; document.getElementById('repair-done-check').checked = (r.status === 'done'); const photoContainer = document.getElementById('repair-photos-container'); const photoDisplay = document.getElementById('repair-photos-display'); if (r.photos && r.photos.length > 0) { photoContainer.classList.remove('hidden'); photoDisplay.innerHTML = r.photos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join(''); } else { photoContainer.classList.add('hidden'); } document.getElementById('modal-repair-process').classList.remove('hidden'); }
+        
+        function saveRepairProcess() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if (r) { r.reply = document.getElementById('repair-reply-input').value; r.cost = Number(document.getElementById('repair-cost-input').value); r.status = document.getElementById('repair-done-check').checked ? 'done' : 'pending'; saveData(); if(db) db.collection('repairs').doc(String(id)).set(r); closeModal('modal-repair-process'); showToast('更新成功'); } }
 
         // ==========================================
         // 6. 雲端同步
@@ -2017,6 +2037,15 @@
                 window.renderRooms();
                 window.renderDashboard();
                 
+                // Remove Loading Screen
+                const loadingScreen = document.getElementById('loading-screen');
+                if(loadingScreen) {
+                    setTimeout(() => {
+                        loadingScreen.style.opacity = '0';
+                        setTimeout(() => loadingScreen.remove(), 500);
+                    }, 800); // 稍微延遲一點，讓感覺更平滑
+                }
+                
                 window.initCloud();
                 
                 // 清除 Tailwind 的 CDN 警告，避免讓使用者誤以為是錯誤
@@ -2026,6 +2055,9 @@
                 }, 1000);
             } catch (e) {
                 console.error("Init Error:", e);
+                // Even if error, remove loading screen
+                const loadingScreen = document.getElementById('loading-screen');
+                if(loadingScreen) loadingScreen.remove();
             }
         };
     </script>
