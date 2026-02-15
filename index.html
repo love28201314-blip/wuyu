@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 - V57.0 直接管理版</title>
+    <title>租屋管家 - V56.2 雙人分帳與設定記憶版</title>
     <link rel="icon" href="data:,">
     
     <!-- PWA Settings -->
@@ -148,10 +148,26 @@
 </head>
 <body>
 
-    <!-- 主應用程式 (移除 Landing 與 Login，直接顯示) -->
-    <div id="app-landlord" class="view-section min-h-screen">
+    <!-- 0. Landing Page -->
+    <div id="view-landing" class="view-section min-h-screen flex flex-col items-center justify-center p-8 bg-white">
+        <div class="z-10 text-center w-full max-w-sm">
+            <div class="mb-8 inline-flex p-6 bg-indigo-50 rounded-[32px] text-indigo-600 shadow-sm">
+                <i class="fa-solid fa-house-chimney text-6xl"></i>
+            </div>
+            <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家</h1>
+            <p class="text-slate-400 mb-12 font-bold tracking-wide">V56.2 雙人分帳與設定記憶版</p>
+            <div class="space-y-4 w-full">
+                <!-- 直接進入系統，免密碼 -->
+                <button onclick="loginAsLandlord()" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">進入系統</button>
+            </div>
+            <p class="mt-12 text-xs text-slate-300 font-mono tracking-widest uppercase">Project: <span id="landing-id">---</span></p>
+        </div>
+    </div>
+
+    <!-- 2. Landlord App -->
+    <div id="app-landlord" class="view-section hidden min-h-screen">
         <header class="bg-white/90 backdrop-blur-md px-5 py-4 sticky top-0 z-30 flex justify-between items-center border-b border-slate-100">
-            <div class="flex items-center" onclick="location.reload()">
+            <div class="flex items-center" onclick="confirmExit()">
                 <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white mr-2 shadow-md">
                     <i class="fa-solid fa-building"></i>
                 </div>
@@ -166,8 +182,20 @@
                 <div id="elec-reminder-container" class="hidden mb-4"></div>
 
                 <div class="card p-6 mb-6 bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-xl shadow-indigo-200 border-none">
-                    <div class="text-indigo-100 text-xs font-bold mb-1 uppercase tracking-widest">本月預估淨利</div>
-                    <div class="text-4xl font-black mb-6 tracking-tight" id="dash-net">$0</div>
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <div class="text-indigo-100 text-xs font-bold mb-1 uppercase tracking-widest">本月實收淨利</div>
+                            <div class="text-4xl font-black mb-1 tracking-tight" id="dash-net">$0</div>
+                        </div>
+                        <div class="text-right pl-4">
+                             <div class="text-indigo-200 text-[10px] font-bold uppercase tracking-widest mb-1">每月固定營收 (預估)</div>
+                             <div class="text-xl font-bold text-white" id="dash-fixed-income">$0</div>
+                             <div class="text-[9px] text-indigo-200 mt-0.5">含租金+水+管</div>
+                        </div>
+                    </div>
+                    
+                    <div id="dash-commission" class="text-indigo-200 text-sm font-bold mb-6 h-5"></div>
+                    
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-blue-200 text-[10px] mb-1">已收總額</div><div class="text-lg font-bold" id="dash-income">$0</div></div>
                         <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-red-300 text-[10px] mb-1">待收總額</div><div class="text-lg font-bold text-red-100" id="dash-pending">$0</div></div>
@@ -266,6 +294,12 @@
                     <div class="border-b pb-2 mb-2"><span class="text-sm font-black text-slate-800">收款設定 (將同步至雲端)</span></div>
                     
                     <div class="pt-2">
+                         <!-- 新增分潤設定 -->
+                         <div class="mb-4">
+                            <label class="input-label">管理分潤比例 (%)</label>
+                            <input type="number" id="set-commission" class="input-field" placeholder="例如: 10" onchange="saveSettings()">
+                        </div>
+
                         <label class="input-label">收款銀行 (將顯示於催繳通知)</label>
                         <select id="set-bank-code" class="input-field mb-3 bg-white" onchange="saveSettings()">
                             <option value="">請選擇銀行...</option>
@@ -316,6 +350,7 @@
                 <button onclick="saveSettings()" class="w-full btn btn-primary shadow-md mb-3">儲存設定並同步至雲端</button>
                 <button onclick="resetFinancialData()" class="w-full btn btn-warning shadow-md mb-3 text-white">🧹 清除帳務紀錄 (保留房間)</button>
                 <button onclick="resetAllData()" class="w-full btn btn-danger shadow-md mb-3">⚠️ 清空所有資料 (重置系統)</button>
+                <button onclick="confirmExit()" class="w-full text-red-400 font-bold text-sm py-4">登出系統</button>
             </div>
         </main>
 
@@ -495,6 +530,13 @@
                     <div><label class="text-[10px] font-bold text-slate-400 ml-2 mb-1 block">房號</label><input id="edit-name" class="input-field !py-3 !px-4 shadow-inner" placeholder="101"></div>
                     <div><label class="text-[10px] font-bold text-slate-400 ml-2 mb-1 block">月租</label><input id="edit-rent" type="number" inputmode="decimal" class="input-field !py-3 !px-4 shadow-inner" placeholder="6000"></div>
                 </div>
+                
+                <!-- 新增：雙人平分房租選項 -->
+                <div class="flex items-center gap-3 bg-blue-50 p-3 rounded-xl border border-blue-100">
+                    <input type="checkbox" id="edit-is-split" class="w-5 h-5 rounded-md text-indigo-600 accent-indigo-600">
+                    <label for="edit-is-split" class="font-bold text-sm text-slate-700">👥 雙人房 (費用平分)</label>
+                </div>
+
                 <div class="bg-indigo-50 p-5 rounded-2xl space-y-4 border border-indigo-100 shadow-sm">
                     <h4 class="font-black text-indigo-800 text-sm flex items-center"><i class="fa-solid fa-user-edit mr-2"></i>合約資料</h4>
                     <input id="edit-tenant" class="input-field bg-white !py-3 !px-4 shadow-sm" placeholder="房客姓名">
@@ -600,7 +642,7 @@
             settings: safeJSONParse('rental_settings', {
                 elecRate: 3.5, elecCostRate: 2.1, waterRate: 0, waterCostRate: 50, 
                 mgmtFee: 500, bankCode: "", bankAccount: "", projectId: USER_PROJECT_ID, 
-                fontSize: 16
+                fontSize: 16, commission: 0
             }),
             loginAttempts: safeJSONParse('rental_login_attempts', {"owner":0}),
             lockoutUntil: safeJSONParse('rental_lockout_until', {"owner":0})
@@ -753,6 +795,9 @@
             
             const bankAccEl = document.getElementById('set-bank-account');
             if(bankAccEl) bankAccEl.value = s.bankAccount || '';
+            
+            const commissionEl = document.getElementById('set-commission');
+            if(commissionEl) commissionEl.value = s.commission || 0;
 
             setFontSize(s.fontSize || 16);
             
@@ -770,6 +815,9 @@
             
             const bankAccEl = document.getElementById('set-bank-account');
             if (bankAccEl) window.state.settings.bankAccount = bankAccEl.value;
+            
+            const commissionEl = document.getElementById('set-commission');
+            if(commissionEl) window.state.settings.commission = Number(commissionEl.value);
 
             saveData(); 
             
@@ -803,7 +851,7 @@
         
         function resetSystemSettings() {
              if(confirm("確定重置系統設定？(資料保留)")) {
-                 window.state.settings = {"elecRate": 3.5, "elecCostRate": 2.1, "waterRate": 0, "waterCostRate": 50, "mgmtFee": 500, "bankCode": "", "bankAccount": "", "projectId": USER_PROJECT_ID, "password": "0000", "fontSize": 16};
+                 window.state.settings = {"elecRate": 3.5, "elecCostRate": 2.1, "waterRate": 0, "waterCostRate": 50, "mgmtFee": 500, "bankCode": "", "bankAccount": "", "projectId": USER_PROJECT_ID, "password": "0000", "fontSize": 16, "commission": 0};
                  saveData(); 
                  alert("重置完成"); 
                  location.reload();
@@ -972,11 +1020,26 @@
             if(document.getElementById('dash-repair-cost')) document.getElementById('dash-repair-cost').innerText = `$${Math.round(totalCosts).toLocaleString()}`;
             if(document.getElementById('dash-elec-rev')) document.getElementById('dash-elec-rev').innerText = `$${Math.round(elecRev).toLocaleString()}`; 
             
-            const pendingReps = window.state.repairs.filter(r => r.status === 'pending');
-            if(document.getElementById('dash-repair-notify')) document.getElementById('dash-repair-notify').innerText = `${pendingReps.length} 件`;
-            
             // Net Profit
             if(document.getElementById('dash-net')) document.getElementById('dash-net').innerText = `$${Math.round(income - totalCosts).toLocaleString()}`;
+            
+            // Fixed Income Calculation
+            let fixedIncome = 0;
+            window.state.rooms.forEach(r => {
+                if(r.tenant) {
+                    fixedIncome += Number(r.rent || 0) + Number(r.waterFee || 0) + Number(r.mgmtFee || 0);
+                }
+            });
+            if(document.getElementById('dash-fixed-income')) {
+                document.getElementById('dash-fixed-income').innerText = `$${Math.round(fixedIncome).toLocaleString()}`;
+            }
+
+            // Commission
+            const commRate = window.state.settings.commission || 0;
+            const myShare = Math.round(income * (commRate / 100));
+            if(document.getElementById('dash-commission')) {
+                document.getElementById('dash-commission').innerText = commRate > 0 ? `(您的分潤: $${myShare.toLocaleString()})` : '';
+            }
 
             const list = document.getElementById('dashboard-bills-list');
             const unpaidRecs = window.state.records.filter(r => !r.paid);
@@ -986,29 +1049,43 @@
                     // 排序: 房號
                     unpaidRecs.sort((a,b) => a.roomName.localeCompare(b.roomName, undefined, {numeric: true}));
                     
-                    list.innerHTML = unpaidRecs.map(r => `
-                    <div class="card p-5 mb-3 border-l-4 ${r.notified ? 'border-orange-500' : 'border-pink-500'} relative">
-                         <div class="absolute top-4 right-4 z-10">
-                            <button onclick='deleteRecord("${r.id}")' class="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 text-red-400 hover:bg-red-100 transition shadow-sm"><i class="fa-solid fa-trash-can text-sm"></i></button>
-                        </div>
-                        <div class="flex justify-between items-center mb-3 pr-8">
-                            <div>
-                                <div class="text-lg font-bold text-slate-800">
-                                    ${r.roomName} 房 
-                                    ${r.tenant ? `<span class="text-sm font-medium text-slate-500 ml-1">- ${r.tenant}</span>` : ''}
+                    list.innerHTML = unpaidRecs.map(r => {
+                        let splitText = '';
+                        // 檢查該房間是否為雙人平分
+                        // 注意：record 裡面沒有存 isSplit，所以要回頭查 room
+                        // 但為了效率，我們假設編輯房間時如果勾選，下一次出帳才會生效
+                        // 這裡為了即時顯示，我們查一次 rooms array
+                        const roomData = window.state.rooms.find(rm => rm.id == r.roomId);
+                        if(roomData && roomData.isSplit) {
+                            const perPerson = Math.round(r.total / 2);
+                            splitText = `<div class="text-[10px] text-slate-400 text-right mt-0.5">(每人 $${perPerson})</div>`;
+                        }
+
+                        return `
+                        <div class="card p-5 mb-3 border-l-4 ${r.notified ? 'border-orange-500' : 'border-pink-500'} relative">
+                             <div class="absolute top-4 right-4 z-10">
+                                <button onclick='deleteRecord("${r.id}")' class="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 text-red-400 hover:bg-red-100 transition shadow-sm"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                            </div>
+                            <div class="flex justify-between items-center mb-3 pr-8">
+                                <div>
+                                    <div class="text-lg font-bold text-slate-800">
+                                        ${r.roomName} 房 
+                                        ${r.tenant ? `<span class="text-sm font-medium text-slate-500 ml-1">- ${r.tenant}</span>` : ''}
+                                    </div>
+                                    <div class="text-xs text-slate-400">${r.billingMonth || '本期'} 帳單</div>
                                 </div>
-                                <div class="text-xs text-slate-400">${r.billingMonth || '本期'} 帳單</div>
+                                <div class="text-right">
+                                    <div class="text-xl font-black ${r.notified ? 'text-orange-500' : 'text-pink-500'}">$${Math.round(r.total)}</div>
+                                    ${splitText}
+                                    <div class="text-[10px] font-bold mt-1 ${r.notified ? 'text-orange-500' : 'text-pink-400'}">${r.notified ? '<i class="fa-solid fa-bell"></i> 已催繳' : '未繳款'}</div>
+                                </div>
                             </div>
-                            <div class="text-right">
-                                <div class="text-xl font-black ${r.notified ? 'text-orange-500' : 'text-pink-500'}">$${Math.round(r.total)}</div>
-                                <div class="text-[10px] font-bold mt-1 ${r.notified ? 'text-orange-500' : 'text-pink-400'}">${r.notified ? '<i class="fa-solid fa-bell"></i> 已催繳' : '未繳款'}</div>
+                            <div class="flex gap-2 pt-2 border-t border-slate-50">
+                                <button onclick='openNotifyModal("${r.id}")' class="flex-1 py-2 rounded-xl border border-blue-200 text-blue-600 font-bold text-sm bg-blue-50 active:scale-95 transition">通知</button>
+                                <button onclick='openPayModal("${r.id}")' class="flex-1 py-2 rounded-xl bg-green-500 text-white font-bold text-sm shadow-md shadow-green-200 active:scale-95 transition">收款</button>
                             </div>
-                        </div>
-                        <div class="flex gap-2 pt-2 border-t border-slate-50">
-                            <button onclick='openNotifyModal("${r.id}")' class="flex-1 py-2 rounded-xl border border-blue-200 text-blue-600 font-bold text-sm bg-blue-50 active:scale-95 transition">通知</button>
-                            <button onclick='openPayModal("${r.id}")' class="flex-1 py-2 rounded-xl bg-green-500 text-white font-bold text-sm shadow-md shadow-green-200 active:scale-95 transition">收款</button>
-                        </div>
-                    </div>`).join(''); 
+                        </div>`;
+                    }).join(''); 
                 }
             }
             
@@ -1342,6 +1419,10 @@
             document.getElementById('edit-water-fee').value=r.waterFee||0; 
             document.getElementById('edit-mgmt').value=r.mgmtFee||0; 
             
+            // Load isSplit
+            const isSplitEl = document.getElementById('edit-is-split');
+            if (isSplitEl) isSplitEl.checked = r.isSplit || false;
+
             const mainPrev = document.getElementById('edit-preview-main');
             if(r.photo){ mainPrev.src=r.photo; mainPrev.classList.remove('hidden'); }
             else { mainPrev.src=''; mainPrev.classList.add('hidden'); }
@@ -1374,6 +1455,9 @@
             document.getElementById('edit-water-fee').value="0"; 
             document.getElementById('edit-mgmt').value="0"; 
             
+            const isSplitEl = document.getElementById('edit-is-split');
+            if (isSplitEl) isSplitEl.checked = false;
+
             const mainPrev = document.getElementById('edit-preview-main');
             if(mainPrev) { mainPrev.src=""; mainPrev.classList.add('hidden'); }
             
@@ -1408,9 +1492,10 @@
                 const waterFee = Number(document.getElementById('edit-water-fee').value);
                 const mgmtFee = Number(document.getElementById('edit-mgmt').value);
                 const photo = document.getElementById('edit-preview-main').src;
+                const isSplit = document.getElementById('edit-is-split').checked;
 
                 const rd={
-                    id, name, rent, tenant, phone, paymentDay, start, end, meter, waterFee, mgmtFee, photo,
+                    id, name, rent, tenant, phone, paymentDay, start, end, meter, waterFee, mgmtFee, photo, isSplit,
                     furnPhotos: tempEditPhotos.furn, 
                     contPhotos: tempEditPhotos.cont, 
                     photoFurn: null, 
@@ -1696,8 +1781,16 @@
             } else {
                 elecText = `\n(本期免抄表)`;
             }
+            
+            // Check for split room logic
+            let splitText = "";
+            const roomData = window.state.rooms.find(rm => rm.id == r.roomId);
+            if(roomData && roomData.isSplit) {
+                const perPerson = Math.round(r.total / 2);
+                splitText = `\n(每人應繳：$${perPerson})`;
+            }
 
-            const text = `Hi ${r.tenant || '房客'}，${r.billingMonth} 的租金帳單已出爐。\n\n房號：${r.roomName}${elecText}\n\n總金額：$${Math.round(r.total)}${bankInfoText}\n\n請盡速完成繳款，謝謝！`; 
+            const text = `Hi ${r.tenant || '房客'}，${r.billingMonth} 的租金帳單已出爐。\n\n房號：${r.roomName}${elecText}\n\n總金額：$${Math.round(r.total)}${splitText}${bankInfoText}\n\n請盡速完成繳款，謝謝！`; 
             document.getElementById('notify-text').value = text;
             
             // 生成並插入明細
@@ -1735,10 +1828,6 @@
             showToast('已標記為催繳'); 
         }
         
-        function openRepairProcess(id) { const r = window.state.repairs.find(x => x.id == id); if (!r) return; document.getElementById('repair-process-id').value = id; document.getElementById('repair-desc-display').innerText = r.desc; document.getElementById('repair-reply-input').value = r.reply || ""; document.getElementById('repair-cost-input').value = r.cost || 0; document.getElementById('repair-done-check').checked = (r.status === 'done'); const photoContainer = document.getElementById('repair-photos-container'); const photoDisplay = document.getElementById('repair-photos-display'); if (r.photos && r.photos.length > 0) { photoContainer.classList.remove('hidden'); photoDisplay.innerHTML = r.photos.map(src => `<div class="photo-item" onclick="viewBigImage('${src}')"><img src="${src}"></div>`).join(''); } else { photoContainer.classList.add('hidden'); } document.getElementById('modal-repair-process').classList.remove('hidden'); }
-        
-        function saveRepairProcess() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if (r) { r.reply = document.getElementById('repair-reply-input').value; r.cost = Number(document.getElementById('repair-cost-input').value); r.status = document.getElementById('repair-done-check').checked ? 'done' : 'pending'; saveData(); if(db) db.collection('repairs').doc(String(id)).set(r); closeModal('modal-repair-process'); showToast('更新成功'); } }
-
         // ==========================================
         // 6. 雲端同步
         // ==========================================
@@ -1900,55 +1989,4 @@
             if(db) {
                 try {
                     await db.collection('records').doc(String(id)).delete();
-                    window.showToast('帳單已刪除');
-                } catch(e) {
-                    console.error(e);
-                }
-            } else {
-                window.showToast('已刪除 (僅本機)');
-            }
-            
-            renderDashboard();
-            renderRooms(); 
-        }
-
-        // ==========================================
-        // 7. 將所有函式強制掛載到 Window 以供 HTML 呼叫
-        // ==========================================
-        Object.assign(window, {
-            saveData, saveLoginState, closeModal, showToast, checkLockout,
-            applySettingsUI, setFontSize, switchView, switchTab, resetSystemSettings,
-            loadUtilityRatesForMonth, saveUtilityRates, renderRooms, renderDashboard, renderFinance, openMonthDetail,
-            showRoomDetail, openEditRoom, openRoomModal, saveRoom, deleteRoom, moveOutTenant, handleAddPhoto, renderEditPhotoList,
-            removeEditPhoto, viewBigImage, triggerFile, handlePhoto, compressImage,
-            onBillMonthChange, openBillFromDetail, openBillModal, createBill, openPayModal, confirmPay, openNotifyModal, copyNotify, markNotified,
-            openRepairProcess, saveRepairProcess, saveSettings,
-            initCloud, syncToCloud, deleteFromCloud, forceUploadAllLocalData, forceDownloadCloudData, clearCacheAndReload, exportData, 
-            openAddExpenseModal, saveExpense, importData, resetAllData, resetFinancialData, deleteRecord, checkMeterReadingReminder, loginAsLandlord
-        });
-        
-        // Final Init
-        window.onload = function() {
-            try {
-                if(document.getElementById('landing-id')) document.getElementById('landing-id').innerText = window.state.settings.projectId;
-                window.setFontSize(window.state.settings.fontSize || 16);
-                window.applySettingsUI();
-                
-                // Show local data immediately
-                window.renderRooms();
-                window.renderDashboard();
-                
-                window.initCloud();
-                
-                // 清除 Tailwind 的 CDN 警告，避免讓使用者誤以為是錯誤
-                setTimeout(() => {
-                    console.clear();
-                    console.log("%c 租屋管家 Pro 已就緒 ", "background: #4f46e5; color: white; font-size: 12px; padding: 4px; border-radius: 4px;");
-                }, 1000);
-            } catch (e) {
-                console.error("Init Error:", e);
-            }
-        };
-    </script>
-</body>
-</html>
+                    window.
