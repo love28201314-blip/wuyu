@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 - V58.2 錯誤修復版</title>
+    <title>租屋管家 - V58.3 拖曳功能增強版</title>
     <link rel="icon" href="data:,">
     
     <!-- PWA Settings -->
@@ -101,7 +101,8 @@
             flex-direction: column; 
             animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); 
             padding-bottom: env(safe-area-inset-bottom); 
-            transition: transform 0.2s ease-out; 
+            transition: transform 0.1s linear; /* 加快反應速度，使用 linear */
+            will-change: transform; /* 效能優化 */
         }
         
         @media (min-width: 640px) { 
@@ -115,16 +116,19 @@
             } 
         }
 
+        /* 拖曳把手 */
         .sheet-handle-area {
             width: 100%;
             padding-top: 12px;
-            padding-bottom: 8px;
+            padding-bottom: 12px; /* 增加觸控區域 */
             display: flex;
             justify-content: center;
             cursor: grab;
-            touch-action: none;
+            touch-action: none; /* 關鍵：防止瀏覽器預設捲動 */
+            background: white; /* 確保有點擊區域 */
         }
         .sheet-handle { width: 40px; height: 5px; background: #e2e8f0; border-radius: 100px; }
+        .sheet-handle-area:active { cursor: grabbing; }
 
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -358,8 +362,8 @@
     <!-- Modals -->
     <!-- 雜支記帳 -->
     <div id="modal-add-expense" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-add-expense')">
-        <div class="sheet-container">
-            <div class="sheet-handle-area" onclick="/* close hint logic could go here */"><div class="sheet-handle"></div></div>
+        <div class="sheet-container" id="sheet-expense">
+            <div class="sheet-handle-area" id="handle-expense"><div class="sheet-handle"></div></div>
             <div class="p-6 h-full flex flex-col">
                 <h3 class="text-xl font-black mb-4 text-center text-orange-600">新增雜支</h3>
                 <div class="space-y-4 flex-1">
@@ -375,10 +379,10 @@
         </div>
     </div>
 
-    <!-- 抄表計費 (新增右上角關閉按鈕) -->
+    <!-- 抄表計費 (新增 ID 支援拖曳) -->
     <div id="modal-bill" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-bill')">
-        <div class="sheet-container">
-            <div class="sheet-handle-area"><div class="sheet-handle"></div></div>
+        <div class="sheet-container" id="sheet-bill">
+            <div class="sheet-handle-area" id="handle-bill"><div class="sheet-handle"></div></div>
             <!-- Header for easy closing on mobile -->
             <div class="px-6 pt-2 pb-0 flex justify-between items-center">
                  <h3 class="text-xl font-black">抄表計費</h3>
@@ -491,8 +495,8 @@
     
     <!-- 編輯房間 -->
     <div id="modal-room-edit" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-room-edit')">
-        <div class="sheet-container">
-            <div class="sheet-handle-area"><div class="sheet-handle"></div></div>
+        <div class="sheet-container" id="sheet-room-edit">
+            <div class="sheet-handle-area" id="handle-room-edit"><div class="sheet-handle"></div></div>
             <div class="p-5 border-b flex justify-between items-center bg-slate-50">
                 <h3 class="text-xl font-bold text-slate-800">編輯房間</h3>
                 <button onclick="closeModal('modal-room-edit')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -571,6 +575,7 @@
     <!-- 催繳通知 -->
     <div id="modal-notify" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) closeModal('modal-notify')">
         <div class="sheet-container">
+            <div class="sheet-handle-area"><div class="sheet-handle"></div></div>
             <div class="bg-blue-600 p-6 text-white text-center shrink-0 relative rounded-t-[32px] sm:rounded-t-[24px]">
                 <i class="fa-solid fa-paper-plane text-5xl mb-3"></i>
                 <h3 class="text-2xl font-black tracking-tighter">發送通知</h3>
@@ -1406,6 +1411,7 @@
             renderEditPhotoList('furn'); 
             renderEditPhotoList('cont');
             
+            // Set checkbox state for double occupancy
             document.getElementById('edit-is-double').checked = r.isDouble || false;
             
             const btnDel = document.getElementById('edit-btn-del');
@@ -1569,476 +1575,61 @@
         function triggerFile(id) { document.getElementById(id).click(); }
         function handlePhoto(input, id) { if(input.files[0]) { compressImage(input.files[0], (base64) => { const img=document.getElementById(id); img.src=base64; img.classList.remove('hidden'); }); } }
         
-        function onBillMonthChange() {
-             const m = document.getElementById('bill-month').value;
-             const rId = currentBillRoomId;
-             if(!m || !rId) return;
+        // Draggable Logic for Modals
+        function initDraggable(handleId, containerId) {
+            const handle = document.getElementById(handleId);
+            const container = document.getElementById(containerId);
+            if (!handle || !container) return;
 
-             const existing = window.state.records.find(x => x.roomId == rId && x.billingMonth == m);
-             const warnEl = document.getElementById('bill-warning');
-             if(warnEl) {
-                 if(existing) {
-                     warnEl.innerText = existing.paid ? '⚠️ 提示：此房間本月份帳單「已生成且已收款過」！' : '⚠️ 提示：此房間本月份帳單「已生成 (尚未收款)」！';
-                     warnEl.classList.remove('hidden');
-                 } else {
-                     warnEl.classList.add('hidden');
-                 }
-             }
+            let isDragging = false;
+            let startX, startY;
+            let initialTranslateX = 0, initialTranslateY = 0;
 
-             // Check Double Month Logic
-             const monthInt = parseInt(m.split('-')[1]);
-             const r = window.state.rooms.find(x => x.id == rId);
-             
-             // Check if "New Tenant" (First Month)
-             let isFirstMonth = false;
-             if(r && r.start) {
-                 const startMonth = r.start.substring(0, 7); // YYYY-MM
-                 if(startMonth === m) isFirstMonth = true;
-             }
+            const getTranslateValues = (el) => {
+                const style = window.getComputedStyle(el);
+                const matrix = new WebKitCSSMatrix(style.webkitTransform);
+                return { x: matrix.m41, y: matrix.m42 };
+            };
 
-             const elecSection = document.getElementById('bill-elec-section');
-             const oddMsg = document.getElementById('bill-odd-month-msg');
-             const msgTitle = document.getElementById('bill-msg-title');
-             const msgDesc = document.getElementById('bill-msg-desc');
-
-             if (isFirstMonth) {
-                 elecSection.classList.add('hidden');
-                 oddMsg.classList.remove('hidden');
-                 msgTitle.innerText = "新入住首月";
-                 msgDesc.innerText = "免抄表，電費直接為 0。";
-                 // Set hidden inputs to 0
-                 document.getElementById('bill-curr').value = 0; 
-             } else if (monthInt % 2 !== 0) {
-                 // Odd Month
-                 elecSection.classList.add('hidden');
-                 oddMsg.classList.remove('hidden');
-                 msgTitle.innerText = "本月免抄表 (奇數月)";
-                 msgDesc.innerText = "雙月抄表制，本月僅收固定費用。";
-                 document.getElementById('bill-curr').value = 0;
-             } else {
-                 // Even Month
-                 elecSection.classList.remove('hidden');
-                 oddMsg.classList.add('hidden');
-                 document.getElementById('bill-curr').value = '';
-             }
-        }
-
-        function openBillFromDetail() { closeModal('modal-room-detail'); openBillModal(currentRoomId); }
-        function openBillModal(id) { 
-            const r=window.state.rooms.find(x=>x.id==id); 
-            if(!r) return;
-            currentBillRoomId=id; 
-            document.getElementById('bill-last').innerText=r.meter; 
-            document.getElementById('bill-curr').value=""; 
-            document.getElementById('bill-mgmt').value=r.mgmtFee||0; 
-            
-            // 重要：確保水費欄位被正確帶入
-            const waterFeeInput = document.getElementById('bill-water-fee');
-            if (waterFeeInput) {
-                waterFeeInput.value = r.waterFee || 0;
-            }
-
-            const now=new Date(); 
-            const monthStr = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,'0');
-            document.getElementById('bill-month').value = monthStr; 
-            
-            onBillMonthChange();
-            document.getElementById('modal-bill').classList.remove('hidden'); 
-        }
-
-        function createBill() { 
-            const r=window.state.rooms.find(x=>x.id==currentBillRoomId); 
-            if(!r) return;
-            let c=Number(document.getElementById('bill-curr').value); 
-            const m=document.getElementById('bill-month').value; 
-            const er=3.5; 
-            
-            // 修正：從房間資料讀取水費
-            const wf = Number(r.waterFee) || 0; 
-            
-            const mf=Number(document.getElementById('bill-mgmt').value); 
-            
-            // Logic for Odd/First Month (c is hidden and set to 0)
-            if(!m) return alert('請選擇月份'); 
-
-            const existing = window.state.records.find(x => x.roomId == r.id && x.billingMonth == m);
-            if(existing) {
-                const statusText = existing.paid ? "「已收款」" : "「尚未收款」";
-                if(!confirm(`⚠️ 警告：此房間在 ${m} 月份的帳單已經存在，且狀態為${statusText}！\n\n您確定要重複生成一張新的帳單嗎？這可能會導致帳目混亂。`)) return;
-            }
-            
-            // Elec Calculation
-            let e = 0;
-            let u = 0;
-            
-            // Check logic again to determine if bill calculation is needed
-            const monthInt = parseInt(m.split('-')[1]);
-            let isFirstMonth = false;
-            if(r.start) {
-                 const startMonth = r.start.substring(0, 7);
-                 if(startMonth === m) isFirstMonth = true;
-            }
-
-            if (isFirstMonth || monthInt % 2 !== 0) {
-                // No Elec
-                e = 0;
-                u = 0;
-            } else {
-                // Even Month
-                if(!c && c !== 0) return alert('請輸入本期度數');
-                if (c < r.meter) return alert(`本期度數 (${c}) 不能小於上期度數 (${r.meter})`);
-                u = c - (r.meter||0);
-                e = u * er;
-                // Update room meter only if read
-                r.meter = c;
-            }
-            
-            const t = Math.round(Number(r.rent) + e + wf + mf); 
-            
-            const rec={
-                id:Date.now().toString(), 
-                roomId:r.id, 
-                roomName:r.name, 
-                tenant:r.tenant, 
-                total:t, 
-                paid:false, 
-                date:new Date().toLocaleDateString('zh-TW'), 
-                billingMonth:m, 
-                elecCost:e, 
-                waterFee:wf, 
-                rent:r.rent,
-                mgmtFee: mf, // 紀錄管理費方便顯示
-                usage:u, 
-                notified: false,
-                isDouble: r.isDouble || false
-            }; 
-            
-            window.state.records.unshift(rec); 
-            saveData(); 
-            if(db){ db.collection('rooms').doc(String(r.id)).set(r); db.collection('records').doc(String(rec.id)).set(rec); } 
-            closeModal('modal-bill'); 
-            showToast('帳單已生成'); 
-        }
-        
-        function openPayModal(id) { 
-            const r=window.state.records.find(x=>x.id==id); 
-            if(r){ 
-                const prId = document.getElementById('pay-record-id');
-                if(prId) prId.value=id; 
-                document.getElementById('pay-amount').innerText=`$${Math.round(r.total)}`; 
-                document.getElementById('pay-date').valueAsDate=new Date(); 
-                document.getElementById('modal-pay-confirm').classList.remove('hidden'); 
-            } 
-        }
-        
-        function confirmPay() { 
-            const id=document.getElementById('pay-record-id').value; 
-            const r=window.state.records.find(x=>x.id==id); 
-            if(r){ 
-                r.paid=true; 
-                saveData(); 
-                if(db) db.collection('records').doc(String(id)).set(r); 
-                closeModal('modal-pay-confirm'); 
-                showToast('收款成功'); 
-            } 
-        }
-        
-        function openNotifyModal(id) { 
-            currentNotifyRecordId = id; 
-            const r = window.state.records.find(x => x.id == id); 
-            
-            let bankInfoText = "";
-            if (window.state.settings.bankCode || window.state.settings.bankAccount) {
-                bankInfoText = `\n\n【匯款資訊】\n銀行：${window.state.settings.bankCode || '未設定'}\n帳號：${window.state.settings.bankAccount || '未設定'}`;
-            }
-            
-            let elecText = "";
-            if (r.usage > 0) {
-                elecText = `\n本期電度：${r.usage} 度`;
-            } else {
-                elecText = `\n(本期免抄表)`;
-            }
-            
-            let splitInfo = "";
-            if (r.isDouble) {
-                const half = Math.round(r.total / 2);
-                splitInfo = `\n\n👯 雙人平分：每人應繳 $${half}`;
-            }
-
-            const text = `Hi ${r.tenant || '房客'}，${r.billingMonth} 的租金帳單已出爐。\n\n房號：${r.roomName}${elecText}\n\n總金額：$${Math.round(r.total)}${splitInfo}${bankInfoText}\n\n請盡速完成繳款，謝謝！`; 
-            document.getElementById('notify-text').value = text;
-            
-            // 生成並插入明細
-            const detailsHtml = `
-                <div class="text-xs space-y-1 text-gray-600">
-                    <div class="flex justify-between"><span>🏠 房租</span><span>$${r.rent}</span></div>
-                    <div class="flex justify-between"><span>⚡ 電費 (${r.usage}度)</span><span>$${Math.round(r.elecCost)}</span></div>
-                    <div class="flex justify-between"><span>💧 水費</span><span>$${r.waterFee}</span></div>
-                    <div class="flex justify-between"><span>🧹 管理費</span><span>$${r.mgmtFee || 0}</span></div>
-                    <div class="border-t border-gray-300 pt-1 mt-1 flex justify-between font-bold text-gray-800">
-                        <span>💰 合計</span><span>$${Math.round(r.total)}</span>
-                    </div>
-                    ${r.isDouble ? `<div class="text-indigo-600 font-bold text-right pt-1">每人: $${Math.round(r.total/2)}</div>` : ''}
-                </div>
-            `;
-            document.getElementById('notify-details').innerHTML = detailsHtml;
-
-            document.getElementById('modal-notify').classList.remove('hidden'); 
-        }
-        
-        function copyNotify() { 
-            const text = document.getElementById('notify-text'); 
-            text.select(); 
-            document.execCommand('copy'); 
-            showToast('已複製'); 
-        }
-        
-        function markNotified() { 
-            const r = window.state.records.find(x => x.id == currentNotifyRecordId);
-            if(r) {
-                r.notified = true;
-                saveData();
-                if(db) db.collection('records').doc(String(r.id)).set(r);
-            }
-            closeModal('modal-notify'); 
-            showToast('已標記為催繳'); 
-        }
-        
-        function openRepairProcess(id) { const r = window.state.repairs.find(x => x.id == id); if (!r) return; document.getElementById('repair-process-id').value = id; document.getElementById('repair-desc-display').innerText = r.desc; document.getElementById('repair-reply-input').value = r.reply || ""; document.getElementById('repair-cost-input').value = r.cost || 0; document.getElementById('repair-done-check').checked = (r.status === 'done'); const photoContainer = document.getElementById('repair-photos-container'); const photoDisplay = document.getElementById('repair-photos-display'); if (r.photos && r.photos.length > 0) { photoContainer.classList.remove('hidden'); photoDisplay.innerHTML = r.photos.map(src => `<div class="photo-item" onclick="window.viewBigImage('${src}')"><img src="${src}"></div>`).join(''); } else { photoContainer.classList.add('hidden'); } document.getElementById('modal-repair-process').classList.remove('hidden'); }
-        
-        function saveRepairProcess() { const id = document.getElementById('repair-process-id').value; const r = window.state.repairs.find(x => x.id == id); if (r) { r.reply = document.getElementById('repair-reply-input').value; r.cost = Number(document.getElementById('repair-cost-input').value); r.status = document.getElementById('repair-done-check').checked ? 'done' : 'pending'; saveData(); if(db) db.collection('repairs').doc(String(id)).set(r); closeModal('modal-repair-process'); showToast('更新成功'); } }
-
-        // ==========================================
-        // 6. 雲端同步
-        // ==========================================
-        async function initCloud() {
-            const statusEl = document.getElementById('status-indicator');
-            if(typeof firebase === 'undefined') return;
-            try {
-                if(!firebase.apps.length) firebase.initializeApp(userFirebaseConfig); // 無需 window.
-                await firebase.auth().signInAnonymously();
-                db = firebase.firestore();
+            const onStart = (e) => {
+                if(e.target.closest('button')) return; // Don't drag if button
+                isDragging = true;
+                const point = e.touches ? e.touches[0] : e;
+                startX = point.clientX;
+                startY = point.clientY;
                 
-                // Fetch settings once upon cloud connection
-                const settingsSnap = await db.collection('config').doc('settings').get();
-                if(settingsSnap.exists) {
-                    // 保留本機目前的字體大小設定 (Local Preference Priority)
-                    const localFontSize = window.state.settings.fontSize;
-                    
-                    window.state.settings = { ...window.state.settings, ...settingsSnap.data() };
-                    
-                    // 如果本機有設定字體大小，則覆蓋雲端設定 (確保本機體驗一致)
-                    if (localFontSize) {
-                        window.state.settings.fontSize = localFontSize;
-                    }
-
-                    localStorage.setItem('rental_settings', JSON.stringify(window.state.settings));
-                    applySettingsUI();
-                }
+                const transforms = getTranslateValues(container);
+                initialTranslateX = transforms.x;
+                initialTranslateY = transforms.y;
                 
-                // Fetch Expenses
-                db.collection('expenses').onSnapshot(snap => {
-                    const cloudExpenses = snap.empty ? [] : snap.docs.map(d => d.data());
-                    window.state.expenses = cloudExpenses;
-                    localStorage.setItem('rental_expenses', JSON.stringify(window.state.expenses));
-                    if(document.getElementById('tab-finance') && !document.getElementById('tab-finance').classList.contains('hidden')) {
-                        renderFinance();
-                    }
-                    renderDashboard();
-                });
+                container.style.transition = 'none'; // Disable transition for direct movement
+            };
 
-                db.collection('rooms').onSnapshot(snap => {
-                    const cloudRooms = snap.empty ? [] : snap.docs.map(d => d.data());
-                    if (JSON.stringify(window.state.rooms) !== JSON.stringify(cloudRooms)) {
-                        window.state.rooms = cloudRooms;
-                        localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms));
-                        renderRooms(); 
-                        renderDashboard();
-                    }
-                    if(statusEl) { statusEl.innerHTML = '<i class="fa-solid fa-cloud mr-1"></i>已連線'; statusEl.className = "text-[10px] font-bold bg-green-100 text-green-600 px-3 py-1 rounded-full cursor-pointer"; }
-                    if(document.getElementById('cloud-status-text')) document.getElementById('cloud-status-text').innerText = "✅ 雲端連線正常";
-                    if(document.getElementById('auth-status')) document.getElementById('auth-status').innerText = "已驗證";
-                });
+            const onMove = (e) => {
+                if (!isDragging) return;
+                if(e.cancelable) e.preventDefault(); // Prevent scrolling while dragging
+                const point = e.touches ? e.touches[0] : e;
+                const dx = point.clientX - startX;
+                const dy = point.clientY - startY;
                 
-                db.collection('records').onSnapshot(snap => { 
-                    const cloudRecords = snap.empty ? [] : snap.docs.map(d => d.data());
-                    window.state.records = cloudRecords;
-                    localStorage.setItem('rental_records', JSON.stringify(window.state.records));
-                    renderDashboard(); 
-                    renderRooms();
-                    if(document.getElementById('tab-finance') && !document.getElementById('tab-finance').classList.contains('hidden')) {
-                        renderFinance();
-                    }
-                });
-                
-                db.collection('repairs').onSnapshot(snap => { 
-                    const cloudRepairs = snap.empty ? [] : snap.docs.map(d => d.data());
-                    window.state.repairs = cloudRepairs;
-                    localStorage.setItem('rental_repairs', JSON.stringify(window.state.repairs));
-                    renderDashboard(); 
-                });
-                
-                db.collection('config').doc('rates').onSnapshot(snap => { 
-                    window.state.utilityRates = snap.exists ? snap.data() : {}; 
-                    localStorage.setItem('rental_utility_rates', JSON.stringify(window.state.utilityRates));
-                    if(document.getElementById('tab-finance') && !document.getElementById('tab-finance').classList.contains('hidden')) {
-                        renderFinance();
-                    }
-                });
+                // Allow free movement
+                container.style.transform = `translate(${initialTranslateX + dx}px, ${initialTranslateY + dy}px)`;
+            };
 
-            } catch(e) { console.error(e); if(statusEl) statusEl.innerText = '連線失敗'; }
-        }
-        
-        async function syncToCloud(coll, id, data) { if(db) { try { await db.collection(coll).doc(String(id)).set(data); } catch (e) { console.error(e); } } }
-        async function deleteFromCloud(coll, id) { if(db) try { await db.collection(coll).doc(String(id)).delete(); } catch(e) {} }
-        async function forceUploadAllLocalData() { if(!db) return alert("❌ 未連線"); if(!confirm("上傳？")) return; try { for(const r of window.state.rooms) await syncToCloud('rooms', r.id, r); for(const r of window.state.records) await syncToCloud('records', r.id, r); for(const r of window.state.repairs) await syncToCloud('repairs', r.id, r); await syncToCloud('config', 'rates', window.state.utilityRates); alert('完成'); } catch(e){alert('失敗');} }
-        async function forceDownloadCloudData() { if(!db) return alert("❌ 未連線"); if(!confirm("下載？")) return; try { const snap = await db.collection('rooms').get(); window.state.rooms = snap.docs.map(d=>d.data()); localStorage.setItem('rental_rooms', JSON.stringify(window.state.rooms)); alert('完成'); location.reload(); } catch(e){alert('失敗');} }
-        function clearCacheAndReload() { if(confirm("確定清除暫存重載？(將從雲端抓取最新資料)")) { localStorage.clear(); location.reload(); } }
-        function exportData() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "rental_manager_backup_" + new Date().toISOString() + ".json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
-        
-        // Reset All Data (New Function)
-        function resetAllData() {
-            if(!confirm("⚠️ 警告：您確定要清空所有資料嗎？\n這將會刪除所有房間、帳單、報修紀錄與設定。\n此動作無法復原！")) return;
-            
-            // Clear Cloud if connected
-            if(db) {
-                if(!confirm("是否同時刪除雲端資料庫的所有資料？")) {
-                     localStorage.clear();
-                     location.reload();
-                     return;
-                }
-                // We can't easily delete whole collections from client, 
-                // so we will just clear local storage and force upload empty arrays
-                window.state.rooms = [];
-                window.state.records = [];
-                window.state.repairs = [];
-                window.state.expenses = [];
-                // Reset settings to default
-                window.state.settings = {"elecRate": 3.5, "elecCostRate": 2.1, "waterRate": 0, "waterCostRate": 50, "mgmtFee": 500, "bankCode": "", "bankAccount": "", "projectId": USER_PROJECT_ID, "password": "0000", "fontSize": 16};
-                
-                forceUploadAllLocalData().then(() => {
-                    localStorage.clear();
-                    location.reload();
-                });
-            } else {
-                localStorage.clear();
-                location.reload();
-            }
-        }
-        
-        // Reset Financial Data Only (New Function)
-        async function resetFinancialData() {
-            if(!confirm("⚠️ 確定要清除所有「帳務紀錄」嗎？\n(房間資料與設定將會保留)\n此動作無法復原！")) return;
-            
-            // Clear Local State first
-            window.state.records = [];
-            window.state.repairs = [];
-            window.state.expenses = [];
-            window.state.utilityRates = {};
-            saveData();
+            const onEnd = () => {
+                isDragging = false;
+                container.style.transition = 'transform 0.2s ease-out';
+            };
 
-            if(db && confirm("是否一併清除雲端上的帳務資料？")) {
-                window.showToast("正在清除雲端資料...");
-                try {
-                    const promises = [];
-                    // Delete Records
-                    const recSnap = await db.collection('records').get();
-                    recSnap.forEach(doc => promises.push(doc.ref.delete()));
-                    
-                    // Delete Repairs
-                    const repSnap = await db.collection('repairs').get();
-                    repSnap.forEach(doc => promises.push(doc.ref.delete()));
-                    
-                    // Delete Expenses
-                    const expSnap = await db.collection('expenses').get();
-                    expSnap.forEach(doc => promises.push(doc.ref.delete()));
-                    
-                    // Delete Rates
-                    promises.push(db.collection('config').doc('rates').delete());
-                    
-                    await Promise.all(promises);
-                    alert("✅ 帳務資料已完全清除");
-                } catch(e) {
-                    alert("⚠️ 雲端部分資料清除失敗: " + e.message);
-                }
-            } else {
-                window.showToast("已清除本機資料");
-            }
-            location.reload();
-        }
+            handle.addEventListener('mousedown', onStart);
+            handle.addEventListener('touchstart', onStart, {passive: false});
 
-        async function deleteRecord(id) {
-            if(!confirm("⚠️ 確定要刪除此筆帳單嗎？\n此動作無法復原！")) return;
-            
-            // Remove from local state
-            window.state.records = window.state.records.filter(r => r.id != id);
-            saveData();
-            
-            // Remove from Cloud
-            if(db) {
-                try {
-                    await db.collection('records').doc(String(id)).delete();
-                    window.showToast('帳單已刪除');
-                } catch(e) {
-                    console.error(e);
-                }
-            } else {
-                window.showToast('已刪除 (僅本機)');
-            }
-            
-            renderDashboard();
-            renderRooms(); 
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('touchmove', onMove, {passive: false});
+
+            window.addEventListener('mouseup', onEnd);
+            window.addEventListener('touchend', onEnd);
         }
 
         // ==========================================
         // 7. 將所有函式強制掛載到 Window 以供 HTML 呼叫
-        // ==========================================
-        Object.assign(window, {
-            saveData, saveLoginState, closeModal, showToast, checkLockout,
-            applySettingsUI, setFontSize, switchView, switchTab, resetSystemSettings,
-            loadUtilityRatesForMonth, saveUtilityRates, renderRooms, renderDashboard, renderFinance, openMonthDetail,
-            showRoomDetail, openEditRoom, openRoomModal, saveRoom, deleteRoom, moveOutTenant, handleAddPhoto, renderEditPhotoList,
-            removeEditPhoto, viewBigImage, triggerFile, handlePhoto, compressImage,
-            onBillMonthChange, openBillFromDetail, openBillModal, createBill, openPayModal, confirmPay, openNotifyModal, copyNotify, markNotified,
-            saveSettings,
-            initCloud, syncToCloud, deleteFromCloud, forceUploadAllLocalData, forceDownloadCloudData, clearCacheAndReload, exportData, 
-            openAddExpenseModal, saveExpense, importData, resetAllData, resetFinancialData, deleteRecord, checkMeterReadingReminder, loginAsLandlord
-        });
-        
-        // Final Init
-        window.onload = function() {
-            try {
-                if(document.getElementById('landing-id')) document.getElementById('landing-id').innerText = window.state.settings.projectId;
-                window.setFontSize(window.state.settings.fontSize || 16);
-                window.applySettingsUI();
-                
-                // Show local data immediately
-                window.renderRooms();
-                window.renderDashboard();
-                
-                // Remove Loading Screen
-                const loadingScreen = document.getElementById('loading-screen');
-                if(loadingScreen) {
-                    setTimeout(() => {
-                        loadingScreen.style.opacity = '0';
-                        setTimeout(() => loadingScreen.remove(), 500);
-                    }, 800); // 稍微延遲一點，讓感覺更平滑
-                }
-                
-                window.initCloud();
-                
-                // 清除 Tailwind 的 CDN 警告，避免讓使用者誤以為是錯誤
-                setTimeout(() => {
-                    console.clear();
-                    console.log("%c 租屋管家 Pro 已就緒 ", "background: #4f46e5; color: white; font-size: 12px; padding: 4px; border-radius: 4px;");
-                }, 1000);
-            } catch (e) {
-                console.error("Init Error:", e);
-                // Even if error, remove loading screen
-                const loadingScreen = document.getElementById('loading-screen');
-                if(loadingScreen) loadingScreen.remove();
-            }
-        };
-    </script>
-</body>
-</html>
