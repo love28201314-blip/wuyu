@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 - V55.7 狀態顯示與連動修正版</title>
+    <title>租屋管家 - V57.0 直接管理版</title>
     <link rel="icon" href="data:,">
     
     <!-- PWA Settings -->
@@ -91,7 +91,7 @@
         /* 手機版：底部抽屜 */
         .sheet-container { 
             width: 100%; 
-            max-height: 85vh; /* 稍微降低高度，避免太滿 */
+            max-height: 85vh; 
             background: white; 
             border-radius: 32px 32px 0 0; 
             overflow: hidden; 
@@ -102,7 +102,6 @@
             transition: transform 0.2s ease-out; 
         }
         
-        /* 桌面版：置中視窗 */
         @media (min-width: 640px) { 
             .sheet-container { 
                 max-width: 28rem; 
@@ -114,7 +113,6 @@
             } 
         }
 
-        /* 拖曳把手 */
         .sheet-handle-area {
             width: 100%;
             padding-top: 12px;
@@ -150,26 +148,10 @@
 </head>
 <body>
 
-    <!-- 0. Landing Page -->
-    <div id="view-landing" class="view-section min-h-screen flex flex-col items-center justify-center p-8 bg-white">
-        <div class="z-10 text-center w-full max-w-sm">
-            <div class="mb-8 inline-flex p-6 bg-indigo-50 rounded-[32px] text-indigo-600 shadow-sm">
-                <i class="fa-solid fa-house-chimney text-6xl"></i>
-            </div>
-            <h1 class="text-3xl font-black mb-2 text-slate-900">租屋管家</h1>
-            <p class="text-slate-400 mb-12 font-bold tracking-wide">V55.7 狀態顯示與連動修正版</p>
-            <div class="space-y-4 w-full">
-                <!-- 直接進入系統，免密碼 -->
-                <button onclick="loginAsLandlord()" class="w-full btn btn-primary py-4 text-lg shadow-xl shadow-indigo-100">進入系統</button>
-            </div>
-            <p class="mt-12 text-xs text-slate-300 font-mono tracking-widest uppercase">Project: <span id="landing-id">---</span></p>
-        </div>
-    </div>
-
-    <!-- 2. Landlord App -->
-    <div id="app-landlord" class="view-section hidden min-h-screen">
+    <!-- 主應用程式 (移除 Landing 與 Login，直接顯示) -->
+    <div id="app-landlord" class="view-section min-h-screen">
         <header class="bg-white/90 backdrop-blur-md px-5 py-4 sticky top-0 z-30 flex justify-between items-center border-b border-slate-100">
-            <div class="flex items-center" onclick="confirmExit()">
+            <div class="flex items-center" onclick="location.reload()">
                 <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white mr-2 shadow-md">
                     <i class="fa-solid fa-building"></i>
                 </div>
@@ -334,7 +316,6 @@
                 <button onclick="saveSettings()" class="w-full btn btn-primary shadow-md mb-3">儲存設定並同步至雲端</button>
                 <button onclick="resetFinancialData()" class="w-full btn btn-warning shadow-md mb-3 text-white">🧹 清除帳務紀錄 (保留房間)</button>
                 <button onclick="resetAllData()" class="w-full btn btn-danger shadow-md mb-3">⚠️ 清空所有資料 (重置系統)</button>
-                <button onclick="confirmExit()" class="w-full text-red-400 font-bold text-sm py-4">登出系統</button>
             </div>
         </main>
 
