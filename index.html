@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 - V59.2 徹底淨化修復版</title>
+    <title>租屋管家 - V59.3 財務月結精準版</title>
     <link rel="icon" href="data:,">
     
     <!-- PWA Settings -->
@@ -198,10 +198,10 @@
                     </div>
                     
                     <div class="grid grid-cols-2 gap-3 mt-6">
-                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-blue-200 text-[10px] mb-1">已收總額</div><div class="text-lg font-bold" id="dash-income">$0</div></div>
-                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-red-300 text-[10px] mb-1">待收總額</div><div class="text-lg font-bold text-red-100" id="dash-pending">$0</div></div>
-                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-yellow-300 text-[10px] mb-1">⚡ 電費營收</div><div class="text-lg font-bold" id="dash-elec-rev">$0</div></div>
-                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-orange-300 text-[10px] mb-1">🔧 雜支/修繕</div><div class="text-lg font-bold" id="dash-repair-cost">$0</div></div>
+                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-blue-200 text-[10px] mb-1">本月已收</div><div class="text-lg font-bold" id="dash-income">$0</div></div>
+                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-red-300 text-[10px] mb-1">總待收款</div><div class="text-lg font-bold text-red-100" id="dash-pending">$0</div></div>
+                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-yellow-300 text-[10px] mb-1">⚡ 本月電收</div><div class="text-lg font-bold" id="dash-elec-rev">$0</div></div>
+                        <div class="bg-white/10 rounded-xl p-3 border border-white/10"><div class="text-orange-300 text-[10px] mb-1">🔧 本月總支</div><div class="text-lg font-bold" id="dash-repair-cost">$0</div></div>
                     </div>
                 </div>
                 
@@ -214,7 +214,7 @@
                     <div id="dashboard-repairs-list" class="space-y-3"></div>
                 </div>
                 
-                <h3 class="text-sm font-bold text-slate-500 mb-3 ml-1">待收款項</h3>
+                <h3 class="text-sm font-bold text-slate-500 mb-3 ml-1">待收款清單</h3>
                 <div id="dashboard-bills-list" class="space-y-3 pb-24"></div>
             </div>
 
@@ -501,7 +501,7 @@
         </div>
     </div>
     
-    <!-- 編輯房間 (淨化版) -->
+    <!-- 編輯房間 (徹底淨化修復版) -->
     <div id="modal-room-edit" class="modal fixed inset-0 hidden flex items-end justify-center p-0 z-50 sm:items-center sm:p-4" onclick="if(event.target === this) window.closeModal('modal-room-edit')">
         <div class="sheet-container">
             <div class="bg-white shrink-0 z-20">
@@ -563,7 +563,6 @@
                     <label class="text-[10px] font-bold text-sky-600 ml-2 mb-1 block"><i class="fa-regular fa-snowflake mr-1"></i>當前冷氣電表度數</label>
                     <input id="edit-meter2" type="number" inputmode="decimal" class="input-field !py-3 !px-4 border-2 border-sky-100 bg-sky-50" value="0">
                 </div>
-                
             </div>
 
             <div class="p-4 border-t bg-slate-50 flex gap-3 shrink-0 z-20">
@@ -639,8 +638,6 @@
             </div>
         </div>
     </div>
-    
-    <div id="modal-lightbox" class="modal fixed inset-0 hidden flex items-center justify-center p-0 bg-black/95 z-[1100]" onclick="if(event.target === this) window.closeModal('modal-lightbox')"><button onclick="window.closeModal('modal-lightbox')" class="absolute top-5 right-5 text-white text-3xl z-50"><i class="fa-solid fa-xmark"></i></button><img id="lightbox-img" class="max-w-full max-h-[90vh] object-contain"></div>
 
     <div id="toast" class="fixed top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-2xl z-[1200] hidden font-black flex items-center text-lg"><i class="fa-solid fa-check-circle mr-3 text-green-400 text-2xl"></i> <span id="toast-msg">成功</span></div>
 
@@ -935,17 +932,42 @@
         }
 
         window.renderDashboard = function() {
-            const income = window.state.records.filter(r => r.paid).reduce((s, r) => s + (Number(r.total) || 0), 0);
+            const now = new Date();
+            const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            
+            const isThisMonth = (dateString) => {
+                if (!dateString) return false;
+                const d = new Date(dateString);
+                return !isNaN(d.getTime()) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+            };
+
+            // 1. 本月帳單 (用 billingMonth 判斷)
+            const currentMonthRecords = window.state.records.filter(r => r.billingMonth === currentMonthStr);
+            const income = currentMonthRecords.filter(r => r.paid).reduce((s, r) => s + (Number(r.total) || 0), 0);
+            const elecRev = currentMonthRecords.reduce((s, r) => s + (Number(r.elecCost) || 0) + (Number(r.elecCost2) || 0), 0);
+            
+            // 2. 待收總額 (不限本月，保留歷史欠款)
             const pending = window.state.records.filter(r => !r.paid).reduce((s, r) => s + (Number(r.total) || 0), 0);
-            const repairCost = window.state.repairs.reduce((s, r) => s + (Number(r.cost) || 0), 0);
-            const elecRev = window.state.records.reduce((s, r) => s + (Number(r.elecCost) || 0) + (Number(r.elecCost2) || 0), 0);
+            
+            // 3. 本月修繕與雜支
+            const currentRepairs = window.state.repairs.filter(r => isThisMonth(r.date));
+            const repairCost = currentRepairs.reduce((s, r) => s + (Number(r.cost) || 0), 0);
+            
+            const currentExpenses = window.state.expenses.filter(e => isThisMonth(e.date));
+            const generalExpense = currentExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+            
+            // 4. 本月水電成本
             let totalUtilityCost = 0;
-            Object.values(window.state.utilityRates).forEach(u => { totalUtilityCost += (u.elecTotal || 0) + (u.waterTotal || 0); });
-            const generalExpense = window.state.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+            const currentUtil = window.state.utilityRates[currentMonthStr];
+            if (currentUtil) {
+                totalUtilityCost = (Number(currentUtil.elecTotal) || 0) + (Number(currentUtil.waterTotal) || 0);
+            }
 
             if(document.getElementById('dash-income')) document.getElementById('dash-income').innerText = `$${Math.round(income).toLocaleString()}`;
             if(document.getElementById('dash-pending')) document.getElementById('dash-pending').innerText = `$${Math.round(pending).toLocaleString()}`;
+            
             const totalCosts = repairCost + totalUtilityCost + generalExpense;
+            
             if(document.getElementById('dash-repair-cost')) document.getElementById('dash-repair-cost').innerText = `$${Math.round(totalCosts).toLocaleString()}`;
             if(document.getElementById('dash-elec-rev')) document.getElementById('dash-elec-rev').innerText = `$${Math.round(elecRev).toLocaleString()}`; 
             if(document.getElementById('dash-net')) document.getElementById('dash-net').innerText = `$${Math.round(income - totalCosts).toLocaleString()}`;
@@ -1196,11 +1218,6 @@
             const isDoubleEl = document.getElementById('edit-is-double');
             if(isDoubleEl) isDoubleEl.checked = r.isDouble || false;
             
-            const btnDel = document.getElementById('edit-btn-del');
-            if (btnDel) btnDel.classList.remove('hidden'); 
-            const btnMoveout = document.getElementById('edit-btn-moveout');
-            if (btnMoveout) btnMoveout.classList.toggle('hidden',!r.tenant); 
-            
             document.getElementById('modal-room-detail').classList.add('hidden'); 
             document.getElementById('modal-room-edit').classList.remove('hidden'); 
         }
@@ -1226,11 +1243,6 @@
             
             const isDoubleEl = document.getElementById('edit-is-double');
             if(isDoubleEl) isDoubleEl.checked = false;
-            
-            const btnDel = document.getElementById('edit-btn-del');
-            if (btnDel) btnDel.classList.add('hidden'); 
-            const btnMoveout = document.getElementById('edit-btn-moveout');
-            if (btnMoveout) btnMoveout.classList.add('hidden'); 
             
             document.getElementById('modal-room-edit').classList.remove('hidden'); 
         }
