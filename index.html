@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>租屋管家 - V59.3 財務月結精準版</title>
+    <title>租屋管家 - V59.4 數據可視化升級版</title>
     <link rel="icon" href="data:,">
     
     <!-- PWA Settings -->
@@ -138,18 +138,24 @@
         .photo-item img { width: 100%; height: 100%; object-fit: cover; }
         .photo-del { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
-        /* 圖表 */
+        /* 圖表 - 圓餅圖 */
         .pie-chart-wrapper { position: relative; width: 160px; height: 160px; margin: 0 auto; }
         .pie-chart { width: 100%; height: 100%; border-radius: 50%; background: #e5e7eb; } 
         .pie-chart-inner { position: absolute; inset: 25px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; }
         
-        .bar-chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 120px; padding-top: 20px; gap: 8px; }
-        .bar-group { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; height: 100%;}
-        .bar { width: 100%; background: #e2e8f0; border-radius: 6px 6px 0 0; transition: height 0.5s ease; min-height: 4px; position: relative; }
-        .bar.positive { background: #10b981; }
-        .bar.negative { background: #ef4444; }
-        .bar-label { font-size: 0.6rem; color: #94a3b8; font-weight: 700; margin-top: auto;}
-        .bar-val { font-size: 0.6rem; color: #64748b; font-weight: 700; margin-bottom: 2px; }
+        /* 圖表 - 柱狀趨勢圖 (動態刻度版) */
+        .chart-box { position: relative; height: 160px; margin-top: 15px; margin-bottom: 5px; padding-left: 35px; }
+        .chart-grid { position: absolute; top: 0; left: 35px; right: 0; bottom: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+        .grid-line { width: 100%; border-top: 1px dashed #cbd5e1; position: relative; }
+        .grid-line.base { border-top: 2px solid #94a3b8; }
+        .grid-label { position: absolute; left: -35px; top: -8px; width: 30px; text-align: right; font-size: 0.6rem; color: #94a3b8; font-weight: 700; }
+        .chart-bars { position: absolute; top: 0; left: 35px; right: 0; bottom: 20px; display: flex; align-items: flex-end; justify-content: space-around; gap: 4px; z-index: 10; }
+        .bar-col { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; }
+        .bar-val { position: absolute; font-size: 0.6rem; font-weight: 800; z-index: 10; text-align: center; width: 150%; left: -25%; text-shadow: 0 1px 2px rgba(255,255,255,0.8); }
+        .bar-fill { width: 80%; border-radius: 4px 4px 0 0; transition: height 0.5s ease-out; min-height: 2px; }
+        .bar-fill.positive { background: #10b981; }
+        .bar-fill.negative { background: #ef4444; }
+        .bar-label { position: absolute; bottom: -20px; font-size: 0.65rem; color: #94a3b8; font-weight: 700; text-align: center; width: 100%; }
 
         /* Loading Overlay */
         #loading-screen {
@@ -267,7 +273,8 @@
                 <!-- 趨勢圖 -->
                 <div class="card p-5 mb-6 shadow-md border-b-4 border-emerald-400">
                     <h3 class="text-sm font-bold text-slate-600 mb-4">近 6 個月淨利趨勢</h3>
-                    <div id="finance-trend-chart" class="bar-chart-container"></div>
+                    <!-- 圖表將由 JS 動態生成至此 -->
+                    <div id="finance-trend-chart"></div>
                 </div>
 
                 <div class="flex justify-between items-end mb-3">
@@ -1067,26 +1074,50 @@
                     const d = new Date(); d.setMonth(d.getMonth() - i);
                     const mk = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; months.push(mk);
                 }
+                
                 let maxVal = 1;
                 months.forEach(m => { const d = grouped[m]; if(d) { const net = d.income - d.cost; if(Math.abs(net) > maxVal) maxVal = Math.abs(net); } });
-                let barsHTML = months.map(m => {
-                    const d = grouped[m] || { income:0, cost:0 }; const net = d.income - d.cost;
-                    
-                    // --- 修正高度計算邏輯 ---
-                    let heightPct = 0;
-                    if (maxVal > 0) {
-                        heightPct = Math.max(10, Math.min(100, (Math.abs(net) / maxVal) * 100));
-                    } else if (net !== 0) {
-                        heightPct = 100; // 如果 maxVal 是 0 (可能只有一個月份且數值不為 0)，或者出現異常，至少給個高度
-                    } else {
-                        heightPct = 5; // 如果 net 是 0，給個微小的高度表示沒有數據，但不要完全不見
-                    }
-                    // -------------------------
+                
+                // 動態計算合適的最高刻度 (取大於 maxVal 的最小 1萬/5千/千 倍數)
+                let scaleMax = Math.ceil(maxVal / 10000) * 10000;
+                if(scaleMax === 0) scaleMax = 10000;
+                let scaleMid = scaleMax / 2;
 
-                    const colorClass = net >= 0 ? 'positive' : 'negative'; const shortMonth = m.split('-')[1];
-                    return `<div class="bar-group"><div class="bar-val">$${Math.round(Math.abs(net)/1000)}k</div><div class="bar ${colorClass}" style="height: ${heightPct}%"></div><div class="bar-label">${shortMonth}月</div></div>`;
-                }).join('');
-                trendContainer.innerHTML = barsHTML;
+                let chartHTML = `
+                    <div class="chart-box">
+                        <div class="chart-grid">
+                            <div class="grid-line"><div class="grid-label">$${scaleMax/1000}k</div></div>
+                            <div class="grid-line"><div class="grid-label">$${scaleMid/1000}k</div></div>
+                            <div class="grid-line base"><div class="grid-label">$0</div></div>
+                        </div>
+                        <div class="chart-bars">
+                `;
+
+                months.forEach(m => {
+                    const d = grouped[m] || { income:0, cost:0 }; 
+                    const net = d.income - d.cost;
+                    
+                    // 修正高度計算，確保不論正負皆有最低顯示高度，且不會超過 100%
+                    let heightPct = 0;
+                    if (scaleMax > 0) {
+                        heightPct = Math.max(1, Math.min(100, (Math.abs(net) / scaleMax) * 100));
+                    } else {
+                        heightPct = net === 0 ? 0 : 100;
+                    }
+
+                    const colorClass = net >= 0 ? 'positive' : 'negative'; 
+                    const shortMonth = m.split('-')[1];
+                    
+                    chartHTML += `
+                        <div class="bar-col">
+                            <div class="bar-fill ${colorClass}" style="height: ${heightPct}%;"></div>
+                            <div class="bar-val" style="color: ${net >= 0 ? '#10b981' : '#ef4444'}; bottom: calc(${heightPct}% + 4px);">${net >= 0 ? '' : '-'}$${Math.round(Math.abs(net)/1000)}k</div>
+                            <div class="bar-label">${parseInt(shortMonth)}月</div>
+                        </div>
+                    `;
+                });
+                chartHTML += `</div></div>`;
+                trendContainer.innerHTML = chartHTML;
             }
 
             const totalYearly = yStat.income || 1;
