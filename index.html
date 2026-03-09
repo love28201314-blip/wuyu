@@ -144,11 +144,11 @@
         .pie-chart-inner { position: absolute; inset: 25px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; }
         
         .bar-chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 120px; padding-top: 20px; gap: 8px; }
-        .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .bar-group { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; height: 100%;}
         .bar { width: 100%; background: #e2e8f0; border-radius: 6px 6px 0 0; transition: height 0.5s ease; min-height: 4px; position: relative; }
         .bar.positive { background: #10b981; }
         .bar.negative { background: #ef4444; }
-        .bar-label { font-size: 0.6rem; color: #94a3b8; font-weight: 700; }
+        .bar-label { font-size: 0.6rem; color: #94a3b8; font-weight: 700; margin-top: auto;}
         .bar-val { font-size: 0.6rem; color: #64748b; font-weight: 700; margin-bottom: 2px; }
 
         /* Loading Overlay */
@@ -941,22 +941,18 @@
                 return !isNaN(d.getTime()) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
             };
 
-            // 1. 本月帳單 (用 billingMonth 判斷)
             const currentMonthRecords = window.state.records.filter(r => r.billingMonth === currentMonthStr);
             const income = currentMonthRecords.filter(r => r.paid).reduce((s, r) => s + (Number(r.total) || 0), 0);
             const elecRev = currentMonthRecords.reduce((s, r) => s + (Number(r.elecCost) || 0) + (Number(r.elecCost2) || 0), 0);
             
-            // 2. 待收總額 (不限本月，保留歷史欠款)
             const pending = window.state.records.filter(r => !r.paid).reduce((s, r) => s + (Number(r.total) || 0), 0);
             
-            // 3. 本月修繕與雜支
             const currentRepairs = window.state.repairs.filter(r => isThisMonth(r.date));
             const repairCost = currentRepairs.reduce((s, r) => s + (Number(r.cost) || 0), 0);
             
             const currentExpenses = window.state.expenses.filter(e => isThisMonth(e.date));
             const generalExpense = currentExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
             
-            // 4. 本月水電成本
             let totalUtilityCost = 0;
             const currentUtil = window.state.utilityRates[currentMonthStr];
             if (currentUtil) {
@@ -1075,7 +1071,18 @@
                 months.forEach(m => { const d = grouped[m]; if(d) { const net = d.income - d.cost; if(Math.abs(net) > maxVal) maxVal = Math.abs(net); } });
                 let barsHTML = months.map(m => {
                     const d = grouped[m] || { income:0, cost:0 }; const net = d.income - d.cost;
-                    const heightPct = Math.max(10, Math.min(100, (Math.abs(net) / maxVal) * 100));
+                    
+                    // --- 修正高度計算邏輯 ---
+                    let heightPct = 0;
+                    if (maxVal > 0) {
+                        heightPct = Math.max(10, Math.min(100, (Math.abs(net) / maxVal) * 100));
+                    } else if (net !== 0) {
+                        heightPct = 100; // 如果 maxVal 是 0 (可能只有一個月份且數值不為 0)，或者出現異常，至少給個高度
+                    } else {
+                        heightPct = 5; // 如果 net 是 0，給個微小的高度表示沒有數據，但不要完全不見
+                    }
+                    // -------------------------
+
                     const colorClass = net >= 0 ? 'positive' : 'negative'; const shortMonth = m.split('-')[1];
                     return `<div class="bar-group"><div class="bar-val">$${Math.round(Math.abs(net)/1000)}k</div><div class="bar ${colorClass}" style="height: ${heightPct}%"></div><div class="bar-label">${shortMonth}月</div></div>`;
                 }).join('');
